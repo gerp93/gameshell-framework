@@ -13,7 +13,7 @@ func GetDatabaseConnectionString() string {
 	userName := os.Getenv("GFB_SQL_USER")
 	userPassword := os.Getenv("GFB_SQL_PASSWORD")
 	databaseName := os.Getenv("GFB_SQL_DATABASE")
-	return fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", userName, userPassword, serverHost, databaseName)
+	return fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 }
 
 func Ping(dbcs string) error {
@@ -28,4 +28,49 @@ func Ping(dbcs string) error {
 		return err
 	}
 	return nil
+}
+
+func GetJudgeCards(dbcs string) ([]Card, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	selectStatment, err := db.Prepare(`
+		SELECT ID
+			 , DATE_ADDED
+			 , DATE_MODIFIED
+			 , DECK_ID
+			 , TYPE
+			 , TEXT
+	 	FROM CARD 
+		WHERE type = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer selectStatment.Close()
+
+	rows, err := selectStatment.Query("JUDGE")
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Card, 0)
+	for rows.Next() {
+		var card Card
+		if err := rows.Scan(
+			&card.Id,
+			&card.DateAdded,
+			&card.DateModified,
+			&card.DeckId,
+			&card.Type,
+			&card.Text); err != nil {
+			fmt.Println(err)
+			break
+		}
+		result = append(result, card)
+	}
+	return result, nil
 }
