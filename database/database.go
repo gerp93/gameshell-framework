@@ -6,6 +6,7 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 )
 
 func GetDatabaseConnectionString() string {
@@ -112,7 +113,7 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	return result, nil
 }
 
-func GetJudgeCards(dbcs string) ([]Card, error) {
+func GetCards(dbcs string, deckId uuid.UUID) ([]Card, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return nil, err
@@ -123,18 +124,17 @@ func GetJudgeCards(dbcs string) ([]Card, error) {
 		SELECT ID
 			 , DATE_ADDED
 			 , DATE_MODIFIED
-			 , DECK_ID
 			 , TYPE
 			 , TEXT
 	 	FROM CARD 
-		WHERE type = ?
+		WHERE DECK_ID = ?
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer selectStatment.Close()
 
-	rows, err := selectStatment.Query("JUDGE")
+	rows, err := selectStatment.Query(deckId)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,6 @@ func GetJudgeCards(dbcs string) ([]Card, error) {
 			&card.Id,
 			&card.DateAdded,
 			&card.DateModified,
-			&card.DeckId,
 			&card.Type,
 			&card.Text); err != nil {
 			continue
