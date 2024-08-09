@@ -72,6 +72,48 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 	return result, nil
 }
 
+func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
+	var lobby Lobby
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return lobby, err
+	}
+	defer db.Close()
+
+	selectStatment, err := db.Prepare(`
+		SELECT ID
+			 , DATE_ADDED
+			 , DATE_MODIFIED
+			 , NAME
+			 , PASSWORD
+	 	FROM LOBBY 
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return lobby, err
+	}
+	defer selectStatment.Close()
+
+	rows, err := selectStatment.Query(id)
+	if err != nil {
+		return lobby, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&lobby.Id,
+			&lobby.DateAdded,
+			&lobby.DateModified,
+			&lobby.Name,
+			&lobby.Password); err != nil {
+			return lobby, err
+		}
+	}
+
+	return lobby, nil
+}
+
 func GetDecks(dbcs string) ([]Deck, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
