@@ -9,8 +9,8 @@ import (
 )
 
 func Access(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckid")
-	deckId, err := uuid.Parse(deckIdString)
+	idString := r.PathValue("id")
+	id, err := uuid.Parse(idString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("failed to get deck id"))
@@ -18,7 +18,7 @@ func Access(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dbcs := database.GetDatabaseConnectionString()
-	deck, err := database.GetDeck(dbcs, deckId)
+	deck, err := database.GetDeck(dbcs, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("failed to get deck"))
