@@ -98,3 +98,36 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 
 	return deck, nil
 }
+
+func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return id, err
+	}
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return id, err
+	}
+	defer db.Close()
+
+	insertStatment, err := db.Prepare(`
+		INSERT INTO DECK (ID, NAME, PASSWORD)
+		VALUES (?, ?, ?)
+	`)
+	if err != nil {
+		return id, err
+	}
+	defer insertStatment.Close()
+
+	if password == "" {
+		_, err = insertStatment.Exec(id, name, nil)
+	} else {
+		_, err = insertStatment.Exec(id, name, password)
+	}
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
+}
