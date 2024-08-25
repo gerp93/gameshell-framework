@@ -23,7 +23,7 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	}
 	defer db.Close()
 
-	selectStatment, err := db.Prepare(`
+	statment, err := db.Prepare(`
 		SELECT ID
 			 , DATE_ADDED
 			 , DATE_MODIFIED
@@ -34,9 +34,9 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer selectStatment.Close()
+	defer statment.Close()
 
-	rows, err := selectStatment.Query()
+	rows, err := statment.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	}
 	defer db.Close()
 
-	selectStatment, err := db.Prepare(`
+	statment, err := db.Prepare(`
 		SELECT ID
 			 , DATE_ADDED
 			 , DATE_MODIFIED
@@ -78,9 +78,9 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	if err != nil {
 		return deck, err
 	}
-	defer selectStatment.Close()
+	defer statment.Close()
 
-	rows, err := selectStatment.Query(id)
+	rows, err := statment.Query(id)
 	if err != nil {
 		return deck, err
 	}
@@ -111,23 +111,77 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	}
 	defer db.Close()
 
-	insertStatment, err := db.Prepare(`
+	statment, err := db.Prepare(`
 		INSERT INTO DECK (ID, NAME, PASSWORD)
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
 		return id, err
 	}
-	defer insertStatment.Close()
+	defer statment.Close()
 
 	if password == "" {
-		_, err = insertStatment.Exec(id, name, nil)
+		_, err = statment.Exec(id, name, nil)
 	} else {
-		_, err = insertStatment.Exec(id, name, password)
+		_, err = statment.Exec(id, name, password)
 	}
 	if err != nil {
 		return id, err
 	}
 
 	return id, nil
+}
+
+func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		UPDATE DECK
+		SET NAME = ?,
+			PASSWORD = ?
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer statment.Close()
+
+	if password == "" {
+		_, err = statment.Exec(name, nil, id)
+	} else {
+		_, err = statment.Exec(name, password, id)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteDeck(dbcs string, id uuid.UUID) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		DELETE FROM DECK
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer statment.Close()
+
+	_, err = statment.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
