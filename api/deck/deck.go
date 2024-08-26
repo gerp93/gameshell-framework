@@ -109,5 +109,5 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("HX-Redirect", "/lobbies")
+	w.Header().Add("HX-Redirect", "/decks")
 }
