@@ -29,7 +29,8 @@ func GetDecks(dbcs string) ([]Deck, error) {
 			 , DATE_MODIFIED
 			 , NAME
 			 , PASSWORD
-	 	FROM DECK 
+	 	FROM DECK
+		ORDER BY DATE_MODIFIED DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 			 , DATE_MODIFIED
 			 , NAME
 			 , PASSWORD
-	 	FROM DECK 
+	 	FROM DECK
 		WHERE ID = ?
 	`)
 	if err != nil {
