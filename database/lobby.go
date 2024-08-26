@@ -29,7 +29,8 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 			 , DATE_MODIFIED
 			 , NAME
 			 , PASSWORD
-	 	FROM LOBBY 
+	 	FROM LOBBY
+		ORDER BY DATE_MODIFIED DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 			 , DATE_MODIFIED
 			 , NAME
 			 , PASSWORD
-	 	FROM LOBBY 
+	 	FROM LOBBY
 		WHERE ID = ?
 	`)
 	if err != nil {
