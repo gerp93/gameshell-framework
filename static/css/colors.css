@@ -1,0 +1,115 @@
+:root {
+  --white: rgb(255, 255, 255);
+  --black: rgb(0, 0, 0);
+  --dark-bg: rgb(34, 34, 34);
+
+  --light-link-fg: rgb(0, 50, 200);
+  --light-button-fg: var(--black);
+  --light-button-bg: rgb(205, 248, 255);
+  --light-row-hover: rgb(234, 234, 234);
+  --light-color-red: rgb(255, 0, 0);
+
+  --dark-link-fg: rgb(130, 160, 255);
+  --dark-button-fg: var(--white);
+  --dark-button-bg: rgb(0, 68, 79);
+  --dark-row-hover: rgb(54, 54, 54);
+  --dark-color-red: rgb(255, 160, 160);
+}
+
+/* light-theme */
+
+body.light-theme {
+  color: var(--black);
+  background-color: var(--white);
+}
+
+body.light-theme a {
+  color: var(--light-link-fg);
+}
+
+body.light-theme dialog {
+  color: var(--black);
+  background-color: var(--white);
+}
+
+body.light-theme button {
+  color: var(--light-button-fg);
+  background-color: var(--light-button-bg);
+}
+
+body.light-theme input {
+  color: var(--black);
+  background-color: var(--white);
+}
+
+body.light-theme input[type="submit"] {
+  color: var(--light-button-fg);
+  background-color: var(--light-button-bg);
+}
+
+body.light-theme textarea {
+  color: var(--black);
+  background-color: var(--white);
+}
+
+body.light-theme select {
+  color: var(--black);
+  background-color: var(--white);
+}
+
+body.light-theme tr:hover {
+  background-color: var(--light-row-hover);
+}
+
+body.light-theme .color-red {
+  color: var(--light-color-red);
+}
+
+/* dark-theme */
+
+body.dark-theme {
+  color: var(--white);
+  background: var(--dark-bg);
+}
+
+body.dark-theme a {
+  color: var(--dark-link-fg);
+}
+
+body.dark-theme dialog {
+  color: var(--white);
+  background: var(--dark-bg);
+}
+
+body.dark-theme button {
+  color: var(--dark-button-fg);
+  background-color: var(--dark-button-bg);
+}
+
+body.dark-theme input {
+  color: var(--white);
+  background: var(--dark-bg);
+}
+
+body.dark-theme input[type="submit"] {
+  color: var(--dark-button-fg);
+  background-color: var(--dark-button-bg);
+}
+
+body.dark-theme textarea {
+  color: var(--white);
+  background: var(--dark-bg);
+}
+
+body.dark-theme select {
+  color: var(--white);
+  background: var(--dark-bg);
+}
+
+body.dark-theme tr:hover {
+  background-color: var(--dark-row-hover);
+}
+
+body.dark-theme .color-red {
+  color: var(--dark-color-red);
+}
