@@ -39,7 +39,7 @@ func Access(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	if deck.Password.String != password {
+	if !auth.PasswordMatchesHash(password, deck.PasswordHash.String) {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Provided password is not valid.")
 		return
 	}

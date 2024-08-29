@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grantfbarnes/card-judge/auth"
 )
 
 type Deck struct {
@@ -12,8 +13,8 @@ type Deck struct {
 	DateAdded    time.Time
 	DateModified time.Time
 
-	Name     string
-	Password sql.NullString
+	Name         string
+	PasswordHash sql.NullString
 }
 
 func GetDecks(dbcs string) ([]Deck, error) {
@@ -28,7 +29,7 @@ func GetDecks(dbcs string) ([]Deck, error) {
 			 , DATE_ADDED
 			 , DATE_MODIFIED
 			 , NAME
-			 , PASSWORD
+			 , PASSWORD_HASH
 	 	FROM DECK
 		ORDER BY DATE_MODIFIED DESC
 	`)
@@ -50,7 +51,7 @@ func GetDecks(dbcs string) ([]Deck, error) {
 			&deck.DateAdded,
 			&deck.DateModified,
 			&deck.Name,
-			&deck.Password); err != nil {
+			&deck.PasswordHash); err != nil {
 			continue
 		}
 		result = append(result, deck)
@@ -72,7 +73,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 			 , DATE_ADDED
 			 , DATE_MODIFIED
 			 , NAME
-			 , PASSWORD
+			 , PASSWORD_HASH
 	 	FROM DECK
 		WHERE ID = ?
 	`)
@@ -92,7 +93,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 			&deck.DateAdded,
 			&deck.DateModified,
 			&deck.Name,
-			&deck.Password); err != nil {
+			&deck.PasswordHash); err != nil {
 			return deck, err
 		}
 	}
@@ -106,6 +107,11 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 		return id, err
 	}
 
+	passwordHash, err := auth.GetPasswordHash(password)
+	if err != nil {
+		return id, err
+	}
+
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return id, err
@@ -113,7 +119,7 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO DECK (ID, NAME, PASSWORD)
+		INSERT INTO DECK (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
@@ -124,7 +130,7 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	if password == "" {
 		_, err = statment.Exec(id, name, nil)
 	} else {
-		_, err = statment.Exec(id, name, password)
+		_, err = statment.Exec(id, name, passwordHash)
 	}
 	if err != nil {
 		return id, err
@@ -134,6 +140,11 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 }
 
 func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
+	passwordHash, err := auth.GetPasswordHash(password)
+	if err != nil {
+		return err
+	}
+
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -143,7 +154,7 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 	statment, err := db.Prepare(`
 		UPDATE DECK
 		SET NAME = ?,
-			PASSWORD = ?
+			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -154,7 +165,7 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 	if password == "" {
 		_, err = statment.Exec(name, nil, id)
 	} else {
-		_, err = statment.Exec(name, password, id)
+		_, err = statment.Exec(name, passwordHash, id)
 	}
 	if err != nil {
 		return err
