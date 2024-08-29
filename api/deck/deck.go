@@ -44,7 +44,7 @@ func Access(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = auth.AddAccessId(w, r, deck.Id)
+	err = auth.AddCookieAccessId(w, r, deck.Id)
 	if err != nil {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to set cookie in browser.")
 		return
@@ -83,7 +83,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.AddAccessId(w, r, id)
+	auth.AddCookieAccessId(w, r, id)
 
 	w.Header().Add("HX-Redirect", "/deck/"+id.String())
 	api.WriteGoodHeader(w, http.StatusCreated, "Success")
@@ -125,7 +125,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.AddAccessId(w, r, id)
+	auth.AddCookieAccessId(w, r, id)
 
 	w.Header().Add("HX-Refresh", "true")
 	api.WriteGoodHeader(w, http.StatusCreated, "Success")
