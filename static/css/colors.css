@@ -8,12 +8,16 @@
   --light-button-bg: rgb(205, 248, 255);
   --light-row-hover: rgb(234, 234, 234);
   --light-color-red: rgb(255, 0, 0);
+  --light-htmx-result-good: rgb(20, 150, 0);
+  --light-htmx-result-bad: rgb(157, 0, 0);
 
   --dark-link-fg: rgb(130, 160, 255);
   --dark-button-fg: var(--white);
   --dark-button-bg: rgb(0, 68, 79);
   --dark-row-hover: rgb(54, 54, 54);
   --dark-color-red: rgb(255, 160, 160);
+  --dark-htmx-result-good: rgb(120, 255, 99);
+  --dark-htmx-result-bad: rgb(255, 100, 100);
 }
 
 /* light-theme */
@@ -65,6 +69,14 @@ body.light-theme .color-red {
   color: var(--light-color-red);
 }
 
+body.light-theme .htmx-result-good {
+  color: var(--light-htmx-result-good);
+}
+
+body.light-theme .htmx-result-bad {
+  color: var(--light-htmx-result-bad);
+}
+
 /* dark-theme */
 
 body.dark-theme {
@@ -112,4 +124,12 @@ body.dark-theme tr:hover {
 
 body.dark-theme .color-red {
   color: var(--dark-color-red);
+}
+
+body.dark-theme .htmx-result-good {
+  color: var(--dark-htmx-result-good);
+}
+
+body.dark-theme .htmx-result-bad {
+  color: var(--dark-htmx-result-bad);
 }
