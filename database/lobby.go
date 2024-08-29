@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grantfbarnes/card-judge/auth"
 )
 
 type Lobby struct {
@@ -12,8 +13,8 @@ type Lobby struct {
 	DateAdded    time.Time
 	DateModified time.Time
 
-	Name     string
-	Password sql.NullString
+	Name         string
+	PasswordHash sql.NullString
 }
 
 func GetLobbies(dbcs string) ([]Lobby, error) {
@@ -28,7 +29,7 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 			 , DATE_ADDED
 			 , DATE_MODIFIED
 			 , NAME
-			 , PASSWORD
+			 , PASSWORD_HASH
 	 	FROM LOBBY
 		ORDER BY DATE_MODIFIED DESC
 	`)
@@ -50,7 +51,7 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 			&lobby.DateAdded,
 			&lobby.DateModified,
 			&lobby.Name,
-			&lobby.Password); err != nil {
+			&lobby.PasswordHash); err != nil {
 			continue
 		}
 		result = append(result, lobby)
@@ -72,7 +73,7 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 			 , DATE_ADDED
 			 , DATE_MODIFIED
 			 , NAME
-			 , PASSWORD
+			 , PASSWORD_HASH
 	 	FROM LOBBY
 		WHERE ID = ?
 	`)
@@ -92,7 +93,7 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 			&lobby.DateAdded,
 			&lobby.DateModified,
 			&lobby.Name,
-			&lobby.Password); err != nil {
+			&lobby.PasswordHash); err != nil {
 			return lobby, err
 		}
 	}
@@ -106,6 +107,11 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 		return id, err
 	}
 
+	passwordHash, err := auth.GetPasswordHash(password)
+	if err != nil {
+		return id, err
+	}
+
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return id, err
@@ -113,7 +119,7 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO LOBBY (ID, NAME, PASSWORD)
+		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
@@ -124,7 +130,7 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 	if password == "" {
 		_, err = statment.Exec(id, name, nil)
 	} else {
-		_, err = statment.Exec(id, name, password)
+		_, err = statment.Exec(id, name, passwordHash)
 	}
 	if err != nil {
 		return id, err
@@ -134,6 +140,11 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 }
 
 func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error {
+	passwordHash, err := auth.GetPasswordHash(password)
+	if err != nil {
+		return err
+	}
+
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -143,7 +154,7 @@ func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error 
 	statment, err := db.Prepare(`
 		UPDATE LOBBY
 		SET NAME = ?,
-			PASSWORD = ?
+			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -154,7 +165,7 @@ func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error 
 	if password == "" {
 		_, err = statment.Exec(name, nil, id)
 	} else {
-		_, err = statment.Exec(name, password, id)
+		_, err = statment.Exec(name, passwordHash, id)
 	}
 	if err != nil {
 		return err
