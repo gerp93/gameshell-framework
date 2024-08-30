@@ -53,29 +53,28 @@ func RemoveCookiePlayerId(w http.ResponseWriter) {
 	http.SetCookie(w, &cookie)
 }
 
-func HasCookieAccess(r *http.Request, id uuid.UUID) (bool, error) {
+func HasCookieAccess(r *http.Request, id uuid.UUID) bool {
 	cookieValue, err := getCookie(r, cookieNameAccessToken)
 	if err != nil {
-		return false, err
+		return false
 	}
 
 	tokenValue, err := getTokenStringValue(cookieValue)
 	if err != nil {
-		return false, err
+		return false
 	}
 
-	return strings.Contains(tokenValue, id.String()), nil
+	return strings.Contains(tokenValue, id.String())
 }
 
 func AddCookieAccessId(w http.ResponseWriter, r *http.Request, id uuid.UUID) error {
+	tokenValue := ""
 	cookieValue, err := getCookie(r, cookieNameAccessToken)
-	if err != nil {
-		return err
-	}
-
-	tokenValue, err := getTokenStringValue(cookieValue)
-	if err != nil {
-		return err
+	if err == nil {
+		tokenValue, err = getTokenStringValue(cookieValue)
+		if err != nil {
+			return err
+		}
 	}
 
 	if strings.Contains(tokenValue, id.String()) {
