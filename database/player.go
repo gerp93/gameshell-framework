@@ -18,6 +18,7 @@ type Player struct {
 	Name         string
 	PasswordHash string
 	ColorTheme   sql.NullString
+	IsAdmin      bool
 	LobbyIds     []uuid.UUID
 	DeckIds      []uuid.UUID
 }
@@ -62,7 +63,8 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH,
-			COLOR_THEME
+			COLOR_THEME,
+			IS_ADMIN
 		FROM PLAYER
 		WHERE ID = ?
 	`)
@@ -83,7 +85,8 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 			&player.ChangedOnDate,
 			&player.Name,
 			&player.PasswordHash,
-			&player.ColorTheme); err != nil {
+			&player.ColorTheme,
+			&player.IsAdmin); err != nil {
 			return player, err
 		}
 	}
