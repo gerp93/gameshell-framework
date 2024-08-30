@@ -38,7 +38,17 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.AddCookieAccessId(w, r, id)
+	playerId, err := auth.GetCookiePlayerId(r)
+	if err != nil {
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		return
+	}
+
+	err = database.AddPlayerDeckAccess(dbcs, playerId, id)
+	if err != nil {
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to add access.")
+		return
+	}
 
 	w.Header().Add("HX-Redirect", "/deck/"+id.String())
 	api.WriteGoodHeader(w, http.StatusCreated, "Success")
@@ -79,8 +89,6 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
 		return
 	}
-
-	auth.AddCookieAccessId(w, r, id)
 
 	w.Header().Add("HX-Refresh", "true")
 	api.WriteGoodHeader(w, http.StatusCreated, "Success")
