@@ -9,9 +9,9 @@ import (
 )
 
 type Deck struct {
-	Id           uuid.UUID
-	DateAdded    time.Time
-	DateModified time.Time
+	Id            uuid.UUID
+	CreatedOnDate time.Time
+	ChangedOnDate time.Time
 
 	Name         string
 	PasswordHash sql.NullString
@@ -27,12 +27,12 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	statment, err := db.Prepare(`
 		SELECT
 			ID,
-			DATE_ADDED,
-			DATE_MODIFIED,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH
 		FROM DECK
-		ORDER BY DATE_MODIFIED DESC
+		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func GetDecks(dbcs string) ([]Deck, error) {
 		var deck Deck
 		if err := rows.Scan(
 			&deck.Id,
-			&deck.DateAdded,
-			&deck.DateModified,
+			&deck.CreatedOnDate,
+			&deck.ChangedOnDate,
 			&deck.Name,
 			&deck.PasswordHash); err != nil {
 			continue
@@ -72,8 +72,8 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	statment, err := db.Prepare(`
 		SELECT
 			ID,
-			DATE_ADDED,
-			DATE_MODIFIED,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH
 		FROM DECK
@@ -92,8 +92,8 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	for rows.Next() {
 		if err := rows.Scan(
 			&deck.Id,
-			&deck.DateAdded,
-			&deck.DateModified,
+			&deck.CreatedOnDate,
+			&deck.ChangedOnDate,
 			&deck.Name,
 			&deck.PasswordHash); err != nil {
 			return deck, err
@@ -158,7 +158,7 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 		SET
 			NAME = ?,
 			PASSWORD_HASH = ?,
-			DATE_MODIFIED = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
