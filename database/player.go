@@ -15,6 +15,7 @@ type Player struct {
 
 	Name         string
 	PasswordHash string
+	ColorTheme   sql.NullString
 }
 
 func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
@@ -32,6 +33,7 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 			 , DATE_MODIFIED
 			 , NAME
 			 , PASSWORD_HASH
+			 , COLOR_THEME
 	 	FROM PLAYER
 		WHERE ID = ?
 	`)
@@ -51,7 +53,8 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 			&player.DateAdded,
 			&player.DateModified,
 			&player.Name,
-			&player.PasswordHash); err != nil {
+			&player.PasswordHash,
+			&player.ColorTheme); err != nil {
 			return player, err
 		}
 	}
@@ -117,6 +120,35 @@ func UpdatePlayer(dbcs string, id uuid.UUID, name string, password string) error
 	defer statment.Close()
 
 	_, err = statment.Exec(name, passwordHash, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SetColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		UPDATE PLAYER
+		SET COLOR_THEME = ?
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer statment.Close()
+
+	if colorTheme == "" {
+		_, err = statment.Exec(nil, id)
+	} else {
+		_, err = statment.Exec(colorTheme, id)
+	}
 	if err != nil {
 		return err
 	}
