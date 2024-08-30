@@ -153,8 +153,10 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 
 	statment, err := db.Prepare(`
 		UPDATE DECK
-		SET NAME = ?,
-			PASSWORD_HASH = ?
+		SET
+			NAME = ?,
+			PASSWORD_HASH = ?,
+			DATE_MODIFIED = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
