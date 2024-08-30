@@ -157,7 +157,9 @@ func SetPlayerName(dbcs string, id uuid.UUID, name string) error {
 
 	statment, err := db.Prepare(`
 		UPDATE PLAYER
-		SET NAME = ?
+		SET
+			NAME = ?,
+			DATE_MODIFIED = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -187,7 +189,9 @@ func SetPlayerPassword(dbcs string, id uuid.UUID, password string) error {
 
 	statment, err := db.Prepare(`
 		UPDATE PLAYER
-		SET PASSWORD_HASH = ?
+		SET
+			PASSWORD_HASH = ?,
+			DATE_MODIFIED = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -212,7 +216,9 @@ func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
 
 	statment, err := db.Prepare(`
 		UPDATE PLAYER
-		SET COLOR_THEME = ?
+		SET
+			COLOR_THEME = ?,
+			DATE_MODIFIED = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
