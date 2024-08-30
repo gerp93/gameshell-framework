@@ -16,8 +16,9 @@ func GetPlayerLobbyAccess(dbcs string, playerId uuid.UUID) (lobbyIds []uuid.UUID
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT LOBBY_ID
-	 	FROM PLAYER_ACCESS_LOBBY
+		SELECT
+			LOBBY_ID
+		FROM PLAYER_ACCESS_LOBBY
 		WHERE PLAYER_ID = ?
 	`)
 	if err != nil {
@@ -49,7 +50,7 @@ func AddPlayerLobbyAccess(dbcs string, playerId uuid.UUID, lobbyId uuid.UUID) er
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO PLAYER_ACCESS_LOBBY (PLAYER_ID, LOBBY_ID) 
+		INSERT INTO PLAYER_ACCESS_LOBBY (PLAYER_ID, LOBBY_ID)
 		VALUES (?, ?)
 	`)
 	if err != nil {
@@ -75,8 +76,9 @@ func GetPlayerDeckAccess(dbcs string, playerId uuid.UUID) (deckIds []uuid.UUID, 
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT DECK_ID
-	 	FROM PLAYER_ACCESS_DECK
+		SELECT
+			DECK_ID
+		FROM PLAYER_ACCESS_DECK
 		WHERE PLAYER_ID = ?
 	`)
 	if err != nil {
@@ -108,7 +110,7 @@ func AddPlayerDeckAccess(dbcs string, playerId uuid.UUID, deckId uuid.UUID) erro
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO PLAYER_ACCESS_DECK (PLAYER_ID, DECK_ID) 
+		INSERT INTO PLAYER_ACCESS_DECK (PLAYER_ID, DECK_ID)
 		VALUES (?, ?)
 	`)
 	if err != nil {

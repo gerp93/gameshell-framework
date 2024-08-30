@@ -25,12 +25,13 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-			 , DATE_ADDED
-			 , DATE_MODIFIED
-			 , NAME
-			 , PASSWORD_HASH
-	 	FROM DECK
+		SELECT
+			ID,
+			DATE_ADDED,
+			DATE_MODIFIED,
+			NAME,
+			PASSWORD_HASH
+		FROM DECK
 		ORDER BY DATE_MODIFIED DESC
 	`)
 	if err != nil {
@@ -69,12 +70,13 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-			 , DATE_ADDED
-			 , DATE_MODIFIED
-			 , NAME
-			 , PASSWORD_HASH
-	 	FROM DECK
+		SELECT
+			ID,
+			DATE_ADDED,
+			DATE_MODIFIED,
+			NAME,
+			PASSWORD_HASH
+		FROM DECK
 		WHERE ID = ?
 	`)
 	if err != nil {
