@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
-	"github.com/grantfbarnes/card-judge/auth"
 	"github.com/grantfbarnes/card-judge/database"
 )
 
@@ -31,16 +30,16 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbcs := database.GetDatabaseConnectionString()
-	id, err := database.CreateDeck(dbcs, name, password)
-	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
+	playerId := api.GetPlayerId(r)
+	if playerId == uuid.Nil {
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
 		return
 	}
 
-	playerId, err := auth.GetCookiePlayerId(r)
+	dbcs := database.GetDatabaseConnectionString()
+	id, err := database.CreateDeck(dbcs, playerId, name, password)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
 		return
 	}
 
@@ -83,8 +82,14 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	playerId := api.GetPlayerId(r)
+	if playerId == uuid.Nil {
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		return
+	}
+
 	dbcs := database.GetDatabaseConnectionString()
-	err = database.UpdateDeck(dbcs, id, name, password)
+	err = database.UpdateDeck(dbcs, playerId, id, name, password)
 	if err != nil {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
 		return

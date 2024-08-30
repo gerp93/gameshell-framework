@@ -9,9 +9,11 @@ import (
 )
 
 type Deck struct {
-	Id            uuid.UUID
-	CreatedOnDate time.Time
-	ChangedOnDate time.Time
+	Id                uuid.UUID
+	CreatedOnDate     time.Time
+	ChangedOnDate     time.Time
+	CreatedByPlayerId uuid.UUID
+	ChangedByPlayerId uuid.UUID
 
 	Name         string
 	PasswordHash sql.NullString
@@ -29,6 +31,8 @@ func GetDecks(dbcs string) ([]Deck, error) {
 			ID,
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
 			NAME,
 			PASSWORD_HASH
 		FROM DECK
@@ -51,6 +55,8 @@ func GetDecks(dbcs string) ([]Deck, error) {
 			&deck.Id,
 			&deck.CreatedOnDate,
 			&deck.ChangedOnDate,
+			&deck.CreatedByPlayerId,
+			&deck.ChangedByPlayerId,
 			&deck.Name,
 			&deck.PasswordHash); err != nil {
 			continue
@@ -74,6 +80,8 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 			ID,
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
 			NAME,
 			PASSWORD_HASH
 		FROM DECK
@@ -94,6 +102,8 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 			&deck.Id,
 			&deck.CreatedOnDate,
 			&deck.ChangedOnDate,
+			&deck.CreatedByPlayerId,
+			&deck.ChangedByPlayerId,
 			&deck.Name,
 			&deck.PasswordHash); err != nil {
 			return deck, err
@@ -103,7 +113,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	return deck, nil
 }
 
-func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
+func CreateDeck(dbcs string, playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return id, err
@@ -121,8 +131,8 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO DECK (ID, NAME, PASSWORD_HASH)
-		VALUES (?, ?, ?)
+		INSERT INTO DECK (ID, CREATED_BY_PLAYER_ID, CHANGED_BY_PLAYER_ID, NAME, PASSWORD_HASH)
+		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return id, err
@@ -130,9 +140,9 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer statment.Close()
 
 	if password == "" {
-		_, err = statment.Exec(id, name, nil)
+		_, err = statment.Exec(id, playerId, playerId, name, nil)
 	} else {
-		_, err = statment.Exec(id, name, passwordHash)
+		_, err = statment.Exec(id, playerId, playerId, name, passwordHash)
 	}
 	if err != nil {
 		return id, err
@@ -141,7 +151,7 @@ func CreateDeck(dbcs string, name string, password string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
+func UpdateDeck(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -158,7 +168,8 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 		SET
 			NAME = ?,
 			PASSWORD_HASH = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
+			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -167,9 +178,9 @@ func UpdateDeck(dbcs string, id uuid.UUID, name string, password string) error {
 	defer statment.Close()
 
 	if password == "" {
-		_, err = statment.Exec(name, nil, id)
+		_, err = statment.Exec(name, nil, playerId, id)
 	} else {
-		_, err = statment.Exec(name, passwordHash, id)
+		_, err = statment.Exec(name, passwordHash, playerId, id)
 	}
 	if err != nil {
 		return err
