@@ -21,6 +21,24 @@ type Player struct {
 	DeckIds      []uuid.UUID
 }
 
+func (p Player) HasLobbyAccess(lobbyId uuid.UUID) bool {
+	for _, id := range p.LobbyIds {
+		if id == lobbyId {
+			return true
+		}
+	}
+	return false
+}
+
+func (p Player) HasDeckAccess(deckId uuid.UUID) bool {
+	for _, id := range p.DeckIds {
+		if id == deckId {
+			return true
+		}
+	}
+	return false
+}
+
 func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	var player Player
 
