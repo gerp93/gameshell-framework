@@ -17,6 +17,8 @@ type Player struct {
 	Name         string
 	PasswordHash string
 	ColorTheme   sql.NullString
+	LobbyIds     []uuid.UUID
+	DeckIds      []uuid.UUID
 }
 
 func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
@@ -58,6 +60,16 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 			&player.ColorTheme); err != nil {
 			return player, err
 		}
+	}
+
+	player.LobbyIds, err = GetPlayerLobbyAccess(dbcs, player.Id)
+	if err != nil {
+		player.LobbyIds = make([]uuid.UUID, 0)
+	}
+
+	player.DeckIds, err = GetPlayerDeckAccess(dbcs, player.Id)
+	if err != nil {
+		player.DeckIds = make([]uuid.UUID, 0)
 	}
 
 	return player, nil
