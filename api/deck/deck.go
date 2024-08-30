@@ -18,9 +18,9 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	var name string
 	var password string
 	for key, val := range r.Form {
-		if key == "newDeckName" {
+		if key == "name" {
 			name = val[0]
-		} else if key == "newDeckPassword" {
+		} else if key == "password" {
 			password = val[0]
 		}
 	}
@@ -70,9 +70,9 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	var name string
 	var password string
 	for key, val := range r.Form {
-		if key == "newDeckName" {
+		if key == "name" {
 			name = val[0]
-		} else if key == "newDeckPassword" {
+		} else if key == "password" {
 			password = val[0]
 		}
 	}
@@ -89,6 +89,11 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dbcs := database.GetDatabaseConnectionString()
+	if !database.HasDeckAccess(dbcs, playerId, id) {
+		api.WriteBadHeader(w, http.StatusUnauthorized, "Player does not have access.")
+		return
+	}
+
 	err = database.UpdateDeck(dbcs, playerId, id, name, password)
 	if err != nil {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
@@ -107,7 +112,18 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	playerId := api.GetPlayerId(r)
+	if playerId == uuid.Nil {
+		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		return
+	}
+
 	dbcs := database.GetDatabaseConnectionString()
+	if !database.HasDeckAccess(dbcs, playerId, id) {
+		api.WriteBadHeader(w, http.StatusUnauthorized, "Player does not have access.")
+		return
+	}
+
 	err = database.DeleteDeck(dbcs, id)
 	if err != nil {
 		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
