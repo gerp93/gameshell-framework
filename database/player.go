@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,6 +63,45 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
+func GetPlayerId(dbcs string, name string, password string) (uuid.UUID, error) {
+	id := uuid.Nil
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return id, err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		SELECT ID
+		     , PASSWORD_HASH
+	 	FROM PLAYER
+		WHERE NAME = ?
+	`)
+	if err != nil {
+		return id, err
+	}
+	defer statment.Close()
+
+	rows, err := statment.Query(name)
+	if err != nil {
+		return id, err
+	}
+
+	var passwordHash string
+	for rows.Next() {
+		if err := rows.Scan(&id, &passwordHash); err != nil {
+			return id, err
+		}
+	}
+
+	if !auth.PasswordMatchesHash(password, passwordHash) {
+		return id, errors.New("invalid password")
+	}
+
+	return id, nil
+}
+
 func CreatePlayer(dbcs string, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
@@ -96,7 +136,32 @@ func CreatePlayer(dbcs string, name string, password string) (uuid.UUID, error) 
 	return id, nil
 }
 
-func UpdatePlayer(dbcs string, id uuid.UUID, name string, password string) error {
+func SetPlayerName(dbcs string, id uuid.UUID, name string) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		UPDATE PLAYER
+		SET NAME = ?
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer statment.Close()
+
+	_, err = statment.Exec(name, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SetPlayerPassword(dbcs string, id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -110,8 +175,7 @@ func UpdatePlayer(dbcs string, id uuid.UUID, name string, password string) error
 
 	statment, err := db.Prepare(`
 		UPDATE PLAYER
-		SET NAME = ?,
-		    PASSWORD_HASH = ?
+		SET PASSWORD_HASH = ?
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -119,7 +183,7 @@ func UpdatePlayer(dbcs string, id uuid.UUID, name string, password string) error
 	}
 	defer statment.Close()
 
-	_, err = statment.Exec(name, passwordHash, id)
+	_, err = statment.Exec(passwordHash, id)
 	if err != nil {
 		return err
 	}
@@ -127,7 +191,7 @@ func UpdatePlayer(dbcs string, id uuid.UUID, name string, password string) error
 	return nil
 }
 
-func SetColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
+func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
