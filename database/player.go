@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/auth"
+	"github.com/grantfbarnes/card-judge/helper"
 )
 
 type Player struct {
@@ -22,21 +23,27 @@ type Player struct {
 }
 
 func (p Player) HasLobbyAccess(lobbyId uuid.UUID) bool {
-	for _, id := range p.LobbyIds {
-		if id == lobbyId {
-			return true
-		}
-	}
-	return false
+	return helper.IsIdInArray(lobbyId, p.LobbyIds)
 }
 
 func (p Player) HasDeckAccess(deckId uuid.UUID) bool {
-	for _, id := range p.DeckIds {
-		if id == deckId {
-			return true
-		}
+	return helper.IsIdInArray(deckId, p.DeckIds)
+}
+
+func HasLobbyAccess(dbcs string, playerId uuid.UUID, lobbyId uuid.UUID) bool {
+	lobbyIds, err := GetPlayerLobbyAccess(dbcs, playerId)
+	if err != nil {
+		return false
 	}
-	return false
+	return helper.IsIdInArray(lobbyId, lobbyIds)
+}
+
+func HasDeckAccess(dbcs string, playerId uuid.UUID, deckId uuid.UUID) bool {
+	deckIds, err := GetPlayerDeckAccess(dbcs, playerId)
+	if err != nil {
+		return false
+	}
+	return helper.IsIdInArray(deckId, deckIds)
 }
 
 func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
