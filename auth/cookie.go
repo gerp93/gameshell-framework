@@ -124,11 +124,6 @@ func SetCookieRedirectURL(w http.ResponseWriter, url string) {
 	http.SetCookie(w, &cookie)
 }
 
-func RemoveCookieRedirectURL(w http.ResponseWriter) {
-	cookie := getRemovalCookie(cookieNameRedirectURL)
-	http.SetCookie(w, &cookie)
-}
-
 func getCookie(r *http.Request, cookieName string) (string, error) {
 	cookieFound := false
 	cookieValue := ""

@@ -9,21 +9,25 @@ import (
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/login" {
-			_, err := auth.GetCookiePlayerId(r)
-			if err == nil {
-				http.Redirect(w, r, auth.GetCookieRedirectURL(r), http.StatusSeeOther)
+		_, err := auth.GetCookiePlayerId(r)
+		loggedIn := err == nil
+
+		// required to be logged in
+		if r.URL.Path == "/manage" ||
+			strings.HasPrefix(r.URL.Path, "/lobby/") ||
+			strings.HasPrefix(r.URL.Path, "/deck/") {
+			if !loggedIn {
+				auth.SetCookieRedirectURL(w, r.URL.Path)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
-		} else {
-			auth.RemoveCookieRedirectURL(w)
-			if strings.HasPrefix(r.URL.Path, "/lobby/") {
-				_, err := auth.GetCookiePlayerId(r)
-				if err != nil {
-					auth.SetCookieRedirectURL(w, r.URL.Path)
-					http.Redirect(w, r, "/login", http.StatusSeeOther)
-					return
-				}
+		}
+
+		// required to not be logged in
+		if r.URL.Path == "/login" {
+			if loggedIn {
+				http.Redirect(w, r, auth.GetCookieRedirectURL(r), http.StatusSeeOther)
+				return
 			}
 		}
 
