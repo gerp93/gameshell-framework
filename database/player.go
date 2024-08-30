@@ -31,13 +31,14 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-			 , DATE_ADDED
-			 , DATE_MODIFIED
-			 , NAME
-			 , PASSWORD_HASH
-			 , COLOR_THEME
-	 	FROM PLAYER
+		SELECT
+			ID,
+			DATE_ADDED,
+			DATE_MODIFIED,
+			NAME,
+			PASSWORD_HASH,
+			COLOR_THEME
+		FROM PLAYER
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -85,9 +86,10 @@ func GetPlayerId(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-		     , PASSWORD_HASH
-	 	FROM PLAYER
+		SELECT
+			ID,
+			PASSWORD_HASH
+		FROM PLAYER
 		WHERE NAME = ?
 	`)
 	if err != nil {

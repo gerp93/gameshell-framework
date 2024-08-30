@@ -25,12 +25,13 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-			 , DATE_ADDED
-			 , DATE_MODIFIED
-			 , NAME
-			 , PASSWORD_HASH
-	 	FROM LOBBY
+		SELECT
+			ID,
+			DATE_ADDED,
+			DATE_MODIFIED,
+			NAME,
+			PASSWORD_HASH
+		FROM LOBBY
 		ORDER BY DATE_MODIFIED DESC
 	`)
 	if err != nil {
@@ -69,12 +70,13 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		SELECT ID
-			 , DATE_ADDED
-			 , DATE_MODIFIED
-			 , NAME
-			 , PASSWORD_HASH
-	 	FROM LOBBY
+		SELECT
+			ID,
+			DATE_ADDED,
+			DATE_MODIFIED,
+			NAME,
+			PASSWORD_HASH
+		FROM LOBBY
 		WHERE ID = ?
 	`)
 	if err != nil {
