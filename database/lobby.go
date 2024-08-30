@@ -9,9 +9,11 @@ import (
 )
 
 type Lobby struct {
-	Id            uuid.UUID
-	CreatedOnDate time.Time
-	ChangedOnDate time.Time
+	Id                uuid.UUID
+	CreatedOnDate     time.Time
+	ChangedOnDate     time.Time
+	CreatedByPlayerId uuid.UUID
+	ChangedByPlayerId uuid.UUID
 
 	Name         string
 	PasswordHash sql.NullString
@@ -29,6 +31,8 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 			ID,
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
 			NAME,
 			PASSWORD_HASH
 		FROM LOBBY
@@ -51,6 +55,8 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 			&lobby.Id,
 			&lobby.CreatedOnDate,
 			&lobby.ChangedOnDate,
+			&lobby.CreatedByPlayerId,
+			&lobby.ChangedByPlayerId,
 			&lobby.Name,
 			&lobby.PasswordHash); err != nil {
 			continue
@@ -74,6 +80,8 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 			ID,
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
 			NAME,
 			PASSWORD_HASH
 		FROM LOBBY
@@ -94,6 +102,8 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 			&lobby.Id,
 			&lobby.CreatedOnDate,
 			&lobby.ChangedOnDate,
+			&lobby.CreatedByPlayerId,
+			&lobby.ChangedByPlayerId,
 			&lobby.Name,
 			&lobby.PasswordHash); err != nil {
 			return lobby, err
@@ -103,7 +113,7 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 	return lobby, nil
 }
 
-func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
+func CreateLobby(dbcs string, playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return id, err
@@ -121,8 +131,8 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer db.Close()
 
 	statment, err := db.Prepare(`
-		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH)
-		VALUES (?, ?, ?)
+		INSERT INTO LOBBY (ID, CREATED_BY_PLAYER_ID, CHANGED_BY_PLAYER_ID, NAME, PASSWORD_HASH)
+		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return id, err
@@ -130,9 +140,9 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 	defer statment.Close()
 
 	if password == "" {
-		_, err = statment.Exec(id, name, nil)
+		_, err = statment.Exec(id, playerId, playerId, name, nil)
 	} else {
-		_, err = statment.Exec(id, name, passwordHash)
+		_, err = statment.Exec(id, playerId, playerId, name, passwordHash)
 	}
 	if err != nil {
 		return id, err
@@ -141,7 +151,7 @@ func CreateLobby(dbcs string, name string, password string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error {
+func UpdateLobby(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -158,7 +168,8 @@ func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error 
 		SET
 			NAME = ?,
 			PASSWORD_HASH = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
+			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -167,9 +178,9 @@ func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error 
 	defer statment.Close()
 
 	if password == "" {
-		_, err = statment.Exec(name, nil, id)
+		_, err = statment.Exec(name, nil, playerId, id)
 	} else {
-		_, err = statment.Exec(name, passwordHash, id)
+		_, err = statment.Exec(name, passwordHash, playerId, id)
 	}
 	if err != nil {
 		return err
