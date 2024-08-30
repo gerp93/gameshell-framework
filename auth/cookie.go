@@ -12,6 +12,7 @@ import (
 
 const cookieNamePlayerToken string = "CARD-JUDGE-PLAYER-TOKEN"
 const cookieNameAccessToken string = "CARD-JUDGE-ACCESS-TOKEN"
+const cookieNameRedirectURL string = "CARD-JUDGE-REDIRECT-URL"
 
 func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
 	cookieValue, err := getCookie(r, cookieNamePlayerToken)
@@ -103,6 +104,29 @@ func AddCookieAccessId(w http.ResponseWriter, r *http.Request, id uuid.UUID) err
 	}
 	http.SetCookie(w, &cookie)
 	return nil
+}
+
+func GetCookieRedirectURL(r *http.Request) string {
+	redirectPath, err := getCookie(r, cookieNameRedirectURL)
+	if err != nil {
+		return "/"
+	}
+	return redirectPath
+}
+
+func SetCookieRedirectURL(w http.ResponseWriter, url string) {
+	cookie := http.Cookie{
+		Name:    cookieNameRedirectURL,
+		Value:   url,
+		Path:    "/",
+		Expires: time.Now().Add(time.Hour * 12),
+	}
+	http.SetCookie(w, &cookie)
+}
+
+func RemoveCookieRedirectURL(w http.ResponseWriter) {
+	cookie := getRemovalCookie(cookieNameRedirectURL)
+	http.SetCookie(w, &cookie)
 }
 
 func getCookie(r *http.Request, cookieName string) (string, error) {
