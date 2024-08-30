@@ -9,9 +9,9 @@ import (
 )
 
 type Lobby struct {
-	Id           uuid.UUID
-	DateAdded    time.Time
-	DateModified time.Time
+	Id            uuid.UUID
+	CreatedOnDate time.Time
+	ChangedOnDate time.Time
 
 	Name         string
 	PasswordHash sql.NullString
@@ -27,12 +27,12 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 	statment, err := db.Prepare(`
 		SELECT
 			ID,
-			DATE_ADDED,
-			DATE_MODIFIED,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH
 		FROM LOBBY
-		ORDER BY DATE_MODIFIED DESC
+		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 		var lobby Lobby
 		if err := rows.Scan(
 			&lobby.Id,
-			&lobby.DateAdded,
-			&lobby.DateModified,
+			&lobby.CreatedOnDate,
+			&lobby.ChangedOnDate,
 			&lobby.Name,
 			&lobby.PasswordHash); err != nil {
 			continue
@@ -72,8 +72,8 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 	statment, err := db.Prepare(`
 		SELECT
 			ID,
-			DATE_ADDED,
-			DATE_MODIFIED,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH
 		FROM LOBBY
@@ -92,8 +92,8 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 	for rows.Next() {
 		if err := rows.Scan(
 			&lobby.Id,
-			&lobby.DateAdded,
-			&lobby.DateModified,
+			&lobby.CreatedOnDate,
+			&lobby.ChangedOnDate,
 			&lobby.Name,
 			&lobby.PasswordHash); err != nil {
 			return lobby, err
@@ -158,7 +158,7 @@ func UpdateLobby(dbcs string, id uuid.UUID, name string, password string) error 
 		SET
 			NAME = ?,
 			PASSWORD_HASH = ?,
-			DATE_MODIFIED = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {

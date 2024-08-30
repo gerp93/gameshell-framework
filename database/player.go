@@ -10,9 +10,9 @@ import (
 )
 
 type Player struct {
-	Id           uuid.UUID
-	DateAdded    time.Time
-	DateModified time.Time
+	Id            uuid.UUID
+	CreatedOnDate time.Time
+	ChangedOnDate time.Time
 
 	Name         string
 	PasswordHash string
@@ -33,8 +33,8 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	statment, err := db.Prepare(`
 		SELECT
 			ID,
-			DATE_ADDED,
-			DATE_MODIFIED,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH,
 			COLOR_THEME
@@ -54,8 +54,8 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	for rows.Next() {
 		if err := rows.Scan(
 			&player.Id,
-			&player.DateAdded,
-			&player.DateModified,
+			&player.CreatedOnDate,
+			&player.ChangedOnDate,
 			&player.Name,
 			&player.PasswordHash,
 			&player.ColorTheme); err != nil {
@@ -161,7 +161,7 @@ func SetPlayerName(dbcs string, id uuid.UUID, name string) error {
 		UPDATE PLAYER
 		SET
 			NAME = ?,
-			DATE_MODIFIED = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -193,7 +193,7 @@ func SetPlayerPassword(dbcs string, id uuid.UUID, password string) error {
 		UPDATE PLAYER
 		SET
 			PASSWORD_HASH = ?,
-			DATE_MODIFIED = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
@@ -220,7 +220,7 @@ func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
 		UPDATE PLAYER
 		SET
 			COLOR_THEME = ?,
-			DATE_MODIFIED = CURRENT_TIMESTAMP()
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
 	`)
 	if err != nil {
