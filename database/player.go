@@ -47,6 +47,49 @@ func HasDeckAccess(dbcs string, playerId uuid.UUID, deckId uuid.UUID) bool {
 	return helper.IsIdInArray(deckId, deckIds)
 }
 
+func GetPlayers(dbcs string) ([]Player, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		SELECT
+			ID,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
+			NAME,
+			IS_ADMIN
+		FROM PLAYER
+		ORDER BY CHANGED_ON_DATE DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer statment.Close()
+
+	rows, err := statment.Query()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		if err := rows.Scan(
+			&player.Id,
+			&player.CreatedOnDate,
+			&player.ChangedOnDate,
+			&player.Name,
+			&player.IsAdmin); err != nil {
+			continue
+		}
+		result = append(result, player)
+	}
+	return result, nil
+}
+
 func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	var player Player
 
