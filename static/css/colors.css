@@ -1,135 +1,148 @@
 :root {
-  --white: rgb(255, 255, 255);
-  --black: rgb(0, 0, 0);
+  --topbar-text: rgb(255, 255, 255);
+  --topbar-bg: rgb(50, 50, 50);
+
+  --light-text: rgb(0, 0, 0);
+  --light-bg: rgb(245, 245, 245);
+  --light-bg-hover: rgb(234, 234, 234);
+  --light-primary-action: rgb(165, 225, 226);
+  --light-primary-action-hover: rgb(145, 200, 201);
+  --light-accent-green: rgb(20, 150, 0);
+  --light-accent-red: rgb(157, 0, 0);
+  --light-accent-blue: rgb(0, 50, 200);
+
+  --dark-text: rgb(255, 255, 255);
   --dark-bg: rgb(34, 34, 34);
-
-  --light-link-fg: rgb(0, 50, 200);
-  --light-button-fg: var(--black);
-  --light-button-bg: rgb(205, 248, 255);
-  --light-row-hover: rgb(234, 234, 234);
-  --light-color-red: rgb(255, 0, 0);
-  --light-htmx-result-good: rgb(20, 150, 0);
-  --light-htmx-result-bad: rgb(157, 0, 0);
-
-  --dark-link-fg: rgb(130, 160, 255);
-  --dark-button-fg: var(--white);
-  --dark-button-bg: rgb(0, 68, 79);
-  --dark-row-hover: rgb(54, 54, 54);
-  --dark-color-red: rgb(255, 160, 160);
-  --dark-htmx-result-good: rgb(120, 255, 99);
-  --dark-htmx-result-bad: rgb(255, 100, 100);
+  --dark-bg-hover: rgb(54, 54, 54);
+  --dark-primary-action: rgb(7, 72, 75);
+  --dark-primary-action-hover: rgb(8, 94, 99);
+  --dark-accent-green: rgb(120, 255, 99);
+  --dark-accent-red: rgb(255, 100, 100);
+  --dark-accent-blue: rgb(130, 160, 255);
 }
 
 /* light-theme */
 
 body.light-theme {
-  color: var(--black);
-  background-color: var(--white);
+  color: var(--light-text);
+  background-color: var(--light-bg);
 }
 
 body.light-theme a {
-  color: var(--light-link-fg);
+  color: var(--light-accent-blue);
 }
 
 body.light-theme dialog {
-  color: var(--black);
-  background-color: var(--white);
+  color: var(--light-text);
+  background-color: var(--light-bg);
 }
 
 body.light-theme button {
-  color: var(--light-button-fg);
-  background-color: var(--light-button-bg);
+  color: var(--light-text);
+  background-color: var(--light-primary-action);
+}
+
+body.light-theme button:hover {
+  color: var(--light-text);
+  background-color: var(--light-primary-action-hover);
 }
 
 body.light-theme input {
-  color: var(--black);
-  background-color: var(--white);
+  color: var(--light-text);
+  background-color: var(--light-bg);
 }
 
 body.light-theme input[type="submit"] {
-  color: var(--light-button-fg);
-  background-color: var(--light-button-bg);
+  color: var(--light-text);
+  background-color: var(--light-primary-action);
+}
+
+body.light-theme input[type="submit"]:hover {
+  color: var(--light-text);
+  background-color: var(--light-primary-action-hover);
 }
 
 body.light-theme textarea {
-  color: var(--black);
-  background-color: var(--white);
+  color: var(--light-text);
+  background-color: var(--light-bg);
 }
 
 body.light-theme select {
-  color: var(--black);
-  background-color: var(--white);
+  color: var(--light-text);
+  background-color: var(--light-bg);
 }
 
 body.light-theme tr:hover {
-  background-color: var(--light-row-hover);
-}
-
-body.light-theme .color-red {
-  color: var(--light-color-red);
+  background-color: var(--light-bg-hover);
 }
 
 body.light-theme .htmx-result-good {
-  color: var(--light-htmx-result-good);
+  color: var(--light-accent-green);
 }
 
 body.light-theme .htmx-result-bad {
-  color: var(--light-htmx-result-bad);
+  color: var(--light-accent-red);
 }
 
 /* dark-theme */
 
 body.dark-theme {
-  color: var(--white);
+  color: var(--dark-text);
   background: var(--dark-bg);
 }
 
 body.dark-theme a {
-  color: var(--dark-link-fg);
+  color: var(--dark-accent-blue);
 }
 
 body.dark-theme dialog {
-  color: var(--white);
+  color: var(--dark-text);
   background: var(--dark-bg);
 }
 
 body.dark-theme button {
-  color: var(--dark-button-fg);
-  background-color: var(--dark-button-bg);
+  color: var(--dark-text);
+  background-color: var(--dark-primary-action);
+}
+
+body.dark-theme button:hover {
+  color: var(--dark-text);
+  background-color: var(--dark-primary-action-hover);
 }
 
 body.dark-theme input {
-  color: var(--white);
+  color: var(--dark-text);
   background: var(--dark-bg);
 }
 
 body.dark-theme input[type="submit"] {
-  color: var(--dark-button-fg);
-  background-color: var(--dark-button-bg);
+  color: var(--dark-text);
+  background-color: var(--dark-primary-action);
+}
+
+body.dark-theme input[type="submit"]:hover {
+  color: var(--dark-text);
+  background-color: var(--dark-primary-action-hover);
 }
 
 body.dark-theme textarea {
-  color: var(--white);
+  color: var(--dark-text);
   background: var(--dark-bg);
 }
 
 body.dark-theme select {
-  color: var(--white);
+  color: var(--dark-text);
   background: var(--dark-bg);
 }
 
 body.dark-theme tr:hover {
-  background-color: var(--dark-row-hover);
-}
-
-body.dark-theme .color-red {
-  color: var(--dark-color-red);
+  background-color: var(--dark-bg-hover);
 }
 
 body.dark-theme .htmx-result-good {
-  color: var(--dark-htmx-result-good);
+  color: var(--dark-accent-green);
 }
 
 body.dark-theme .htmx-result-bad {
-  color: var(--dark-htmx-result-bad);
+  color: var(--dark-accent-red);
 }
