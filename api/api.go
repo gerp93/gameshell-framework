@@ -41,6 +41,7 @@ func PageMiddleware(next http.Handler) http.Handler {
 
 		// required to be logged in
 		if r.URL.Path == "/manage" ||
+			r.URL.Path == "/admin" ||
 			r.URL.Path == "/lobbies" ||
 			r.URL.Path == "/decks" ||
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
@@ -56,6 +57,14 @@ func PageMiddleware(next http.Handler) http.Handler {
 		if r.URL.Path == "/login" {
 			if basePageData.LoggedIn {
 				http.Redirect(w, r, auth.GetCookieRedirectURL(r), http.StatusSeeOther)
+				return
+			}
+		}
+
+		// required to be admin
+		if r.URL.Path == "/admin" {
+			if !basePageData.Player.IsAdmin {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 		}
