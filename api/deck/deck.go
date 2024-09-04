@@ -11,7 +11,8 @@ import (
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to parse form.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -26,44 +27,50 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if name == "" {
-		api.WriteBadHeader(w, http.StatusBadRequest, "No name found.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("No name found."))
 		return
 	}
 
 	playerId := api.GetPlayerId(r)
 	if playerId == uuid.Nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player id."))
 		return
 	}
 
 	dbcs := database.GetDatabaseConnectionString()
 	id, err := database.CreateDeck(dbcs, playerId, name, password)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to update the database."))
 		return
 	}
 
 	err = database.AddPlayerDeckAccess(dbcs, playerId, id)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to add access.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to add access."))
 		return
 	}
 
 	w.Header().Add("HX-Redirect", "/deck/"+id.String())
-	api.WriteGoodHeader(w, http.StatusCreated, "Success")
+	w.WriteHeader(http.StatusCreated)
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	id, err := uuid.Parse(idString)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get id from path.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get id from path."))
 		return
 	}
 
 	err = r.ParseForm()
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to parse form.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -78,58 +85,66 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if name == "" {
-		api.WriteBadHeader(w, http.StatusBadRequest, "No name found.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("No name found."))
 		return
 	}
 
 	playerId := api.GetPlayerId(r)
 	if playerId == uuid.Nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player id."))
 		return
 	}
 
 	dbcs := database.GetDatabaseConnectionString()
 	if !database.HasDeckAccess(dbcs, playerId, id) {
-		api.WriteBadHeader(w, http.StatusUnauthorized, "Player does not have access.")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Player does not have access."))
 		return
 	}
 
 	err = database.UpdateDeck(dbcs, playerId, id, name, password)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to update the database."))
 		return
 	}
 
 	w.Header().Add("HX-Refresh", "true")
-	api.WriteGoodHeader(w, http.StatusCreated, "Success")
+	w.WriteHeader(http.StatusCreated)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	id, err := uuid.Parse(idString)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get id from path.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get id from path."))
 		return
 	}
 
 	playerId := api.GetPlayerId(r)
 	if playerId == uuid.Nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to get player id.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player id."))
 		return
 	}
 
 	dbcs := database.GetDatabaseConnectionString()
 	if !database.HasDeckAccess(dbcs, playerId, id) {
-		api.WriteBadHeader(w, http.StatusUnauthorized, "Player does not have access.")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Player does not have access."))
 		return
 	}
 
 	err = database.DeleteDeck(dbcs, id)
 	if err != nil {
-		api.WriteBadHeader(w, http.StatusBadRequest, "Failed to update the database.")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to update the database."))
 		return
 	}
 
 	w.Header().Add("HX-Redirect", "/decks")
-	api.WriteGoodHeader(w, http.StatusCreated, "Success")
+	w.WriteHeader(http.StatusCreated)
 }
