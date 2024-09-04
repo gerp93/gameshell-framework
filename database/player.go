@@ -311,6 +311,33 @@ func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
 	return nil
 }
 
+func SetPlayerIsAdmin(dbcs string, id uuid.UUID, isAdmin bool) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	statment, err := db.Prepare(`
+		UPDATE PLAYER
+		SET
+			IS_ADMIN = ?,
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+		WHERE ID = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer statment.Close()
+
+	_, err = statment.Exec(isAdmin, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DeletePlayer(dbcs string, id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
