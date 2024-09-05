@@ -39,7 +39,8 @@ func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 	for rows.Next() {
 		var lobbyId uuid.UUID
 		if err := rows.Scan(&lobbyId); err != nil {
-			return lobbyIds, err
+			log.Println(err)
+			return lobbyIds, errors.New("failed to scan row in query results")
 		}
 		lobbyIds = append(lobbyIds, lobbyId)
 	}
@@ -105,7 +106,8 @@ func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	for rows.Next() {
 		var deckId uuid.UUID
 		if err := rows.Scan(&deckId); err != nil {
-			return deckIds, err
+			log.Println(err)
+			return deckIds, errors.New("failed to scan row in query results")
 		}
 		deckIds = append(deckIds, deckId)
 	}
