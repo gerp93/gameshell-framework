@@ -39,15 +39,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbcs := database.GetDatabaseConnectionString()
-	id, err := database.CreateDeck(dbcs, playerId, name, password)
+	id, err := database.CreateDeck(playerId, name, password)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to update the database."))
 		return
 	}
 
-	err = database.AddPlayerDeckAccess(dbcs, playerId, id)
+	err = database.AddPlayerDeckAccess(playerId, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to add access."))
@@ -97,14 +96,13 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbcs := database.GetDatabaseConnectionString()
-	if !database.HasDeckAccess(dbcs, playerId, id) {
+	if !database.HasDeckAccess(playerId, id) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Player does not have access."))
 		return
 	}
 
-	err = database.UpdateDeck(dbcs, playerId, id, name, password)
+	err = database.UpdateDeck(playerId, id, name, password)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to update the database."))
@@ -131,14 +129,13 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbcs := database.GetDatabaseConnectionString()
-	if !database.HasDeckAccess(dbcs, playerId, id) {
+	if !database.HasDeckAccess(playerId, id) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Player does not have access."))
 		return
 	}
 
-	err = database.DeleteDeck(dbcs, id)
+	err = database.DeleteDeck(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to update the database."))

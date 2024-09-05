@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetPlayerLobbyAccess(dbcs string, playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
+func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
 	lobbyIds = make([]uuid.UUID, 0)
 
 	db, err := sql.Open("mysql", dbcs)
@@ -42,7 +42,7 @@ func GetPlayerLobbyAccess(dbcs string, playerId uuid.UUID) (lobbyIds []uuid.UUID
 	return lobbyIds, nil
 }
 
-func AddPlayerLobbyAccess(dbcs string, playerId uuid.UUID, lobbyId uuid.UUID) error {
+func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func AddPlayerLobbyAccess(dbcs string, playerId uuid.UUID, lobbyId uuid.UUID) er
 	return nil
 }
 
-func GetPlayerDeckAccess(dbcs string, playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
+func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	deckIds = make([]uuid.UUID, 0)
 
 	db, err := sql.Open("mysql", dbcs)
@@ -102,7 +102,7 @@ func GetPlayerDeckAccess(dbcs string, playerId uuid.UUID) (deckIds []uuid.UUID, 
 	return deckIds, nil
 }
 
-func AddPlayerDeckAccess(dbcs string, playerId uuid.UUID, deckId uuid.UUID) error {
+func AddPlayerDeckAccess(playerId uuid.UUID, deckId uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err

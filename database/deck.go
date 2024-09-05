@@ -19,7 +19,7 @@ type Deck struct {
 	PasswordHash sql.NullString
 }
 
-func GetDecks(dbcs string) ([]Deck, error) {
+func GetDecks() ([]Deck, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func GetDecks(dbcs string) ([]Deck, error) {
 	return result, nil
 }
 
-func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
+func GetDeck(id uuid.UUID) (Deck, error) {
 	var deck Deck
 
 	db, err := sql.Open("mysql", dbcs)
@@ -113,7 +113,7 @@ func GetDeck(dbcs string, id uuid.UUID) (Deck, error) {
 	return deck, nil
 }
 
-func CreateDeck(dbcs string, playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
+func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return id, err
@@ -151,7 +151,7 @@ func CreateDeck(dbcs string, playerId uuid.UUID, name string, password string) (
 	return id, nil
 }
 
-func UpdateDeck(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, password string) error {
+func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -189,7 +189,7 @@ func UpdateDeck(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, pass
 	return nil
 }
 
-func DeleteDeck(dbcs string, id uuid.UUID) error {
+func DeleteDeck(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
