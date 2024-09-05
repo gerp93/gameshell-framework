@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,7 +51,8 @@ func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
 func GetPlayers() ([]Player, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -95,7 +97,8 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return player, err
+		log.Println(err)
+		return player, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -152,7 +155,8 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -200,7 +204,8 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -224,7 +229,8 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 func SetPlayerName(id uuid.UUID, name string) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -256,7 +262,8 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -283,7 +290,8 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -314,7 +322,8 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -341,7 +350,8 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 func DeletePlayer(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 

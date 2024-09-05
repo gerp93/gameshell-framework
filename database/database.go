@@ -2,7 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -21,13 +23,15 @@ func SetDatabaseConnectionString() {
 func Ping() error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to ping database")
 	}
 	return nil
 }

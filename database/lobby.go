@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +24,8 @@ type Lobby struct {
 func GetLobbies() ([]Lobby, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -71,7 +74,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return lobby, err
+		log.Println(err)
+		return lobby, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -126,7 +130,8 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -159,7 +164,8 @@ func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string)
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -192,7 +198,8 @@ func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string)
 func DeleteLobby(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
