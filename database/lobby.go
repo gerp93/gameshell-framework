@@ -114,7 +114,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.ChangedByPlayerId,
 			&lobby.Name,
 			&lobby.PasswordHash); err != nil {
-			return lobby, err
+			log.Println(err)
+			return lobby, errors.New("failed to scan row in query results")
 		}
 	}
 
@@ -124,12 +125,14 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to generate new id")
 	}
 
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to hash password")
 	}
 
 	db, err := sql.Open("mysql", dbcs)
@@ -165,7 +168,8 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to hash password")
 	}
 
 	db, err := sql.Open("mysql", dbcs)

@@ -137,7 +137,8 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 			&player.PasswordHash,
 			&player.ColorTheme,
 			&player.IsAdmin); err != nil {
-			return player, err
+			log.Println(err)
+			return player, errors.New("failed to scan row in query results")
 		}
 	}
 
@@ -186,7 +187,8 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 	var passwordHash string
 	for rows.Next() {
 		if err := rows.Scan(&id, &passwordHash); err != nil {
-			return id, err
+			log.Println(err)
+			return id, errors.New("failed to scan row in query results")
 		}
 	}
 
@@ -200,12 +202,14 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 func CreatePlayer(name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to generate new id")
 	}
 
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to hash password")
 	}
 
 	db, err := sql.Open("mysql", dbcs)
@@ -267,7 +271,8 @@ func SetPlayerName(id uuid.UUID, name string) error {
 func SetPlayerPassword(id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to hash password")
 	}
 
 	db, err := sql.Open("mysql", dbcs)
