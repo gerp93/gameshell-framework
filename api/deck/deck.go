@@ -110,7 +110,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("HX-Refresh", "true")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
@@ -143,5 +143,5 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("HX-Redirect", "/decks")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
