@@ -227,8 +227,8 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 
 	err = database.DeleteDeck(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to update the database."))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
