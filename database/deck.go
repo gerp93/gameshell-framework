@@ -42,7 +42,8 @@ func GetDecks() ([]Deck, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -92,7 +93,8 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return deck, err
+		log.Println(err)
+		return deck, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -140,7 +142,8 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -179,7 +182,8 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -208,7 +212,8 @@ func DeleteDeck(id uuid.UUID) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 

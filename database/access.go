@@ -25,7 +25,8 @@ func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 		WHERE PLAYER_ID = ?
 	`)
 	if err != nil {
-		return lobbyIds, err
+		log.Println(err)
+		return lobbyIds, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -58,7 +59,8 @@ func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 		VALUES (?, ?)
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -87,7 +89,8 @@ func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 		WHERE PLAYER_ID = ?
 	`)
 	if err != nil {
-		return deckIds, err
+		log.Println(err)
+		return deckIds, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -120,7 +123,8 @@ func AddPlayerDeckAccess(playerId uuid.UUID, deckId uuid.UUID) error {
 		VALUES (?, ?)
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
