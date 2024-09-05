@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -14,17 +15,20 @@ const cookieNameRedirectURL string = "CARD-JUDGE-REDIRECT-URL"
 func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
 	cookieValue, err := getCookie(r, cookieNamePlayerToken)
 	if err != nil {
-		return uuid.Nil, err
+		log.Println(err)
+		return uuid.Nil, errors.New("failed to get cookie")
 	}
 
 	tokenValue, err := getTokenStringValue(cookieValue)
 	if err != nil {
-		return uuid.Nil, err
+		log.Println(err)
+		return uuid.Nil, errors.New("failed to get token")
 	}
 
 	playerId, err := uuid.Parse(tokenValue)
 	if err != nil {
-		return uuid.Nil, err
+		log.Println(err)
+		return uuid.Nil, errors.New("failed to parse token")
 	}
 
 	return playerId, nil
@@ -33,7 +37,8 @@ func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
 func SetCookiePlayerId(w http.ResponseWriter, playerId uuid.UUID) error {
 	tokenString, err := getValueTokenString(playerId.String())
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to create token")
 	}
 
 	cookie := http.Cookie{
