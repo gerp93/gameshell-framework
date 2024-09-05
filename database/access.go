@@ -32,7 +32,8 @@ func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 
 	rows, err := statement.Query(playerId)
 	if err != nil {
-		return lobbyIds, err
+		log.Println(err)
+		return lobbyIds, errors.New("failed to query statement in database")
 	}
 
 	for rows.Next() {
@@ -66,7 +67,8 @@ func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 
 	_, err = statement.Exec(playerId, lobbyId)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -96,7 +98,8 @@ func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 
 	rows, err := statement.Query(playerId)
 	if err != nil {
-		return deckIds, err
+		log.Println(err)
+		return deckIds, errors.New("failed to query statement in database")
 	}
 
 	for rows.Next() {
@@ -130,7 +133,8 @@ func AddPlayerDeckAccess(playerId uuid.UUID, deckId uuid.UUID) error {
 
 	_, err = statement.Exec(playerId, deckId)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil

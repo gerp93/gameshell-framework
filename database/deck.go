@@ -49,7 +49,8 @@ func GetDecks() ([]Deck, error) {
 
 	rows, err := statement.Query()
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
 	}
 
 	result := make([]Deck, 0)
@@ -100,7 +101,8 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 
 	rows, err := statement.Query(id)
 	if err != nil {
-		return deck, err
+		log.Println(err)
+		return deck, errors.New("failed to query statement in database")
 	}
 
 	for rows.Next() {
@@ -153,7 +155,8 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 		_, err = statement.Exec(id, playerId, playerId, name, passwordHash)
 	}
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to execute statement in database")
 	}
 
 	return id, nil
@@ -193,7 +196,8 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 		_, err = statement.Exec(name, passwordHash, playerId, id)
 	}
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -219,7 +223,8 @@ func DeleteDeck(id uuid.UUID) error {
 
 	_, err = statement.Exec(id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
