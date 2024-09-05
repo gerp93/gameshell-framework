@@ -19,7 +19,7 @@ type Lobby struct {
 	PasswordHash sql.NullString
 }
 
-func GetLobbies(dbcs string) ([]Lobby, error) {
+func GetLobbies() ([]Lobby, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func GetLobbies(dbcs string) ([]Lobby, error) {
 	return result, nil
 }
 
-func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
+func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 
 	db, err := sql.Open("mysql", dbcs)
@@ -113,7 +113,7 @@ func GetLobby(dbcs string, id uuid.UUID) (Lobby, error) {
 	return lobby, nil
 }
 
-func CreateLobby(dbcs string, playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
+func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return id, err
@@ -151,7 +151,7 @@ func CreateLobby(dbcs string, playerId uuid.UUID, name string, password string) 
 	return id, nil
 }
 
-func UpdateLobby(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, password string) error {
+func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -189,7 +189,7 @@ func UpdateLobby(dbcs string, playerId uuid.UUID, id uuid.UUID, name string, pas
 	return nil
 }
 
-func DeleteLobby(dbcs string, id uuid.UUID) error {
+func DeleteLobby(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err

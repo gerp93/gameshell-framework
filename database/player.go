@@ -31,23 +31,23 @@ func (p Player) HasDeckAccess(deckId uuid.UUID) bool {
 	return helper.IsIdInArray(deckId, p.DeckIds)
 }
 
-func HasLobbyAccess(dbcs string, playerId uuid.UUID, lobbyId uuid.UUID) bool {
-	lobbyIds, err := GetPlayerLobbyAccess(dbcs, playerId)
+func HasLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) bool {
+	lobbyIds, err := GetPlayerLobbyAccess(playerId)
 	if err != nil {
 		return false
 	}
 	return helper.IsIdInArray(lobbyId, lobbyIds)
 }
 
-func HasDeckAccess(dbcs string, playerId uuid.UUID, deckId uuid.UUID) bool {
-	deckIds, err := GetPlayerDeckAccess(dbcs, playerId)
+func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
+	deckIds, err := GetPlayerDeckAccess(playerId)
 	if err != nil {
 		return false
 	}
 	return helper.IsIdInArray(deckId, deckIds)
 }
 
-func GetPlayers(dbcs string) ([]Player, error) {
+func GetPlayers() ([]Player, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func GetPlayers(dbcs string) ([]Player, error) {
 	return result, nil
 }
 
-func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
+func GetPlayer(id uuid.UUID) (Player, error) {
 	var player Player
 
 	db, err := sql.Open("mysql", dbcs)
@@ -134,12 +134,12 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 		}
 	}
 
-	player.LobbyIds, err = GetPlayerLobbyAccess(dbcs, player.Id)
+	player.LobbyIds, err = GetPlayerLobbyAccess(player.Id)
 	if err != nil {
 		player.LobbyIds = make([]uuid.UUID, 0)
 	}
 
-	player.DeckIds, err = GetPlayerDeckAccess(dbcs, player.Id)
+	player.DeckIds, err = GetPlayerDeckAccess(player.Id)
 	if err != nil {
 		player.DeckIds = make([]uuid.UUID, 0)
 	}
@@ -147,7 +147,7 @@ func GetPlayer(dbcs string, id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
-func GetPlayerId(dbcs string, name string, password string) (uuid.UUID, error) {
+func GetPlayerId(name string, password string) (uuid.UUID, error) {
 	id := uuid.Nil
 
 	db, err := sql.Open("mysql", dbcs)
@@ -187,7 +187,7 @@ func GetPlayerId(dbcs string, name string, password string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func CreatePlayer(dbcs string, name string, password string) (uuid.UUID, error) {
+func CreatePlayer(name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return id, err
@@ -221,7 +221,7 @@ func CreatePlayer(dbcs string, name string, password string) (uuid.UUID, error) 
 	return id, nil
 }
 
-func SetPlayerName(dbcs string, id uuid.UUID, name string) error {
+func SetPlayerName(id uuid.UUID, name string) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -248,7 +248,7 @@ func SetPlayerName(dbcs string, id uuid.UUID, name string) error {
 	return nil
 }
 
-func SetPlayerPassword(dbcs string, id uuid.UUID, password string) error {
+func SetPlayerPassword(id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		return err
@@ -280,7 +280,7 @@ func SetPlayerPassword(dbcs string, id uuid.UUID, password string) error {
 	return nil
 }
 
-func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
+func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -311,7 +311,7 @@ func SetPlayerColorTheme(dbcs string, id uuid.UUID, colorTheme string) error {
 	return nil
 }
 
-func SetPlayerIsAdmin(dbcs string, id uuid.UUID, isAdmin bool) error {
+func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err
@@ -338,7 +338,7 @@ func SetPlayerIsAdmin(dbcs string, id uuid.UUID, isAdmin bool) error {
 	return nil
 }
 
-func DeletePlayer(dbcs string, id uuid.UUID) error {
+func DeletePlayer(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		return err

@@ -31,8 +31,7 @@ func PageMiddleware(next http.Handler) http.Handler {
 
 		playerId, err := auth.GetCookiePlayerId(r)
 		if err == nil {
-			dbcs := database.GetDatabaseConnectionString()
-			player, err := database.GetPlayer(dbcs, playerId)
+			player, err := database.GetPlayer(playerId)
 			if err == nil {
 				basePageData.Player = player
 				basePageData.LoggedIn = true
