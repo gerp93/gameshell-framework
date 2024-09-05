@@ -67,7 +67,8 @@ func GetPlayers() ([]Player, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -115,7 +116,8 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return player, err
+		log.Println(err)
+		return player, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -168,7 +170,8 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 		WHERE NAME = ?
 	`)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -214,7 +217,8 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -242,7 +246,8 @@ func SetPlayerName(id uuid.UUID, name string) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -275,7 +280,8 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -303,7 +309,8 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -335,7 +342,8 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -360,7 +368,8 @@ func DeletePlayer(id uuid.UUID) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 

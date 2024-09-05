@@ -42,7 +42,8 @@ func GetLobbies() ([]Lobby, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -92,7 +93,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return lobby, err
+		log.Println(err)
+		return lobby, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -140,7 +142,8 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -179,7 +182,8 @@ func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string)
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
@@ -208,7 +212,8 @@ func DeleteLobby(id uuid.UUID) error {
 		WHERE ID = ?
 	`)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
 	}
 	defer statment.Close()
 
