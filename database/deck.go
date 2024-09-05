@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +24,8 @@ type Deck struct {
 func GetDecks() ([]Deck, error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -71,7 +74,8 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return deck, err
+		log.Println(err)
+		return deck, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -126,7 +130,8 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -159,7 +164,8 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -192,7 +198,8 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 func DeleteDeck(id uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 

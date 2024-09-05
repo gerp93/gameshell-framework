@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -11,7 +13,8 @@ func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return lobbyIds, err
+		log.Println(err)
+		return lobbyIds, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -45,7 +48,8 @@ func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -71,7 +75,8 @@ func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return deckIds, err
+		log.Println(err)
+		return deckIds, errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
@@ -105,7 +110,8 @@ func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 func AddPlayerDeckAccess(playerId uuid.UUID, deckId uuid.UUID) error {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to connect to database")
 	}
 	defer db.Close()
 
