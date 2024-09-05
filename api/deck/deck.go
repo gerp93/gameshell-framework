@@ -18,11 +18,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 
 	var name string
 	var password string
+	var passwordConfirm string
 	for key, val := range r.Form {
 		if key == "name" {
 			name = val[0]
 		} else if key == "password" {
 			password = val[0]
+		} else if key == "passwordConfirm" {
+			passwordConfirm = val[0]
 		}
 	}
 
@@ -30,6 +33,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("No name found."))
 		return
+	}
+
+	if password != "" {
+		if password != passwordConfirm {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Passwords do not match."))
+			return
+		}
 	}
 
 	playerId := api.GetPlayerId(r)
@@ -39,17 +50,29 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existingDeckId, err := database.GetDeckId(name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if existingDeckId != uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Deck name already exists."))
+		return
+	}
+
 	id, err := database.CreateDeck(playerId, name, password)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to update the database."))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	err = database.AddPlayerDeckAccess(playerId, id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to add access."))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -57,35 +80,12 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func Update(w http.ResponseWriter, r *http.Request) {
+func SetName(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	id, err := uuid.Parse(idString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to get id from path."))
-		return
-	}
-
-	err = r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
-		return
-	}
-
-	var name string
-	var password string
-	for key, val := range r.Form {
-		if key == "name" {
-			name = val[0]
-		} else if key == "password" {
-			password = val[0]
-		}
-	}
-
-	if name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No name found."))
 		return
 	}
 
@@ -102,10 +102,100 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.UpdateDeck(playerId, id, name, password)
+	err = r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to update the database."))
+		w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var name string
+	for key, val := range r.Form {
+		if key == "name" {
+			name = val[0]
+		}
+	}
+
+	if name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("No name found."))
+		return
+	}
+
+	existingDeckId, err := database.GetDeckId(name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if existingDeckId != uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Deck name already exists."))
+		return
+	}
+
+	err = database.SetDeckName(playerId, id, name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+func SetPassword(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+	id, err := uuid.Parse(idString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get id from path."))
+		return
+	}
+
+	playerId := api.GetPlayerId(r)
+	if playerId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player id."))
+		return
+	}
+
+	if !database.HasDeckAccess(playerId, id) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Player does not have access."))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var password string
+	var passwordConfirm string
+	for key, val := range r.Form {
+		if key == "password" {
+			password = val[0]
+		} else if key == "passwordConfirm" {
+			passwordConfirm = val[0]
+		}
+	}
+
+	if password != "" {
+		if password != passwordConfirm {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Passwords do not match."))
+			return
+		}
+	}
+
+	err = database.SetDeckPassword(playerId, id, password)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 

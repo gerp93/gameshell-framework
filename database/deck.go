@@ -165,7 +165,76 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 	return id, nil
 }
 
-func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) error {
+func GetDeckId(name string) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return id, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			ID
+		FROM DECK
+		WHERE NAME = ?
+	`)
+	if err != nil {
+		log.Println(err)
+		return id, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(name)
+	if err != nil {
+		log.Println(err)
+		return id, errors.New("failed to query statement in database")
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			log.Println(err)
+			return id, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return id, nil
+}
+
+func SetDeckName(playerId uuid.UUID, id uuid.UUID, name string) error {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		UPDATE DECK
+		SET
+			NAME = ?,
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
+			CHANGED_BY_PLAYER_ID = ?
+		WHERE ID = ?
+	`)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	_, err = statement.Exec(name, playerId, id)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
+	}
+
+	return nil
+}
+
+func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		log.Println(err)
@@ -182,7 +251,6 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 	statement, err := db.Prepare(`
 		UPDATE DECK
 		SET
-			NAME = ?,
 			PASSWORD_HASH = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
@@ -195,9 +263,9 @@ func UpdateDeck(playerId uuid.UUID, id uuid.UUID, name string, password string) 
 	defer statement.Close()
 
 	if password == "" {
-		_, err = statement.Exec(name, nil, playerId, id)
+		_, err = statement.Exec(nil, playerId, id)
 	} else {
-		_, err = statement.Exec(name, passwordHash, playerId, id)
+		_, err = statement.Exec(passwordHash, playerId, id)
 	}
 	if err != nil {
 		log.Println(err)
