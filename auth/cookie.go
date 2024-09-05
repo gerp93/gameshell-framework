@@ -15,7 +15,6 @@ const cookieNameRedirectURL string = "CARD-JUDGE-REDIRECT-URL"
 func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
 	cookieValue, err := getCookie(r, cookieNamePlayerToken)
 	if err != nil {
-		log.Println(err)
 		return uuid.Nil, errors.New("failed to get cookie")
 	}
 
