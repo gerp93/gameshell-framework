@@ -56,7 +56,7 @@ func GetPlayers() ([]Player, error) {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -70,9 +70,9 @@ func GetPlayers() ([]Player, error) {
 		log.Println(err)
 		return nil, errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	rows, err := statment.Query()
+	rows, err := statement.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -119,9 +119,9 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 		log.Println(err)
 		return player, errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	rows, err := statment.Query(id)
+	rows, err := statement.Query(id)
 	if err != nil {
 		return player, err
 	}
@@ -162,7 +162,7 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		SELECT
 			ID,
 			PASSWORD_HASH
@@ -173,9 +173,9 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 		log.Println(err)
 		return id, errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	rows, err := statment.Query(name)
+	rows, err := statement.Query(name)
 	if err != nil {
 		return id, err
 	}
@@ -212,7 +212,7 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		INSERT INTO PLAYER (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
 	`)
@@ -220,9 +220,9 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 		log.Println(err)
 		return id, errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	_, err = statment.Exec(id, name, passwordHash)
+	_, err = statement.Exec(id, name, passwordHash)
 	if err != nil {
 		return id, err
 	}
@@ -238,7 +238,7 @@ func SetPlayerName(id uuid.UUID, name string) error {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		UPDATE PLAYER
 		SET
 			NAME = ?,
@@ -249,9 +249,9 @@ func SetPlayerName(id uuid.UUID, name string) error {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	_, err = statment.Exec(name, id)
+	_, err = statement.Exec(name, id)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		UPDATE PLAYER
 		SET
 			PASSWORD_HASH = ?,
@@ -283,9 +283,9 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	_, err = statment.Exec(passwordHash, id)
+	_, err = statement.Exec(passwordHash, id)
 	if err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		UPDATE PLAYER
 		SET
 			COLOR_THEME = ?,
@@ -312,12 +312,12 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
 	if colorTheme == "" {
-		_, err = statment.Exec(nil, id)
+		_, err = statement.Exec(nil, id)
 	} else {
-		_, err = statment.Exec(colorTheme, id)
+		_, err = statement.Exec(colorTheme, id)
 	}
 	if err != nil {
 		return err
@@ -334,7 +334,7 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		UPDATE PLAYER
 		SET
 			IS_ADMIN = ?,
@@ -345,9 +345,9 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	_, err = statment.Exec(isAdmin, id)
+	_, err = statement.Exec(isAdmin, id)
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func DeletePlayer(id uuid.UUID) error {
 	}
 	defer db.Close()
 
-	statment, err := db.Prepare(`
+	statement, err := db.Prepare(`
 		DELETE FROM PLAYER
 		WHERE ID = ?
 	`)
@@ -371,9 +371,9 @@ func DeletePlayer(id uuid.UUID) error {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
 	}
-	defer statment.Close()
+	defer statement.Close()
 
-	_, err = statment.Exec(id)
+	_, err = statement.Exec(id)
 	if err != nil {
 		return err
 	}
