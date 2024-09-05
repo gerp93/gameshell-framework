@@ -199,6 +199,35 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 	return id, nil
 }
 
+func PlayerNameExists(name string) (bool, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return false, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			NAME
+		FROM PLAYER
+		WHERE NAME = ?
+	`)
+	if err != nil {
+		log.Println(err)
+		return false, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(name)
+	if err != nil {
+		log.Println(err)
+		return false, errors.New("failed to query statement in database")
+	}
+
+	return rows.Next(), nil
+}
+
 func CreatePlayer(name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
