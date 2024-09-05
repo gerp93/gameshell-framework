@@ -74,7 +74,8 @@ func GetPlayers() ([]Player, error) {
 
 	rows, err := statement.Query()
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
 	}
 
 	result := make([]Player, 0)
@@ -123,7 +124,8 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 
 	rows, err := statement.Query(id)
 	if err != nil {
-		return player, err
+		log.Println(err)
+		return player, errors.New("failed to query statement in database")
 	}
 
 	for rows.Next() {
@@ -177,7 +179,8 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 
 	rows, err := statement.Query(name)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to query statement in database")
 	}
 
 	var passwordHash string
@@ -224,7 +227,8 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 
 	_, err = statement.Exec(id, name, passwordHash)
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to execute statement in database")
 	}
 
 	return id, nil
@@ -253,7 +257,8 @@ func SetPlayerName(id uuid.UUID, name string) error {
 
 	_, err = statement.Exec(name, id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -287,7 +292,8 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 
 	_, err = statement.Exec(passwordHash, id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -320,7 +326,8 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 		_, err = statement.Exec(colorTheme, id)
 	}
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -349,7 +356,8 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 
 	_, err = statement.Exec(isAdmin, id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -375,7 +383,8 @@ func DeletePlayer(id uuid.UUID) error {
 
 	_, err = statement.Exec(id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil

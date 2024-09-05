@@ -49,7 +49,8 @@ func GetLobbies() ([]Lobby, error) {
 
 	rows, err := statement.Query()
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
 	}
 
 	result := make([]Lobby, 0)
@@ -100,7 +101,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 
 	rows, err := statement.Query(id)
 	if err != nil {
-		return lobby, err
+		log.Println(err)
+		return lobby, errors.New("failed to query statement in database")
 	}
 
 	for rows.Next() {
@@ -153,7 +155,8 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 		_, err = statement.Exec(id, playerId, playerId, name, passwordHash)
 	}
 	if err != nil {
-		return id, err
+		log.Println(err)
+		return id, errors.New("failed to execute statement in database")
 	}
 
 	return id, nil
@@ -193,7 +196,8 @@ func UpdateLobby(playerId uuid.UUID, id uuid.UUID, name string, password string)
 		_, err = statement.Exec(name, passwordHash, playerId, id)
 	}
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
@@ -219,7 +223,8 @@ func DeleteLobby(id uuid.UUID) error {
 
 	_, err = statement.Exec(id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
 	}
 
 	return nil
