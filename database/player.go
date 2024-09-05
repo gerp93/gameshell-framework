@@ -155,8 +155,84 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
-func GetPlayerId(name string, password string) (uuid.UUID, error) {
-	id := uuid.Nil
+func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
+	var passwordHash string
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return passwordHash, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			PASSWORD_HASH
+		FROM PLAYER
+		WHERE ID = ?
+	`)
+	if err != nil {
+		log.Println(err)
+		return passwordHash, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(id)
+	if err != nil {
+		log.Println(err)
+		return passwordHash, errors.New("failed to query statement in database")
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&passwordHash); err != nil {
+			log.Println(err)
+			return passwordHash, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return passwordHash, nil
+}
+
+func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
+	var isAdmin bool = false
+
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return isAdmin, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			IS_ADMIN
+		FROM PLAYER
+		WHERE ID = ?
+	`)
+	if err != nil {
+		log.Println(err)
+		return isAdmin, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(id)
+	if err != nil {
+		log.Println(err)
+		return isAdmin, errors.New("failed to query statement in database")
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&isAdmin); err != nil {
+			log.Println(err)
+			return isAdmin, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return isAdmin, nil
+}
+
+func GetPlayerId(name string) (uuid.UUID, error) {
+	var id uuid.UUID
 
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
@@ -167,8 +243,7 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 
 	statement, err := db.Prepare(`
 		SELECT
-			ID,
-			PASSWORD_HASH
+			ID
 		FROM PLAYER
 		WHERE NAME = ?
 	`)
@@ -184,48 +259,14 @@ func GetPlayerId(name string, password string) (uuid.UUID, error) {
 		return id, errors.New("failed to query statement in database")
 	}
 
-	var passwordHash string
 	for rows.Next() {
-		if err := rows.Scan(&id, &passwordHash); err != nil {
+		if err := rows.Scan(&id); err != nil {
 			log.Println(err)
 			return id, errors.New("failed to scan row in query results")
 		}
 	}
 
-	if !auth.PasswordMatchesHash(password, passwordHash) {
-		return id, errors.New("invalid password")
-	}
-
 	return id, nil
-}
-
-func PlayerNameExists(name string) (bool, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return false, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
-		SELECT
-			NAME
-		FROM PLAYER
-		WHERE NAME = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return false, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(name)
-	if err != nil {
-		log.Println(err)
-		return false, errors.New("failed to query statement in database")
-	}
-
-	return rows.Next(), nil
 }
 
 func CreatePlayer(name string, password string) (uuid.UUID, error) {
