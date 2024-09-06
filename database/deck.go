@@ -71,6 +71,57 @@ func GetDecks() ([]Deck, error) {
 	return result, nil
 }
 
+func SearchDecks(search string) ([]Deck, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			ID,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
+			NAME,
+			PASSWORD_HASH
+		FROM DECK
+		WHERE NAME LIKE ?
+		ORDER BY CHANGED_ON_DATE DESC
+	`)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(search)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
+	}
+
+	result := make([]Deck, 0)
+	for rows.Next() {
+		var deck Deck
+		if err := rows.Scan(
+			&deck.Id,
+			&deck.CreatedOnDate,
+			&deck.ChangedOnDate,
+			&deck.CreatedByPlayerId,
+			&deck.ChangedByPlayerId,
+			&deck.Name,
+			&deck.PasswordHash); err != nil {
+			continue
+		}
+		result = append(result, deck)
+	}
+	return result, nil
+}
+
 func GetDeck(id uuid.UUID) (Deck, error) {
 	var deck Deck
 

@@ -2,11 +2,48 @@ package apiDeck
 
 import (
 	"net/http"
+	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
 	"github.com/grantfbarnes/card-judge/database"
 )
+
+func Search(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var search string
+	for key, val := range r.Form {
+		if key == "search" {
+			search = val[0]
+		}
+	}
+
+	search = "%" + search + "%"
+
+	decks, err := database.SearchDecks(search)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	tmpl, err := template.ParseFiles(
+		"templates/components/table-rows/deck-table-rows.html",
+	)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to parse HTML."))
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "deck-table-rows", decks)
+}
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
