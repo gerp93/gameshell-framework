@@ -94,6 +94,53 @@ func GetPlayers() ([]Player, error) {
 	return result, nil
 }
 
+func SearchPlayers(search string) ([]Player, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			ID,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
+			NAME,
+			IS_ADMIN
+		FROM PLAYER
+		WHERE NAME LIKE ?
+		ORDER BY CHANGED_ON_DATE DESC
+	`)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(search)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
+	}
+
+	result := make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		if err := rows.Scan(
+			&player.Id,
+			&player.CreatedOnDate,
+			&player.ChangedOnDate,
+			&player.Name,
+			&player.IsAdmin); err != nil {
+			continue
+		}
+		result = append(result, player)
+	}
+	return result, nil
+}
+
 func GetPlayer(id uuid.UUID) (Player, error) {
 	var player Player
 
