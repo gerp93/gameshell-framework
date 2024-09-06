@@ -19,6 +19,7 @@ type Deck struct {
 
 	Name         string
 	PasswordHash sql.NullString
+	InLobby      bool
 }
 
 func GetDecks() ([]Deck, error) {
