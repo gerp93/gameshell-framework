@@ -71,6 +71,57 @@ func GetLobbies() ([]Lobby, error) {
 	return result, nil
 }
 
+func SearchLobbies(search string) ([]Lobby, error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to connect to database")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(`
+		SELECT
+			ID,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
+			CREATED_BY_PLAYER_ID,
+			CHANGED_BY_PLAYER_ID,
+			NAME,
+			PASSWORD_HASH
+		FROM LOBBY
+		WHERE NAME LIKE ?
+		ORDER BY CHANGED_ON_DATE DESC
+	`)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(search)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
+	}
+
+	result := make([]Lobby, 0)
+	for rows.Next() {
+		var lobby Lobby
+		if err := rows.Scan(
+			&lobby.Id,
+			&lobby.CreatedOnDate,
+			&lobby.ChangedOnDate,
+			&lobby.CreatedByPlayerId,
+			&lobby.ChangedByPlayerId,
+			&lobby.Name,
+			&lobby.PasswordHash); err != nil {
+			continue
+		}
+		result = append(result, lobby)
+	}
+	return result, nil
+}
+
 func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 
