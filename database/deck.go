@@ -59,7 +59,7 @@ func GetDecks() ([]Deck, error) {
 
 func GetPlayerDecks(playerId uuid.UUID) ([]Deck, error) {
 	sqlString := `
-		SELECT
+		SELECT DISTINCT
 			D.ID,
 			D.NAME
 		FROM DECK AS D
