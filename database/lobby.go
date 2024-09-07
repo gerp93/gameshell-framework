@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/auth"
-	"github.com/grantfbarnes/card-judge/helper"
 )
 
 type Lobby struct {
@@ -20,19 +19,7 @@ type Lobby struct {
 
 	Name         string
 	PasswordHash sql.NullString
-	DeckIds      []uuid.UUID
-}
-
-func (l Lobby) HasDeck(deckId uuid.UUID) bool {
-	return helper.IsIdInArray(deckId, l.DeckIds)
-}
-
-func LobbyHasDeck(lobbyId uuid.UUID, deckId uuid.UUID) bool {
-	deckIds, err := getLobbyDecks(lobbyId)
-	if err != nil {
-		return false
-	}
-	return helper.IsIdInArray(deckId, deckIds)
+	Cards        []Card
 }
 
 func GetLobbies() ([]Lobby, error) {
@@ -142,9 +129,9 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		}
 	}
 
-	lobby.DeckIds, err = getLobbyDecks(lobby.Id)
+	lobby.Cards, err = getLobbyCards(lobby.Id)
 	if err != nil {
-		lobby.DeckIds = make([]uuid.UUID, 0)
+		lobby.Cards = make([]Card, 0)
 	}
 
 	return lobby, nil
@@ -172,6 +159,24 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 	} else {
 		return id, Execute(sqlString, id, playerId, playerId, name, passwordHash)
 	}
+}
+
+func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+	for _, deckId := range deckIds {
+		sqlString := `
+			INSERT INTO LOBBY_CARD (LOBBY_ID, CARD_ID)
+			SELECT
+				? AS LOBBY_ID,
+				ID AS CARD_ID
+			FROM CARD
+			WHERE DECK_ID = ?
+		`
+		err := Execute(sqlString, lobbyId, deckId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetLobbyId(name string) (uuid.UUID, error) {
@@ -232,52 +237,40 @@ func SetLobbyPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 	}
 }
 
-func AddDeckToLobby(playerId uuid.UUID, id uuid.UUID, deckId uuid.UUID) error {
-	sqlString := `
-		INSERT INTO LOBBY_DECK (LOBBY_ID, DECK_ID)
-		VALUES (?, ?)
-	`
-	return Execute(sqlString, id, deckId)
-}
-
-func RemoveDeckFromLobby(playerId uuid.UUID, id uuid.UUID, deckId uuid.UUID) error {
-	sqlString := `
-		DELETE FROM LOBBY_DECK
-		WHERE LOBBY_ID = ?
-			AND DECK_ID = ?
-	`
-	return Execute(sqlString, id, deckId)
-}
-
-func DeleteLobby(id uuid.UUID) error {
+func DeleteLobby(lobbyId uuid.UUID) error {
 	sqlString := `
 		DELETE FROM LOBBY
 		WHERE ID = ?
 	`
-	return Execute(sqlString, id)
+	return Execute(sqlString, lobbyId)
 }
 
-func getLobbyDecks(lobbyId uuid.UUID) (deckIds []uuid.UUID, err error) {
+func getLobbyCards(lobbyId uuid.UUID) (cards []Card, err error) {
 	sqlString := `
 		SELECT
-			DECK_ID
-		FROM LOBBY_DECK
-		WHERE LOBBY_ID = ?
+			C.ID,
+			C.TYPE,
+			C.TEXT
+		FROM CARD AS C
+			INNER JOIN LOBBY_CARD AS LC ON LC.CARD_ID = C.ID
+		WHERE LC.LOBBY_ID = ?
 	`
 	rows, err := Query(sqlString, lobbyId)
 	if err != nil {
 		return nil, err
 	}
 
-	deckIds = make([]uuid.UUID, 0)
+	cards = make([]Card, 0)
 	for rows.Next() {
-		var deckId uuid.UUID
-		if err := rows.Scan(&deckId); err != nil {
-			log.Println(err)
-			return deckIds, errors.New("failed to scan row in query results")
+		var card Card
+		if err := rows.Scan(
+			&card.Id,
+			&card.Type,
+			&card.Text); err != nil {
+			continue
 		}
-		deckIds = append(deckIds, deckId)
+		cards = append(cards, card)
 	}
 
-	return deckIds, nil
+	return cards, nil
 }
