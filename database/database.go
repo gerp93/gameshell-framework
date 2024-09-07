@@ -36,7 +36,7 @@ func Ping() (err error) {
 	return nil
 }
 
-func Query(sqlString string, params ...interface{}) (rows *sql.Rows, err error) {
+func Query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		log.Println(err)
@@ -51,7 +51,7 @@ func Query(sqlString string, params ...interface{}) (rows *sql.Rows, err error) 
 	}
 	defer statement.Close()
 
-	rows, err = statement.Query(params)
+	rows, err = statement.Query(params...)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("failed to query statement in database")
@@ -60,7 +60,7 @@ func Query(sqlString string, params ...interface{}) (rows *sql.Rows, err error) 
 	return rows, nil
 }
 
-func Execute(sqlString string, params ...interface{}) (err error) {
+func Execute(sqlString string, params ...any) (err error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		log.Println(err)
@@ -75,7 +75,7 @@ func Execute(sqlString string, params ...interface{}) (err error) {
 	}
 	defer statement.Close()
 
-	_, err = statement.Exec(params)
+	_, err = statement.Exec(params...)
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to execute statement in database")
