@@ -23,14 +23,7 @@ type Deck struct {
 }
 
 func GetDecks() ([]Deck, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -43,15 +36,7 @@ func GetDecks() ([]Deck, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query()
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Deck, 0)
@@ -73,14 +58,7 @@ func GetDecks() ([]Deck, error) {
 }
 
 func SearchDecks(search string) ([]Deck, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -92,17 +70,9 @@ func SearchDecks(search string) ([]Deck, error) {
 		FROM DECK
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`, search)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(search)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Deck, 0)
@@ -126,14 +96,7 @@ func SearchDecks(search string) ([]Deck, error) {
 func GetDeck(id uuid.UUID) (Deck, error) {
 	var deck Deck
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return deck, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -144,17 +107,9 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 			PASSWORD_HASH
 		FROM DECK
 		WHERE ID = ?
-	`)
+	`, id)
 	if err != nil {
-		log.Println(err)
-		return deck, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(id)
-	if err != nil {
-		log.Println(err)
-		return deck, errors.New("failed to query statement in database")
+		return deck, err
 	}
 
 	for rows.Next() {
@@ -187,62 +142,28 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 		return id, errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		INSERT INTO DECK (ID, CREATED_BY_PLAYER_ID, CHANGED_BY_PLAYER_ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?, ?, ?)
-	`)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
+	`
 	if password == "" {
-		_, err = statement.Exec(id, playerId, playerId, name, nil)
+		return id, Execute(sqlString, id, playerId, playerId, name, nil)
 	} else {
-		_, err = statement.Exec(id, playerId, playerId, name, passwordHash)
+		return id, Execute(sqlString, id, playerId, playerId, name, passwordHash)
 	}
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to execute statement in database")
-	}
-
-	return id, nil
 }
 
 func GetDeckId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID
 		FROM DECK
 		WHERE NAME = ?
-	`)
+	`, name)
 	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(name)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to query statement in database")
+		return id, err
 	}
 
 	for rows.Next() {
@@ -256,34 +177,15 @@ func GetDeckId(name string) (uuid.UUID, error) {
 }
 
 func SetDeckName(playerId uuid.UUID, id uuid.UUID, name string) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE DECK
 		SET
 			NAME = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(name, playerId, id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, name, playerId, id)
 }
 
 func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
@@ -293,63 +195,25 @@ func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 		return errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE DECK
 		SET
 			PASSWORD_HASH = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
+	`
 	if password == "" {
-		_, err = statement.Exec(nil, playerId, id)
+		return Execute(sqlString, nil, playerId, id)
 	} else {
-		_, err = statement.Exec(passwordHash, playerId, id)
+		return Execute(sqlString, passwordHash, playerId, id)
 	}
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
 }
 
 func DeleteDeck(id uuid.UUID) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		DELETE FROM DECK
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, id)
 }
