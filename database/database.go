@@ -20,11 +20,11 @@ func SetDatabaseConnectionString() {
 	dbcs = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 }
 
-func Ping() error {
+func Ping() (err error) {
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		log.Println(err)
-		return errors.New("failed to connect to database")
+		return errors.New("failed to open database connection")
 	}
 	defer db.Close()
 
@@ -33,5 +33,53 @@ func Ping() error {
 		log.Println(err)
 		return errors.New("failed to ping database")
 	}
+	return nil
+}
+
+func Query(sqlString string, params ...interface{}) (rows *sql.Rows, err error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to open database connection")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(sqlString)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	rows, err = statement.Query(params)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("failed to query statement in database")
+	}
+
+	return rows, nil
+}
+
+func Execute(sqlString string, params ...interface{}) (err error) {
+	db, err := sql.Open("mysql", dbcs)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to open database connection")
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare(sqlString)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to prepare database statement")
+	}
+	defer statement.Close()
+
+	_, err = statement.Exec(params)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to execute statement in database")
+	}
+
 	return nil
 }

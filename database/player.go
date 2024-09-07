@@ -49,14 +49,7 @@ func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
 }
 
 func GetPlayers() ([]Player, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -67,15 +60,7 @@ func GetPlayers() ([]Player, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query()
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Player, 0)
@@ -95,14 +80,7 @@ func GetPlayers() ([]Player, error) {
 }
 
 func SearchPlayers(search string) ([]Player, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -112,17 +90,9 @@ func SearchPlayers(search string) ([]Player, error) {
 		FROM PLAYER
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`, search)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(search)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Player, 0)
@@ -144,14 +114,7 @@ func SearchPlayers(search string) ([]Player, error) {
 func GetPlayer(id uuid.UUID) (Player, error) {
 	var player Player
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return player, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -162,17 +125,9 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 			IS_ADMIN
 		FROM PLAYER
 		WHERE ID = ?
-	`)
+	`, id)
 	if err != nil {
-		log.Println(err)
-		return player, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(id)
-	if err != nil {
-		log.Println(err)
-		return player, errors.New("failed to query statement in database")
+		return player, err
 	}
 
 	for rows.Next() {
@@ -205,29 +160,14 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 	var passwordHash string
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return passwordHash, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			PASSWORD_HASH
 		FROM PLAYER
 		WHERE ID = ?
-	`)
+	`, id)
 	if err != nil {
-		log.Println(err)
-		return passwordHash, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(id)
-	if err != nil {
-		log.Println(err)
-		return passwordHash, errors.New("failed to query statement in database")
+		return passwordHash, err
 	}
 
 	for rows.Next() {
@@ -243,29 +183,14 @@ func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
 	var isAdmin bool = false
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return isAdmin, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			IS_ADMIN
 		FROM PLAYER
 		WHERE ID = ?
-	`)
+	`, id)
 	if err != nil {
-		log.Println(err)
-		return isAdmin, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(id)
-	if err != nil {
-		log.Println(err)
-		return isAdmin, errors.New("failed to query statement in database")
+		return isAdmin, err
 	}
 
 	for rows.Next() {
@@ -281,29 +206,14 @@ func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
 func GetPlayerId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID
 		FROM PLAYER
 		WHERE NAME = ?
-	`)
+	`, name)
 	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(name)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to query statement in database")
+		return id, err
 	}
 
 	for rows.Next() {
@@ -329,60 +239,22 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 		return id, errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		INSERT INTO PLAYER (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
-	`)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id, name, passwordHash)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to execute statement in database")
-	}
-
-	return id, nil
+	`
+	return id, Execute(sqlString, id, name, passwordHash)
 }
 
 func SetPlayerName(id uuid.UUID, name string) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE PLAYER
 		SET
 			NAME = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(name, id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, name, id)
 }
 
 func SetPlayerPassword(id uuid.UUID, password string) error {
@@ -392,122 +264,46 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 		return errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE PLAYER
 		SET
 			PASSWORD_HASH = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(passwordHash, id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, passwordHash, id)
 }
 
 func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE PLAYER
 		SET
 			COLOR_THEME = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
+	`
 	if colorTheme == "" {
-		_, err = statement.Exec(nil, id)
+		return Execute(sqlString, nil, id)
 	} else {
-		_, err = statement.Exec(colorTheme, id)
+		return Execute(sqlString, colorTheme, id)
 	}
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
 }
 
 func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE PLAYER
 		SET
 			IS_ADMIN = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(isAdmin, id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, isAdmin, id)
 }
 
 func DeletePlayer(id uuid.UUID) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		DELETE FROM PLAYER
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, id)
 }

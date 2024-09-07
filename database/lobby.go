@@ -36,14 +36,7 @@ func LobbyHasDeck(lobbyId uuid.UUID, deckId uuid.UUID) bool {
 }
 
 func GetLobbies() ([]Lobby, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -56,15 +49,7 @@ func GetLobbies() ([]Lobby, error) {
 		ORDER BY CHANGED_ON_DATE DESC
 	`)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query()
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Lobby, 0)
@@ -86,14 +71,7 @@ func GetLobbies() ([]Lobby, error) {
 }
 
 func SearchLobbies(search string) ([]Lobby, error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -105,17 +83,9 @@ func SearchLobbies(search string) ([]Lobby, error) {
 		FROM LOBBY
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`, search)
 	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(search)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
 	result := make([]Lobby, 0)
@@ -139,14 +109,7 @@ func SearchLobbies(search string) ([]Lobby, error) {
 func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return lobby, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -157,17 +120,9 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			PASSWORD_HASH
 		FROM LOBBY
 		WHERE ID = ?
-	`)
+	`, id)
 	if err != nil {
-		log.Println(err)
-		return lobby, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(id)
-	if err != nil {
-		log.Println(err)
-		return lobby, errors.New("failed to query statement in database")
+		return lobby, err
 	}
 
 	for rows.Next() {
@@ -205,62 +160,28 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 		return id, errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		INSERT INTO LOBBY (ID, CREATED_BY_PLAYER_ID, CHANGED_BY_PLAYER_ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?, ?, ?)
-	`)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
+	`
 	if password == "" {
-		_, err = statement.Exec(id, playerId, playerId, name, nil)
+		return id, Execute(sqlString, id, playerId, playerId, name, nil)
 	} else {
-		_, err = statement.Exec(id, playerId, playerId, name, passwordHash)
+		return id, Execute(sqlString, id, playerId, playerId, name, passwordHash)
 	}
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to execute statement in database")
-	}
-
-	return id, nil
 }
 
 func GetLobbyId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			ID
 		FROM LOBBY
 		WHERE NAME = ?
-	`)
+	`, name)
 	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(name)
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to query statement in database")
+		return id, err
 	}
 
 	for rows.Next() {
@@ -274,34 +195,15 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 }
 
 func SetLobbyName(playerId uuid.UUID, id uuid.UUID, name string) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE LOBBY
 		SET
 			NAME = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(name, playerId, id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, name, playerId, id)
 }
 
 func SetLobbyPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
@@ -311,150 +213,58 @@ func SetLobbyPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 		return errors.New("failed to hash password")
 	}
 
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		UPDATE LOBBY
 		SET
 			PASSWORD_HASH = ?,
 			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
+	`
 	if password == "" {
-		_, err = statement.Exec(nil, playerId, id)
+		return Execute(sqlString, nil, playerId, id)
 	} else {
-		_, err = statement.Exec(passwordHash, playerId, id)
+		return Execute(sqlString, passwordHash, playerId, id)
 	}
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
 }
 
 func AddDeckToLobby(playerId uuid.UUID, id uuid.UUID, deckId uuid.UUID) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		INSERT INTO LOBBY_DECK (LOBBY_ID, DECK_ID)
 		VALUES (?, ?)
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id, deckId)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, id, deckId)
 }
 
 func RemoveDeckFromLobby(playerId uuid.UUID, id uuid.UUID, deckId uuid.UUID) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		DELETE FROM LOBBY_DECK
 		WHERE LOBBY_ID = ?
 			AND DECK_ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id, deckId)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, id, deckId)
 }
 
 func DeleteLobby(id uuid.UUID) error {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	sqlString := `
 		DELETE FROM LOBBY
 		WHERE ID = ?
-	`)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to execute statement in database")
-	}
-
-	return nil
+	`
+	return Execute(sqlString, id)
 }
 
 func getLobbyDecks(lobbyId uuid.UUID) (deckIds []uuid.UUID, err error) {
-	deckIds = make([]uuid.UUID, 0)
-
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return deckIds, errors.New("failed to connect to database")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(`
+	rows, err := Query(`
 		SELECT
 			DECK_ID
 		FROM LOBBY_DECK
 		WHERE LOBBY_ID = ?
-	`)
+	`, lobbyId)
 	if err != nil {
-		log.Println(err)
-		return deckIds, errors.New("failed to prepare database statement")
-	}
-	defer statement.Close()
-
-	rows, err := statement.Query(lobbyId)
-	if err != nil {
-		log.Println(err)
-		return deckIds, errors.New("failed to query statement in database")
+		return nil, err
 	}
 
+	deckIds = make([]uuid.UUID, 0)
 	for rows.Next() {
 		var deckId uuid.UUID
 		if err := rows.Scan(&deckId); err != nil {
