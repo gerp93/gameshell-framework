@@ -8,12 +8,13 @@ import (
 )
 
 func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			LOBBY_ID
 		FROM PLAYER_ACCESS_LOBBY
 		WHERE PLAYER_ID = ?
-	`, playerId)
+	`
+	rows, err := Query(sqlString, playerId)
 	if err != nil {
 		return nil, err
 	}
@@ -40,12 +41,13 @@ func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 }
 
 func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			DECK_ID
 		FROM PLAYER_ACCESS_DECK
 		WHERE PLAYER_ID = ?
-	`, playerId)
+	`
+	rows, err := Query(sqlString, playerId)
 	if err != nil {
 		return nil, err
 	}

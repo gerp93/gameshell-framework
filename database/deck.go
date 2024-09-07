@@ -23,7 +23,7 @@ type Deck struct {
 }
 
 func GetDecks() ([]Deck, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -34,7 +34,8 @@ func GetDecks() ([]Deck, error) {
 			PASSWORD_HASH
 		FROM DECK
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`
+	rows, err := Query(sqlString)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func GetDecks() ([]Deck, error) {
 }
 
 func SearchDecks(search string) ([]Deck, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -70,7 +71,8 @@ func SearchDecks(search string) ([]Deck, error) {
 		FROM DECK
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`, search)
+	`
+	rows, err := Query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +98,7 @@ func SearchDecks(search string) ([]Deck, error) {
 func GetDeck(id uuid.UUID) (Deck, error) {
 	var deck Deck
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -107,7 +109,8 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 			PASSWORD_HASH
 		FROM DECK
 		WHERE ID = ?
-	`, id)
+	`
+	rows, err := Query(sqlString, id)
 	if err != nil {
 		return deck, err
 	}
@@ -156,12 +159,13 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 func GetDeckId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID
 		FROM DECK
 		WHERE NAME = ?
-	`, name)
+	`
+	rows, err := Query(sqlString, name)
 	if err != nil {
 		return id, err
 	}
