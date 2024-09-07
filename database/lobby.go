@@ -36,7 +36,7 @@ func LobbyHasDeck(lobbyId uuid.UUID, deckId uuid.UUID) bool {
 }
 
 func GetLobbies() ([]Lobby, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -47,7 +47,8 @@ func GetLobbies() ([]Lobby, error) {
 			PASSWORD_HASH
 		FROM LOBBY
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`
+	rows, err := Query(sqlString)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func GetLobbies() ([]Lobby, error) {
 }
 
 func SearchLobbies(search string) ([]Lobby, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -83,7 +84,8 @@ func SearchLobbies(search string) ([]Lobby, error) {
 		FROM LOBBY
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`, search)
+	`
+	rows, err := Query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +111,7 @@ func SearchLobbies(search string) ([]Lobby, error) {
 func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -120,7 +122,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			PASSWORD_HASH
 		FROM LOBBY
 		WHERE ID = ?
-	`, id)
+	`
+	rows, err := Query(sqlString, id)
 	if err != nil {
 		return lobby, err
 	}
@@ -174,12 +177,13 @@ func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, e
 func GetLobbyId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID
 		FROM LOBBY
 		WHERE NAME = ?
-	`, name)
+	`
+	rows, err := Query(sqlString, name)
 	if err != nil {
 		return id, err
 	}
@@ -254,12 +258,13 @@ func DeleteLobby(id uuid.UUID) error {
 }
 
 func getLobbyDecks(lobbyId uuid.UUID) (deckIds []uuid.UUID, err error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			DECK_ID
 		FROM LOBBY_DECK
 		WHERE LOBBY_ID = ?
-	`, lobbyId)
+	`
+	rows, err := Query(sqlString, lobbyId)
 	if err != nil {
 		return nil, err
 	}

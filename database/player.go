@@ -49,7 +49,7 @@ func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
 }
 
 func GetPlayers() ([]Player, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -58,7 +58,8 @@ func GetPlayers() ([]Player, error) {
 			IS_ADMIN
 		FROM PLAYER
 		ORDER BY CHANGED_ON_DATE DESC
-	`)
+	`
+	rows, err := Query(sqlString)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func GetPlayers() ([]Player, error) {
 }
 
 func SearchPlayers(search string) ([]Player, error) {
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -90,7 +91,8 @@ func SearchPlayers(search string) ([]Player, error) {
 		FROM PLAYER
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
-	`, search)
+	`
+	rows, err := Query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +116,7 @@ func SearchPlayers(search string) ([]Player, error) {
 func GetPlayer(id uuid.UUID) (Player, error) {
 	var player Player
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID,
 			CREATED_ON_DATE,
@@ -125,7 +127,8 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 			IS_ADMIN
 		FROM PLAYER
 		WHERE ID = ?
-	`, id)
+	`
+	rows, err := Query(sqlString, id)
 	if err != nil {
 		return player, err
 	}
@@ -160,12 +163,13 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 	var passwordHash string
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			PASSWORD_HASH
 		FROM PLAYER
 		WHERE ID = ?
-	`, id)
+	`
+	rows, err := Query(sqlString, id)
 	if err != nil {
 		return passwordHash, err
 	}
@@ -183,12 +187,13 @@ func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
 	var isAdmin bool = false
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			IS_ADMIN
 		FROM PLAYER
 		WHERE ID = ?
-	`, id)
+	`
+	rows, err := Query(sqlString, id)
 	if err != nil {
 		return isAdmin, err
 	}
@@ -206,12 +211,13 @@ func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
 func GetPlayerId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	rows, err := Query(`
+	sqlString := `
 		SELECT
 			ID
 		FROM PLAYER
 		WHERE NAME = ?
-	`, name)
+	`
+	rows, err := Query(sqlString, name)
 	if err != nil {
 		return id, err
 	}
