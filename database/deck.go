@@ -57,6 +57,35 @@ func GetDecks() ([]Deck, error) {
 	return result, nil
 }
 
+func GetPlayerDecks(playerId uuid.UUID) ([]Deck, error) {
+	sqlString := `
+		SELECT
+			D.ID,
+			D.NAME
+		FROM DECK AS D
+			LEFT JOIN PLAYER_ACCESS_DECK AS PAD ON PAD.DECK_ID = D.ID
+		WHERE D.PASSWORD_HASH IS NULL
+			OR PAD.PLAYER_ID = ?
+		ORDER BY NAME ASC
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Deck, 0)
+	for rows.Next() {
+		var deck Deck
+		if err := rows.Scan(
+			&deck.Id,
+			&deck.Name); err != nil {
+			continue
+		}
+		result = append(result, deck)
+	}
+	return result, nil
+}
+
 func SearchDecks(search string) ([]Deck, error) {
 	sqlString := `
 		SELECT
