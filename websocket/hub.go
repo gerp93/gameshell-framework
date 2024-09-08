@@ -46,6 +46,11 @@ func (h *Hub) run() {
 				close(client.send)
 				database.RemovePlayerFromLobby(h.lobbyId, client.player.Id)
 			}
+			if len(h.clients) == 0 {
+				database.DeleteLobby(h.lobbyId)
+				delete(lobbyHubs, h.lobbyId)
+				return
+			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
 				select {
