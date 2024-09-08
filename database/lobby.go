@@ -19,6 +19,8 @@ type Lobby struct {
 
 	Name         string
 	PasswordHash sql.NullString
+	JudgePlayer  sql.Null[Player]
+	JudgeCard    sql.Null[Card]
 	Cards        []Card
 	Players      []Player
 }
