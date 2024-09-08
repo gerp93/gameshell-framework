@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,6 +33,8 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
+
+var lobbyHubs map[uuid.UUID]*Hub = make(map[uuid.UUID]*Hub)
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
@@ -117,7 +120,22 @@ func (c *Client) writePump() {
 }
 
 // ServeWs handles websocket requests from the peer.
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func ServeWs(w http.ResponseWriter, r *http.Request) {
+	lobbyIdString := r.PathValue("id")
+	lobbyId, err := uuid.Parse(lobbyIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get id from path."))
+		return
+	}
+
+	if _, ok := lobbyHubs[lobbyId]; !ok {
+		newHub := newHub()
+		go newHub.run()
+		lobbyHubs[lobbyId] = newHub
+	}
+	hub := lobbyHubs[lobbyId]
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
