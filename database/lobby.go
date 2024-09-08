@@ -135,7 +135,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		lobby.Cards = make([]Card, 0)
 	}
 
-	lobby.Players, err = getLobbyPlayers(lobby.Id)
+	lobby.Players, err = GetLobbyPlayers(lobby.Id)
 	if err != nil {
 		lobby.Players = make([]Player, 0)
 	}
@@ -165,6 +165,34 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	}
 
 	return passwordHash, nil
+}
+
+func GetLobbyPlayers(lobbyId uuid.UUID) (players []Player, err error) {
+	sqlString := `
+		SELECT
+			P.ID,
+			P.NAME
+		FROM PLAYER AS P
+			INNER JOIN LOBBY_PLAYER AS LP ON LP.PLAYER_ID = P.ID
+		WHERE LP.LOBBY_ID = ?
+	`
+	rows, err := Query(sqlString, lobbyId)
+	if err != nil {
+		return nil, err
+	}
+
+	players = make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		if err := rows.Scan(
+			&player.Id,
+			&player.Name); err != nil {
+			continue
+		}
+		players = append(players, player)
+	}
+
+	return players, nil
 }
 
 func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
@@ -320,32 +348,4 @@ func getLobbyCards(lobbyId uuid.UUID) (cards []Card, err error) {
 	}
 
 	return cards, nil
-}
-
-func getLobbyPlayers(lobbyId uuid.UUID) (players []Player, err error) {
-	sqlString := `
-		SELECT
-			P.ID,
-			P.NAME
-		FROM PLAYER AS P
-			INNER JOIN LOBBY_PLAYER AS LP ON LP.PLAYER_ID = P.ID
-		WHERE LP.LOBBY_ID = ?
-	`
-	rows, err := Query(sqlString, lobbyId)
-	if err != nil {
-		return nil, err
-	}
-
-	players = make([]Player, 0)
-	for rows.Next() {
-		var player Player
-		if err := rows.Scan(
-			&player.Id,
-			&player.Name); err != nil {
-			continue
-		}
-		players = append(players, player)
-	}
-
-	return players, nil
 }
