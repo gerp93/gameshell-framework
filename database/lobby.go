@@ -21,8 +21,6 @@ type Lobby struct {
 	PasswordHash sql.NullString
 	JudgePlayer  sql.Null[Player]
 	JudgeCard    sql.Null[Card]
-	Cards        []Card
-	Players      []Player
 }
 
 func GetLobbies() ([]Lobby, error) {
@@ -130,16 +128,6 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			log.Println(err)
 			return lobby, errors.New("failed to scan row in query results")
 		}
-	}
-
-	lobby.Cards, err = getLobbyCards(lobby.Id)
-	if err != nil {
-		lobby.Cards = make([]Card, 0)
-	}
-
-	lobby.Players, err = GetLobbyPlayers(lobby.Id)
-	if err != nil {
-		lobby.Players = make([]Player, 0)
 	}
 
 	return lobby, nil
@@ -320,34 +308,4 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 		WHERE ID = ?
 	`
 	return Execute(sqlString, lobbyId)
-}
-
-func getLobbyCards(lobbyId uuid.UUID) (cards []Card, err error) {
-	sqlString := `
-		SELECT
-			C.ID,
-			C.TYPE,
-			C.TEXT
-		FROM CARD AS C
-			INNER JOIN LOBBY_CARD AS LC ON LC.CARD_ID = C.ID
-		WHERE LC.LOBBY_ID = ?
-	`
-	rows, err := Query(sqlString, lobbyId)
-	if err != nil {
-		return nil, err
-	}
-
-	cards = make([]Card, 0)
-	for rows.Next() {
-		var card Card
-		if err := rows.Scan(
-			&card.Id,
-			&card.Type,
-			&card.Text); err != nil {
-			continue
-		}
-		cards = append(cards, card)
-	}
-
-	return cards, nil
 }
