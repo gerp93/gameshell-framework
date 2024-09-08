@@ -38,28 +38,42 @@ func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
-			database.AddPlayerToLobby(h.lobbyId, client.player.Id)
+			h.registerClient(client)
 		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
-				database.RemovePlayerFromLobby(h.lobbyId, client.player.Id)
-			}
+			h.unregisterClient(client)
 			if len(h.clients) == 0 {
 				database.DeleteLobby(h.lobbyId)
 				delete(lobbyHubs, h.lobbyId)
 				return
 			}
 		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
+			h.broadcastMessage(message)
+		}
+	}
+}
+
+func (h *Hub) registerClient(client *Client) {
+	h.clients[client] = true
+	database.AddPlayerToLobby(h.lobbyId, client.player.Id)
+	h.broadcastMessage([]byte("Player " + client.player.Name + " Joined"))
+}
+
+func (h *Hub) unregisterClient(client *Client) {
+	if _, ok := h.clients[client]; ok {
+		delete(h.clients, client)
+		close(client.send)
+		database.RemovePlayerFromLobby(h.lobbyId, client.player.Id)
+	}
+	h.broadcastMessage([]byte("Player " + client.player.Name + " Left"))
+}
+
+func (h *Hub) broadcastMessage(message []byte) {
+	for client := range h.clients {
+		select {
+		case client.send <- message:
+		default:
+			close(client.send)
+			delete(h.clients, client)
 		}
 	}
 }
