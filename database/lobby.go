@@ -20,6 +20,7 @@ type Lobby struct {
 	Name         string
 	PasswordHash sql.NullString
 	Cards        []Card
+	Players      []Player
 }
 
 func GetLobbies() ([]Lobby, error) {
@@ -134,6 +135,11 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		lobby.Cards = make([]Card, 0)
 	}
 
+	lobby.Players, err = getLobbyPlayers(lobby.Id)
+	if err != nil {
+		lobby.Players = make([]Player, 0)
+	}
+
 	return lobby, nil
 }
 
@@ -201,6 +207,23 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 		}
 	}
 	return nil
+}
+
+func AddPlayerToLobby(lobbyId uuid.UUID, playerId uuid.UUID) error {
+	sqlString := `
+		INSERT IGNORE INTO LOBBY_PLAYER (LOBBY_ID, PLAYER_ID)
+		VALUES (?, ?)
+	`
+	return Execute(sqlString, lobbyId, playerId)
+}
+
+func RemovePlayerFromLobby(lobbyId uuid.UUID, playerId uuid.UUID) error {
+	sqlString := `
+		DELETE FROM LOBBY_PLAYER
+		WHERE LOBBY_ID = ?
+			AND PLAYER_ID = ?
+	`
+	return Execute(sqlString, lobbyId, playerId)
 }
 
 func GetLobbyId(name string) (uuid.UUID, error) {
@@ -297,4 +320,32 @@ func getLobbyCards(lobbyId uuid.UUID) (cards []Card, err error) {
 	}
 
 	return cards, nil
+}
+
+func getLobbyPlayers(lobbyId uuid.UUID) (players []Player, err error) {
+	sqlString := `
+		SELECT
+			P.ID,
+			P.NAME
+		FROM PLAYER AS P
+			INNER JOIN LOBBY_PLAYER AS LP ON LP.PLAYER_ID = P.ID
+		WHERE LP.LOBBY_ID = ?
+	`
+	rows, err := Query(sqlString, lobbyId)
+	if err != nil {
+		return nil, err
+	}
+
+	players = make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		if err := rows.Scan(
+			&player.Id,
+			&player.Name); err != nil {
+			continue
+		}
+		players = append(players, player)
+	}
+
+	return players, nil
 }

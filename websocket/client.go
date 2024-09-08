@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/grantfbarnes/card-judge/auth"
+	"github.com/grantfbarnes/card-judge/database"
 )
 
 const (
@@ -38,6 +40,8 @@ var lobbyHubs map[uuid.UUID]*Hub = make(map[uuid.UUID]*Hub)
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
+	player database.Player
+
 	hub *Hub
 
 	// The websocket connection.
@@ -129,8 +133,22 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	playerId, err := auth.GetCookiePlayerId(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player id."))
+		return
+	}
+
+	player, err := database.GetPlayerName(playerId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get player name."))
+		return
+	}
+
 	if _, ok := lobbyHubs[lobbyId]; !ok {
-		newHub := newHub()
+		newHub := newHub(lobbyId)
 		go newHub.run()
 		lobbyHubs[lobbyId] = newHub
 	}
@@ -141,7 +159,12 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		player: player,
+	}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

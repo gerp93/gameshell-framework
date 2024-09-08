@@ -160,6 +160,33 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
+func GetPlayerName(id uuid.UUID) (Player, error) {
+	var player Player
+
+	sqlString := `
+		SELECT
+			ID,
+			NAME
+		FROM PLAYER
+		WHERE ID = ?
+	`
+	rows, err := Query(sqlString, id)
+	if err != nil {
+		return player, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&player.Id,
+			&player.Name); err != nil {
+			log.Println(err)
+			return player, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return player, nil
+}
+
 func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 	var passwordHash string
 
