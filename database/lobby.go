@@ -137,6 +137,30 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 	return lobby, nil
 }
 
+func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
+	var passwordHash sql.NullString
+
+	sqlString := `
+		SELECT
+			PASSWORD_HASH
+		FROM LOBBY
+		WHERE ID = ?
+	`
+	rows, err := Query(sqlString, id)
+	if err != nil {
+		return passwordHash, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&passwordHash); err != nil {
+			log.Println(err)
+			return passwordHash, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return passwordHash, nil
+}
+
 func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
