@@ -20,20 +20,10 @@ type Player struct {
 	PasswordHash string
 	ColorTheme   sql.NullString
 	IsAdmin      bool
-	LobbyIds     []uuid.UUID
-	DeckIds      []uuid.UUID
-}
-
-func (p Player) HasLobbyAccess(lobbyId uuid.UUID) bool {
-	return helper.IsIdInArray(lobbyId, p.LobbyIds)
-}
-
-func (p Player) HasDeckAccess(deckId uuid.UUID) bool {
-	return helper.IsIdInArray(deckId, p.DeckIds)
 }
 
 func HasLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) bool {
-	lobbyIds, err := GetPlayerLobbyAccess(playerId)
+	lobbyIds, err := getPlayerLobbyAccess(playerId)
 	if err != nil {
 		return false
 	}
@@ -41,7 +31,7 @@ func HasLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) bool {
 }
 
 func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
-	deckIds, err := GetPlayerDeckAccess(playerId)
+	deckIds, err := getPlayerDeckAccess(playerId)
 	if err != nil {
 		return false
 	}
@@ -145,16 +135,6 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}
-	}
-
-	player.LobbyIds, err = GetPlayerLobbyAccess(player.Id)
-	if err != nil {
-		player.LobbyIds = make([]uuid.UUID, 0)
-	}
-
-	player.DeckIds, err = GetPlayerDeckAccess(player.Id)
-	if err != nil {
-		player.DeckIds = make([]uuid.UUID, 0)
 	}
 
 	return player, nil
