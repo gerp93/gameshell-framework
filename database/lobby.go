@@ -23,75 +23,48 @@ type Lobby struct {
 	JudgeCard    sql.Null[Card]
 }
 
-func GetLobbies() ([]Lobby, error) {
-	sqlString := `
-		SELECT
-			ID,
-			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
-			CREATED_BY_PLAYER_ID,
-			CHANGED_BY_PLAYER_ID,
-			NAME,
-			PASSWORD_HASH
-		FROM LOBBY
-		ORDER BY CHANGED_ON_DATE DESC
-	`
-	rows, err := Query(sqlString)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]Lobby, 0)
-	for rows.Next() {
-		var lobby Lobby
-		if err := rows.Scan(
-			&lobby.Id,
-			&lobby.CreatedOnDate,
-			&lobby.ChangedOnDate,
-			&lobby.CreatedByPlayerId,
-			&lobby.ChangedByPlayerId,
-			&lobby.Name,
-			&lobby.PasswordHash); err != nil {
-			continue
-		}
-		result = append(result, lobby)
-	}
-	return result, nil
+type LobbyDetails struct {
+	Lobby
+	PlayerCount int
 }
 
-func SearchLobbies(search string) ([]Lobby, error) {
+func GetLobbies(search string) ([]LobbyDetails, error) {
 	sqlString := `
 		SELECT
-			ID,
-			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
-			CREATED_BY_PLAYER_ID,
-			CHANGED_BY_PLAYER_ID,
-			NAME,
-			PASSWORD_HASH
-		FROM LOBBY
-		WHERE NAME LIKE ?
-		ORDER BY CHANGED_ON_DATE DESC
+			L.ID,
+			L.CREATED_ON_DATE,
+			L.CHANGED_ON_DATE,
+			L.CREATED_BY_PLAYER_ID,
+			L.CHANGED_BY_PLAYER_ID,
+			L.NAME,
+			L.PASSWORD_HASH,
+			COUNT(LP.ID) AS PLAYER_COUNT
+		FROM LOBBY AS L
+			INNER JOIN LOBBY_PLAYER AS LP ON LP.LOBBY_ID = L.ID
+		WHERE L.NAME LIKE ?
+		GROUP BY L.ID
+		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(LP.ID) DESC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]Lobby, 0)
+	result := make([]LobbyDetails, 0)
 	for rows.Next() {
-		var lobby Lobby
+		var lobbyDetails LobbyDetails
 		if err := rows.Scan(
-			&lobby.Id,
-			&lobby.CreatedOnDate,
-			&lobby.ChangedOnDate,
-			&lobby.CreatedByPlayerId,
-			&lobby.ChangedByPlayerId,
-			&lobby.Name,
-			&lobby.PasswordHash); err != nil {
+			&lobbyDetails.Id,
+			&lobbyDetails.CreatedOnDate,
+			&lobbyDetails.ChangedOnDate,
+			&lobbyDetails.CreatedByPlayerId,
+			&lobbyDetails.ChangedByPlayerId,
+			&lobbyDetails.Name,
+			&lobbyDetails.PasswordHash,
+			&lobbyDetails.PlayerCount); err != nil {
 			continue
 		}
-		result = append(result, lobby)
+		result = append(result, lobbyDetails)
 	}
 	return result, nil
 }
