@@ -45,7 +45,7 @@ func GetDecks(search string) ([]DeckDetails, error) {
 			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
 		WHERE D.NAME LIKE ?
 		GROUP BY D.ID
-		ORDER BY D.CHANGED_ON_DATE DESC, NAME ASC, COUNT(C.ID) DESC
+		ORDER BY D.CHANGED_ON_DATE DESC, D.NAME ASC, COUNT(C.ID) DESC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
