@@ -7,12 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
+func getPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
 	sqlString := `
-		SELECT
-			LOBBY_ID
-		FROM PLAYER_ACCESS_LOBBY
-		WHERE PLAYER_ID = ?
+		SELECT DISTINCT
+			L.ID
+		FROM LOBBY AS L
+			LEFT JOIN PLAYER_ACCESS_LOBBY AS PAL ON PAL.LOBBY_ID = L.ID
+		WHERE L.PASSWORD_HASH IS NULL
+			OR PAL.PLAYER_ID = ?
 	`
 	rows, err := Query(sqlString, playerId)
 	if err != nil {
@@ -40,12 +42,14 @@ func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
 	return Execute(sqlString, playerId, lobbyId)
 }
 
-func GetPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
+func getPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	sqlString := `
-		SELECT
-			DECK_ID
-		FROM PLAYER_ACCESS_DECK
-		WHERE PLAYER_ID = ?
+		SELECT DISTINCT
+			D.ID
+		FROM DECK AS D
+			LEFT JOIN PLAYER_ACCESS_DECK AS PAD ON PAD.DECK_ID = D.ID
+		WHERE D.PASSWORD_HASH IS NULL
+			OR PAD.PLAYER_ID = ?
 	`
 	rows, err := Query(sqlString, playerId)
 	if err != nil {
