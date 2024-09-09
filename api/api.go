@@ -12,8 +12,8 @@ import (
 
 type RequestContextKey string
 
-const BasePageDataRequestContextKey RequestContextKey = "basePageDataRequestContextKey"
-const PlayerIdRequestContextKey RequestContextKey = "playerIdRequestContextKey"
+const basePageDataRequestContextKey RequestContextKey = "basePageDataRequestContextKey"
+const playerIdRequestContextKey RequestContextKey = "playerIdRequestContextKey"
 
 type BasePageData struct {
 	PageTitle string
@@ -68,24 +68,24 @@ func PageMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), BasePageDataRequestContextKey, basePageData))
+		r = r.WithContext(context.WithValue(r.Context(), basePageDataRequestContextKey, basePageData))
 
 		next.ServeHTTP(w, r)
 	})
 }
 
 func GetBasePageData(r *http.Request) BasePageData {
-	return r.Context().Value(BasePageDataRequestContextKey).(BasePageData)
+	return r.Context().Value(basePageDataRequestContextKey).(BasePageData)
 }
 
 func ApiMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		playerId, _ := auth.GetCookiePlayerId(r)
-		r = r.WithContext(context.WithValue(r.Context(), PlayerIdRequestContextKey, playerId))
+		r = r.WithContext(context.WithValue(r.Context(), playerIdRequestContextKey, playerId))
 		next.ServeHTTP(w, r)
 	})
 }
 
 func GetPlayerId(r *http.Request) uuid.UUID {
-	return r.Context().Value(PlayerIdRequestContextKey).(uuid.UUID)
+	return r.Context().Value(playerIdRequestContextKey).(uuid.UUID)
 }
