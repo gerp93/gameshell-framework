@@ -38,39 +38,11 @@ func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
 	return helper.IsIdInArray(deckId, deckIds)
 }
 
-func GetPlayers() ([]Player, error) {
-	sqlString := `
-		SELECT
-			ID,
-			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
-			NAME,
-			IS_ADMIN
-		FROM PLAYER
-		ORDER BY CHANGED_ON_DATE DESC
-	`
-	rows, err := Query(sqlString)
-	if err != nil {
-		return nil, err
+func GetPlayers(search string) ([]Player, error) {
+	if search == "" {
+		search = "%"
 	}
 
-	result := make([]Player, 0)
-	for rows.Next() {
-		var player Player
-		if err := rows.Scan(
-			&player.Id,
-			&player.CreatedOnDate,
-			&player.ChangedOnDate,
-			&player.Name,
-			&player.IsAdmin); err != nil {
-			continue
-		}
-		result = append(result, player)
-	}
-	return result, nil
-}
-
-func SearchPlayers(search string) ([]Player, error) {
 	sqlString := `
 		SELECT
 			ID,
