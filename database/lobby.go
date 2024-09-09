@@ -157,34 +157,6 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func GetLobbyPlayers(lobbyId uuid.UUID) (players []Player, err error) {
-	sqlString := `
-		SELECT
-			P.ID,
-			P.NAME
-		FROM PLAYER AS P
-			INNER JOIN LOBBY_PLAYER AS LP ON LP.PLAYER_ID = P.ID
-		WHERE LP.LOBBY_ID = ?
-	`
-	rows, err := Query(sqlString, lobbyId)
-	if err != nil {
-		return nil, err
-	}
-
-	players = make([]Player, 0)
-	for rows.Next() {
-		var player Player
-		if err := rows.Scan(
-			&player.Id,
-			&player.Name); err != nil {
-			continue
-		}
-		players = append(players, player)
-	}
-
-	return players, nil
-}
-
 func CreateLobby(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
