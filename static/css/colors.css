@@ -84,7 +84,7 @@ body.light-theme .htmx-result-bad {
   color: var(--light-accent-red);
 }
 
-body.light-theme #lobby-chat-container {
+body.light-theme #lobby-grid-container > div {
   background-color: var(--light-bg);
 }
 
@@ -151,6 +151,6 @@ body.dark-theme .htmx-result-bad {
   color: var(--dark-accent-red);
 }
 
-body.dark-theme #lobby-chat-container {
+body.dark-theme #lobby-grid-container > div {
   background-color: var(--dark-bg);
 }
