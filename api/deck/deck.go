@@ -26,7 +26,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	search = "%" + search + "%"
 
-	decks, err := database.SearchDecks(search)
+	decks, err := database.GetDecks(search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

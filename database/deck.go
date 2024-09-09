@@ -21,38 +21,52 @@ type Deck struct {
 	PasswordHash sql.NullString
 }
 
-func GetDecks() ([]Deck, error) {
+type DeckDetails struct {
+	Deck
+	CardCount int
+}
+
+func GetDecks(search string) ([]DeckDetails, error) {
+	if search == "" {
+		search = "%"
+	}
+
 	sqlString := `
 		SELECT
-			ID,
-			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
-			CREATED_BY_PLAYER_ID,
-			CHANGED_BY_PLAYER_ID,
-			NAME,
-			PASSWORD_HASH
-		FROM DECK
-		ORDER BY CHANGED_ON_DATE DESC
+			D.ID,
+			D.CREATED_ON_DATE,
+			D.CHANGED_ON_DATE,
+			D.CREATED_BY_PLAYER_ID,
+			D.CHANGED_BY_PLAYER_ID,
+			D.NAME,
+			D.PASSWORD_HASH,
+			COUNT(C.ID) AS CARD_COUNT
+		FROM DECK AS D
+			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
+		WHERE D.NAME LIKE ?
+		GROUP BY D.ID
+		ORDER BY D.CHANGED_ON_DATE DESC, NAME ASC, COUNT(C.ID) DESC
 	`
-	rows, err := Query(sqlString)
+	rows, err := Query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]Deck, 0)
+	result := make([]DeckDetails, 0)
 	for rows.Next() {
-		var deck Deck
+		var deckDetails DeckDetails
 		if err := rows.Scan(
-			&deck.Id,
-			&deck.CreatedOnDate,
-			&deck.ChangedOnDate,
-			&deck.CreatedByPlayerId,
-			&deck.ChangedByPlayerId,
-			&deck.Name,
-			&deck.PasswordHash); err != nil {
+			&deckDetails.Id,
+			&deckDetails.CreatedOnDate,
+			&deckDetails.ChangedOnDate,
+			&deckDetails.CreatedByPlayerId,
+			&deckDetails.ChangedByPlayerId,
+			&deckDetails.Name,
+			&deckDetails.PasswordHash,
+			&deckDetails.CardCount); err != nil {
 			continue
 		}
-		result = append(result, deck)
+		result = append(result, deckDetails)
 	}
 	return result, nil
 }
@@ -80,43 +94,6 @@ func GetPlayerDecks(playerId uuid.UUID) ([]Deck, error) {
 		if err := rows.Scan(
 			&deck.Id,
 			&deck.Name); err != nil {
-			continue
-		}
-		result = append(result, deck)
-	}
-	return result, nil
-}
-
-func SearchDecks(search string) ([]Deck, error) {
-	sqlString := `
-		SELECT
-			ID,
-			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
-			CREATED_BY_PLAYER_ID,
-			CHANGED_BY_PLAYER_ID,
-			NAME,
-			PASSWORD_HASH
-		FROM DECK
-		WHERE NAME LIKE ?
-		ORDER BY CHANGED_ON_DATE DESC
-	`
-	rows, err := Query(sqlString, search)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]Deck, 0)
-	for rows.Next() {
-		var deck Deck
-		if err := rows.Scan(
-			&deck.Id,
-			&deck.CreatedOnDate,
-			&deck.ChangedOnDate,
-			&deck.CreatedByPlayerId,
-			&deck.ChangedByPlayerId,
-			&deck.Name,
-			&deck.PasswordHash); err != nil {
 			continue
 		}
 		result = append(result, deck)
