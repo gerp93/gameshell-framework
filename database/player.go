@@ -235,8 +235,7 @@ func SetPlayerName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE PLAYER
 		SET
-			NAME = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			NAME = ?
 		WHERE ID = ?
 	`
 	return Execute(sqlString, name, id)
@@ -252,8 +251,7 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 	sqlString := `
 		UPDATE PLAYER
 		SET
-			PASSWORD_HASH = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
 	return Execute(sqlString, passwordHash, id)
@@ -263,8 +261,7 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 	sqlString := `
 		UPDATE PLAYER
 		SET
-			COLOR_THEME = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			COLOR_THEME = ?
 		WHERE ID = ?
 	`
 	if colorTheme == "" {
@@ -278,8 +275,7 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 	sqlString := `
 		UPDATE PLAYER
 		SET
-			IS_ADMIN = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP()
+			IS_ADMIN = ?
 		WHERE ID = ?
 	`
 	return Execute(sqlString, isAdmin, id)
