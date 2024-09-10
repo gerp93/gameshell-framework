@@ -11,11 +11,9 @@ import (
 )
 
 type Deck struct {
-	Id                uuid.UUID
-	CreatedOnDate     time.Time
-	ChangedOnDate     time.Time
-	CreatedByPlayerId uuid.UUID
-	ChangedByPlayerId uuid.UUID
+	Id            uuid.UUID
+	CreatedOnDate time.Time
+	ChangedOnDate time.Time
 
 	Name         string
 	PasswordHash sql.NullString
@@ -36,8 +34,6 @@ func GetDecks(search string) ([]DeckDetails, error) {
 			D.ID,
 			D.CREATED_ON_DATE,
 			D.CHANGED_ON_DATE,
-			D.CREATED_BY_PLAYER_ID,
-			D.CHANGED_BY_PLAYER_ID,
 			D.NAME,
 			D.PASSWORD_HASH,
 			COUNT(C.ID) AS CARD_COUNT
@@ -59,8 +55,6 @@ func GetDecks(search string) ([]DeckDetails, error) {
 			&deckDetails.Id,
 			&deckDetails.CreatedOnDate,
 			&deckDetails.ChangedOnDate,
-			&deckDetails.CreatedByPlayerId,
-			&deckDetails.ChangedByPlayerId,
 			&deckDetails.Name,
 			&deckDetails.PasswordHash,
 			&deckDetails.CardCount); err != nil {
@@ -109,8 +103,6 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 			ID,
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
-			CREATED_BY_PLAYER_ID,
-			CHANGED_BY_PLAYER_ID,
 			NAME,
 			PASSWORD_HASH
 		FROM DECK
@@ -126,8 +118,6 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 			&deck.Id,
 			&deck.CreatedOnDate,
 			&deck.ChangedOnDate,
-			&deck.CreatedByPlayerId,
-			&deck.ChangedByPlayerId,
 			&deck.Name,
 			&deck.PasswordHash); err != nil {
 			log.Println(err)
@@ -162,7 +152,7 @@ func GetDeckPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, error) {
+func CreateDeck(name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -176,13 +166,13 @@ func CreateDeck(playerId uuid.UUID, name string, password string) (uuid.UUID, er
 	}
 
 	sqlString := `
-		INSERT INTO DECK (ID, CREATED_BY_PLAYER_ID, CHANGED_BY_PLAYER_ID, NAME, PASSWORD_HASH)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO DECK (ID, NAME, PASSWORD_HASH)
+		VALUES (?, ?, ?)
 	`
 	if password == "" {
-		return id, Execute(sqlString, id, playerId, playerId, name, nil)
+		return id, Execute(sqlString, id, name, nil)
 	} else {
-		return id, Execute(sqlString, id, playerId, playerId, name, passwordHash)
+		return id, Execute(sqlString, id, name, passwordHash)
 	}
 }
 
@@ -210,18 +200,17 @@ func GetDeckId(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func SetDeckName(playerId uuid.UUID, id uuid.UUID, name string) error {
+func SetDeckName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE DECK
 		SET
-			NAME = ?,
-			CHANGED_BY_PLAYER_ID = ?
+			NAME = ?
 		WHERE ID = ?
 	`
-	return Execute(sqlString, name, playerId, id)
+	return Execute(sqlString, name, id)
 }
 
-func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
+func SetDeckPassword(id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		log.Println(err)
@@ -231,14 +220,13 @@ func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 	sqlString := `
 		UPDATE DECK
 		SET
-			PASSWORD_HASH = ?,
-			CHANGED_BY_PLAYER_ID = ?
+			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
 	if password == "" {
-		return Execute(sqlString, nil, playerId, id)
+		return Execute(sqlString, nil, id)
 	} else {
-		return Execute(sqlString, passwordHash, playerId, id)
+		return Execute(sqlString, passwordHash, id)
 	}
 }
 

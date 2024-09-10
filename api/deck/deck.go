@@ -99,7 +99,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := database.CreateDeck(playerId, name, password)
+	id, err := database.CreateDeck(name, password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -171,7 +171,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetDeckName(playerId, id, name)
+	err = database.SetDeckName(id, name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -229,7 +229,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = database.SetDeckPassword(playerId, id, password)
+	err = database.SetDeckPassword(id, password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
