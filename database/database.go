@@ -13,10 +13,10 @@ import (
 var dbcs string
 
 func SetDatabaseConnectionString() {
-	serverHost := os.Getenv("GFB_SQL_HOST")
-	userName := os.Getenv("GFB_SQL_USER")
-	userPassword := os.Getenv("GFB_SQL_PASSWORD")
-	databaseName := os.Getenv("GFB_SQL_DATABASE")
+	userName := os.Getenv("CARD_JUDGE_SQL_USER")
+	userPassword := os.Getenv("CARD_JUDGE_SQL_PASSWORD")
+	serverHost := os.Getenv("CARD_JUDGE_SQL_HOST")
+	databaseName := os.Getenv("CARD_JUDGE_SQL_DATABASE")
 	dbcs = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 }
 
