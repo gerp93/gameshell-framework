@@ -215,7 +215,6 @@ func SetDeckName(playerId uuid.UUID, id uuid.UUID, name string) error {
 		UPDATE DECK
 		SET
 			NAME = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
 	`
@@ -233,7 +232,6 @@ func SetDeckPassword(playerId uuid.UUID, id uuid.UUID, password string) error {
 		UPDATE DECK
 		SET
 			PASSWORD_HASH = ?,
-			CHANGED_ON_DATE = CURRENT_TIMESTAMP(),
 			CHANGED_BY_PLAYER_ID = ?
 		WHERE ID = ?
 	`
