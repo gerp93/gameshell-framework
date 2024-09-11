@@ -61,6 +61,77 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 	return result, nil
 }
 
+type LobbyGameInfo struct {
+	Lobby
+	CardCount int
+}
+
+func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
+	sqlString := `
+		SELECT
+			L.ID,
+			L.NAME,
+			COUNT(DP.CARD_ID) AS CARD_COUNT
+		FROM LOBBY AS L
+			INNER JOIN DRAW_PILE AS DP ON DP.LOBBY_ID = L.ID
+		WHERE L.ID = ?
+		GROUP BY L.ID
+	`
+	rows, err := Query(sqlString, lobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.Id,
+			&data.Name,
+			&data.CardCount); err != nil {
+			return data, err
+		}
+	}
+
+	return data, nil
+}
+
+type lobbyGameStats struct {
+	UserId   uuid.UUID
+	UserName string
+	Wins     int
+}
+
+func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
+	sqlString := `
+		SELECT
+			P.USER_ID,
+			U.NAME AS USER_NAME,
+			COUNT(W.ID) AS WINS
+		FROM PLAYER AS P
+			LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+		WHERE P.LOBBY_ID = ?
+		GROUP BY P.USER_ID
+		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
+	`
+	rows, err := Query(sqlString, lobbyId)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]lobbyGameStats, 0)
+	for rows.Next() {
+		var stats lobbyGameStats
+		if err := rows.Scan(
+			&stats.UserId,
+			&stats.UserName,
+			&stats.Wins); err != nil {
+			continue
+		}
+		result = append(result, stats)
+	}
+	return result, nil
+}
+
 func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 
@@ -160,12 +231,23 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	return nil
 }
 
-func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
+func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, err error) {
+	playerId, err = uuid.NewUUID()
+	if err != nil {
+		log.Println(err)
+		return playerId, errors.New("failed to generate new id")
+	}
+
 	sqlString := `
-		INSERT IGNORE INTO PLAYER (LOBBY_ID, USER_ID)
-		VALUES (?, ?)
+		INSERT IGNORE INTO PLAYER (ID, LOBBY_ID, USER_ID)
+		VALUES (?, ?, ?)
 	`
-	return Execute(sqlString, lobbyId, userId)
+	err = Execute(sqlString, playerId, lobbyId, userId)
+	if err != nil {
+		return playerId, err
+	}
+
+	return playerId, err
 }
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {

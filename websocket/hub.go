@@ -54,7 +54,6 @@ func (h *Hub) run() {
 
 func (h *Hub) registerClient(client *Client) {
 	h.clients[client] = true
-	database.AddUserToLobby(h.lobbyId, client.user.Id)
 	h.broadcastMessage([]byte(client.user.Name + " has joined..."))
 }
 
