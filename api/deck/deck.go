@@ -118,11 +118,11 @@ func Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetName(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	deckIdString := r.PathValue("deckId")
+	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
@@ -133,7 +133,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, id) {
+	if !database.HasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -171,7 +171,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetDeckName(id, name)
+	err = database.SetDeckName(deckId, name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -183,11 +183,11 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetPassword(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	deckIdString := r.PathValue("deckId")
+	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
@@ -198,7 +198,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, id) {
+	if !database.HasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -229,7 +229,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = database.SetDeckPassword(id, password)
+	err = database.SetDeckPassword(deckId, password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -241,11 +241,11 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	deckIdString := r.PathValue("deckId")
+	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
@@ -256,13 +256,13 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, id) {
+	if !database.HasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
 	}
 
-	err = database.DeleteDeck(id)
+	err = database.DeleteDeck(deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
