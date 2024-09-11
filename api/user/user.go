@@ -246,15 +246,15 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetName(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
-	if !isCurrentUser(r, id) {
+	if !isCurrentUser(r, userId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -292,7 +292,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetUserName(id, name)
+	err = database.SetUserName(userId, name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -304,15 +304,15 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetPassword(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
-	if !isCurrentUser(r, id) {
+	if !isCurrentUser(r, userId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -347,7 +347,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetUserPassword(id, password)
+	err = database.SetUserPassword(userId, password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -359,11 +359,11 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
@@ -373,7 +373,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetUserPassword(id, "password")
+	err = database.SetUserPassword(userId, "password")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -385,15 +385,15 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetColorTheme(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
-	if !isCurrentUser(r, id) {
+	if !isCurrentUser(r, userId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -419,7 +419,7 @@ func SetColorTheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.SetUserColorTheme(id, colorTheme)
+	err = database.SetUserColorTheme(userId, colorTheme)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -431,11 +431,11 @@ func SetColorTheme(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetIsAdmin(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
@@ -459,7 +459,7 @@ func SetIsAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = database.SetUserIsAdmin(id, isAdmin)
+	err = database.SetUserIsAdmin(userId, isAdmin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -471,22 +471,22 @@ func SetIsAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-	idString := r.PathValue("id")
-	id, err := uuid.Parse(idString)
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get user id from path."))
 		return
 	}
 
-	isCurrentUser := isCurrentUser(r, id)
+	isCurrentUser := isCurrentUser(r, userId)
 	if !isCurrentUser && !isAdmin(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
 	}
 
-	err = database.DeleteUser(id)
+	err = database.DeleteUser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
