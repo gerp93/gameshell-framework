@@ -65,19 +65,19 @@ func GetDecks(search string) ([]DeckDetails, error) {
 	return result, nil
 }
 
-func GetPlayerDecks(playerId uuid.UUID) ([]Deck, error) {
+func GetUserDecks(userId uuid.UUID) ([]Deck, error) {
 	sqlString := `
 		SELECT DISTINCT
 			D.ID,
 			D.NAME
 		FROM DECK AS D
 			INNER JOIN CARD AS C ON C.DECK_ID = D.ID
-			LEFT JOIN PLAYER_ACCESS_DECK AS PAD ON PAD.DECK_ID = D.ID
+			LEFT JOIN USER_ACCESS_DECK AS UAD ON UAD.DECK_ID = D.ID
 		WHERE D.PASSWORD_HASH IS NULL
-			OR PAD.PLAYER_ID = ?
+			OR UAD.USER_ID = ?
 		ORDER BY NAME ASC
 	`
-	rows, err := Query(sqlString, playerId)
+	rows, err := Query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}

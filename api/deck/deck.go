@@ -80,10 +80,10 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	playerId := api.GetPlayerId(r)
-	if playerId == uuid.Nil {
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player id."))
+		w.Write([]byte("Failed to get user id."))
 		return
 	}
 
@@ -106,7 +106,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.AddPlayerDeckAccess(playerId, id)
+	err = database.AddUserDeckAccess(userId, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -126,16 +126,16 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerId := api.GetPlayerId(r)
-	if playerId == uuid.Nil {
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player id."))
+		w.Write([]byte("Failed to get user id."))
 		return
 	}
 
-	if !database.HasDeckAccess(playerId, id) {
+	if !database.HasDeckAccess(userId, id) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Player does not have access."))
+		w.Write([]byte("User does not have access."))
 		return
 	}
 
@@ -191,16 +191,16 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerId := api.GetPlayerId(r)
-	if playerId == uuid.Nil {
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player id."))
+		w.Write([]byte("Failed to get user id."))
 		return
 	}
 
-	if !database.HasDeckAccess(playerId, id) {
+	if !database.HasDeckAccess(userId, id) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Player does not have access."))
+		w.Write([]byte("User does not have access."))
 		return
 	}
 
@@ -249,16 +249,16 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerId := api.GetPlayerId(r)
-	if playerId == uuid.Nil {
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player id."))
+		w.Write([]byte("Failed to get user id."))
 		return
 	}
 
-	if !database.HasDeckAccess(playerId, id) {
+	if !database.HasDeckAccess(userId, id) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Player does not have access."))
+		w.Write([]byte("User does not have access."))
 		return
 	}
 

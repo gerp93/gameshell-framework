@@ -7,16 +7,16 @@ import (
 	"github.com/google/uuid"
 )
 
-func getPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
+func getUserLobbyAccess(userId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
 	sqlString := `
 		SELECT DISTINCT
 			L.ID
 		FROM LOBBY AS L
-			LEFT JOIN PLAYER_ACCESS_LOBBY AS PAL ON PAL.LOBBY_ID = L.ID
+			LEFT JOIN USER_ACCESS_LOBBY AS UAL ON UAL.LOBBY_ID = L.ID
 		WHERE L.PASSWORD_HASH IS NULL
-			OR PAL.PLAYER_ID = ?
+			OR UAL.USER_ID = ?
 	`
-	rows, err := Query(sqlString, playerId)
+	rows, err := Query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -34,24 +34,24 @@ func getPlayerLobbyAccess(playerId uuid.UUID) (lobbyIds []uuid.UUID, err error) 
 	return lobbyIds, nil
 }
 
-func AddPlayerLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) error {
+func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 	sqlString := `
-		INSERT INTO PLAYER_ACCESS_LOBBY (PLAYER_ID, LOBBY_ID)
+		INSERT INTO USER_ACCESS_LOBBY (USER_ID, LOBBY_ID)
 		VALUES (?, ?)
 	`
-	return Execute(sqlString, playerId, lobbyId)
+	return Execute(sqlString, userId, lobbyId)
 }
 
-func getPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
+func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	sqlString := `
 		SELECT DISTINCT
 			D.ID
 		FROM DECK AS D
-			LEFT JOIN PLAYER_ACCESS_DECK AS PAD ON PAD.DECK_ID = D.ID
+			LEFT JOIN USER_ACCESS_DECK AS UAD ON UAD.DECK_ID = D.ID
 		WHERE D.PASSWORD_HASH IS NULL
-			OR PAD.PLAYER_ID = ?
+			OR UAD.USER_ID = ?
 	`
-	rows, err := Query(sqlString, playerId)
+	rows, err := Query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -69,10 +69,10 @@ func getPlayerDeckAccess(playerId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	return deckIds, nil
 }
 
-func AddPlayerDeckAccess(playerId uuid.UUID, deckId uuid.UUID) error {
+func AddUserDeckAccess(userId uuid.UUID, deckId uuid.UUID) error {
 	sqlString := `
-		INSERT INTO PLAYER_ACCESS_DECK (PLAYER_ID, DECK_ID)
+		INSERT INTO USER_ACCESS_DECK (USER_ID, DECK_ID)
 		VALUES (?, ?)
 	`
-	return Execute(sqlString, playerId, deckId)
+	return Execute(sqlString, userId, deckId)
 }
