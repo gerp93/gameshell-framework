@@ -34,12 +34,12 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			L.CHANGED_ON_DATE,
 			L.NAME,
 			L.PASSWORD_HASH,
-			COUNT(LU.ID) AS USER_COUNT
+			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
-			INNER JOIN LOBBY_USER AS LU ON LU.LOBBY_ID = L.ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
-		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(LU.ID) DESC
+		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(P.ID) DESC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
@@ -164,7 +164,7 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 
 func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-		INSERT IGNORE INTO LOBBY_USER (LOBBY_ID, USER_ID)
+		INSERT IGNORE INTO PLAYER (LOBBY_ID, USER_ID)
 		VALUES (?, ?)
 	`
 	return Execute(sqlString, lobbyId, userId)
@@ -172,7 +172,7 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-		DELETE FROM LOBBY_USER
+		DELETE FROM PLAYER
 		WHERE LOBBY_ID = ?
 			AND USER_ID = ?
 	`
