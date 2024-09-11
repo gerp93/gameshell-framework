@@ -126,11 +126,11 @@ func (c *Client) writePump() {
 
 // ServeWs handles websocket requests from the peer.
 func ServeWs(w http.ResponseWriter, r *http.Request) {
-	lobbyIdString := r.PathValue("id")
+	lobbyIdString := r.PathValue("lobbyId")
 	lobbyId, err := uuid.Parse(lobbyIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get id from path."))
+		w.Write([]byte("Failed to get lobby id from path."))
 		return
 	}
 
