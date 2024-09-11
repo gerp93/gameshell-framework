@@ -15,10 +15,10 @@ type Lobby struct {
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
 
-	Name         string
-	PasswordHash sql.NullString
-	JudgePlayer  sql.Null[Player]
-	JudgeCard    sql.Null[Card]
+	Name          string
+	PasswordHash  sql.NullString
+	JudgePlayerId sql.Null[uuid.UUID]
+	JudgeCardId   sql.Null[uuid.UUID]
 }
 
 type LobbyDetails struct {
