@@ -147,7 +147,7 @@ func CreateLobby(name string, password string) (uuid.UUID, error) {
 func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	for _, deckId := range deckIds {
 		sqlString := `
-			INSERT INTO LOBBY_CARD (LOBBY_ID, CARD_ID)
+			INSERT INTO DRAW_PILE (LOBBY_ID, CARD_ID)
 			SELECT
 				? AS LOBBY_ID,
 				ID AS CARD_ID
