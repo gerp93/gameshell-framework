@@ -15,15 +15,15 @@ type Lobby struct {
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
 
-	Name          string
-	PasswordHash  sql.NullString
-	JudgePlayerId sql.Null[uuid.UUID]
-	JudgeCardId   sql.Null[uuid.UUID]
+	Name         string
+	PasswordHash sql.NullString
+	JudgeUserId  sql.Null[uuid.UUID]
+	JudgeCardId  sql.Null[uuid.UUID]
 }
 
 type LobbyDetails struct {
 	Lobby
-	PlayerCount int
+	UserCount int
 }
 
 func GetLobbies(search string) ([]LobbyDetails, error) {
@@ -34,12 +34,12 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			L.CHANGED_ON_DATE,
 			L.NAME,
 			L.PASSWORD_HASH,
-			COUNT(LP.ID) AS PLAYER_COUNT
+			COUNT(LU.ID) AS USER_COUNT
 		FROM LOBBY AS L
-			INNER JOIN LOBBY_PLAYER AS LP ON LP.LOBBY_ID = L.ID
+			INNER JOIN LOBBY_USER AS LU ON LU.LOBBY_ID = L.ID
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
-		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(LP.ID) DESC
+		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(LU.ID) DESC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
@@ -55,7 +55,7 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			&lobbyDetails.ChangedOnDate,
 			&lobbyDetails.Name,
 			&lobbyDetails.PasswordHash,
-			&lobbyDetails.PlayerCount); err != nil {
+			&lobbyDetails.UserCount); err != nil {
 			continue
 		}
 		result = append(result, lobbyDetails)
@@ -162,21 +162,21 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	return nil
 }
 
-func AddPlayerToLobby(lobbyId uuid.UUID, playerId uuid.UUID) error {
+func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-		INSERT IGNORE INTO LOBBY_PLAYER (LOBBY_ID, PLAYER_ID)
+		INSERT IGNORE INTO LOBBY_USER (LOBBY_ID, USER_ID)
 		VALUES (?, ?)
 	`
-	return Execute(sqlString, lobbyId, playerId)
+	return Execute(sqlString, lobbyId, userId)
 }
 
-func RemovePlayerFromLobby(lobbyId uuid.UUID, playerId uuid.UUID) error {
+func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-		DELETE FROM LOBBY_PLAYER
+		DELETE FROM LOBBY_USER
 		WHERE LOBBY_ID = ?
-			AND PLAYER_ID = ?
+			AND USER_ID = ?
 	`
-	return Execute(sqlString, lobbyId, playerId)
+	return Execute(sqlString, lobbyId, userId)
 }
 
 func GetLobbyId(name string) (uuid.UUID, error) {

@@ -40,7 +40,7 @@ var lobbyHubs map[uuid.UUID]*Hub = make(map[uuid.UUID]*Hub)
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	player database.Player
+	user database.User
 
 	hub *Hub
 
@@ -73,7 +73,7 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		message = []byte(c.player.Name + ": " + string(message))
+		message = []byte(c.user.Name + ": " + string(message))
 		c.hub.broadcast <- message
 	}
 }
@@ -134,17 +134,17 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerId, err := auth.GetCookiePlayerId(r)
+	userId, err := auth.GetCookieUserId(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player id."))
+		w.Write([]byte("Failed to get user id."))
 		return
 	}
 
-	player, err := database.GetPlayerName(playerId)
+	user, err := database.GetUserName(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get player name."))
+		w.Write([]byte("Failed to get user name."))
 		return
 	}
 
@@ -161,10 +161,10 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client := &Client{
-		hub:    hub,
-		conn:   conn,
-		send:   make(chan []byte, 256),
-		player: player,
+		hub:  hub,
+		conn: conn,
+		send: make(chan []byte, 256),
+		user: user,
 	}
 	client.hub.register <- client
 

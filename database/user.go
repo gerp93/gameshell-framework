@@ -11,7 +11,7 @@ import (
 	"github.com/grantfbarnes/card-judge/helper"
 )
 
-type Player struct {
+type User struct {
 	Id            uuid.UUID
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
@@ -22,23 +22,23 @@ type Player struct {
 	IsAdmin      bool
 }
 
-func HasLobbyAccess(playerId uuid.UUID, lobbyId uuid.UUID) bool {
-	lobbyIds, err := getPlayerLobbyAccess(playerId)
+func HasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) bool {
+	lobbyIds, err := getUserLobbyAccess(userId)
 	if err != nil {
 		return false
 	}
 	return helper.IsIdInArray(lobbyId, lobbyIds)
 }
 
-func HasDeckAccess(playerId uuid.UUID, deckId uuid.UUID) bool {
-	deckIds, err := getPlayerDeckAccess(playerId)
+func HasDeckAccess(userId uuid.UUID, deckId uuid.UUID) bool {
+	deckIds, err := getUserDeckAccess(userId)
 	if err != nil {
 		return false
 	}
 	return helper.IsIdInArray(deckId, deckIds)
 }
 
-func GetPlayers(search string) ([]Player, error) {
+func GetUsers(search string) ([]User, error) {
 	if search == "" {
 		search = "%"
 	}
@@ -50,7 +50,7 @@ func GetPlayers(search string) ([]Player, error) {
 			CHANGED_ON_DATE,
 			NAME,
 			IS_ADMIN
-		FROM PLAYER
+		FROM USER
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC
 	`
@@ -59,24 +59,24 @@ func GetPlayers(search string) ([]Player, error) {
 		return nil, err
 	}
 
-	result := make([]Player, 0)
+	result := make([]User, 0)
 	for rows.Next() {
-		var player Player
+		var user User
 		if err := rows.Scan(
-			&player.Id,
-			&player.CreatedOnDate,
-			&player.ChangedOnDate,
-			&player.Name,
-			&player.IsAdmin); err != nil {
+			&user.Id,
+			&user.CreatedOnDate,
+			&user.ChangedOnDate,
+			&user.Name,
+			&user.IsAdmin); err != nil {
 			continue
 		}
-		result = append(result, player)
+		result = append(result, user)
 	}
 	return result, nil
 }
 
-func GetPlayer(id uuid.UUID) (Player, error) {
-	var player Player
+func GetUser(id uuid.UUID) (User, error) {
+	var user User
 
 	sqlString := `
 		SELECT
@@ -87,65 +87,65 @@ func GetPlayer(id uuid.UUID) (Player, error) {
 			PASSWORD_HASH,
 			COLOR_THEME,
 			IS_ADMIN
-		FROM PLAYER
+		FROM USER
 		WHERE ID = ?
 	`
 	rows, err := Query(sqlString, id)
 	if err != nil {
-		return player, err
+		return user, err
 	}
 
 	for rows.Next() {
 		if err := rows.Scan(
-			&player.Id,
-			&player.CreatedOnDate,
-			&player.ChangedOnDate,
-			&player.Name,
-			&player.PasswordHash,
-			&player.ColorTheme,
-			&player.IsAdmin); err != nil {
+			&user.Id,
+			&user.CreatedOnDate,
+			&user.ChangedOnDate,
+			&user.Name,
+			&user.PasswordHash,
+			&user.ColorTheme,
+			&user.IsAdmin); err != nil {
 			log.Println(err)
-			return player, errors.New("failed to scan row in query results")
+			return user, errors.New("failed to scan row in query results")
 		}
 	}
 
-	return player, nil
+	return user, nil
 }
 
-func GetPlayerName(id uuid.UUID) (Player, error) {
-	var player Player
+func GetUserName(id uuid.UUID) (User, error) {
+	var user User
 
 	sqlString := `
 		SELECT
 			ID,
 			NAME
-		FROM PLAYER
+		FROM USER
 		WHERE ID = ?
 	`
 	rows, err := Query(sqlString, id)
 	if err != nil {
-		return player, err
+		return user, err
 	}
 
 	for rows.Next() {
 		if err := rows.Scan(
-			&player.Id,
-			&player.Name); err != nil {
+			&user.Id,
+			&user.Name); err != nil {
 			log.Println(err)
-			return player, errors.New("failed to scan row in query results")
+			return user, errors.New("failed to scan row in query results")
 		}
 	}
 
-	return player, nil
+	return user, nil
 }
 
-func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
+func GetUserPasswordHash(id uuid.UUID) (string, error) {
 	var passwordHash string
 
 	sqlString := `
 		SELECT
 			PASSWORD_HASH
-		FROM PLAYER
+		FROM USER
 		WHERE ID = ?
 	`
 	rows, err := Query(sqlString, id)
@@ -163,13 +163,13 @@ func GetPlayerPasswordHash(id uuid.UUID) (string, error) {
 	return passwordHash, nil
 }
 
-func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
+func GetUserIsAdmin(id uuid.UUID) (bool, error) {
 	var isAdmin bool = false
 
 	sqlString := `
 		SELECT
 			IS_ADMIN
-		FROM PLAYER
+		FROM USER
 		WHERE ID = ?
 	`
 	rows, err := Query(sqlString, id)
@@ -187,13 +187,13 @@ func GetPlayerIsAdmin(id uuid.UUID) (bool, error) {
 	return isAdmin, nil
 }
 
-func GetPlayerId(name string) (uuid.UUID, error) {
+func GetUserId(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 
 	sqlString := `
 		SELECT
 			ID
-		FROM PLAYER
+		FROM USER
 		WHERE NAME = ?
 	`
 	rows, err := Query(sqlString, name)
@@ -211,7 +211,7 @@ func GetPlayerId(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func CreatePlayer(name string, password string) (uuid.UUID, error) {
+func CreateUser(name string, password string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -225,15 +225,15 @@ func CreatePlayer(name string, password string) (uuid.UUID, error) {
 	}
 
 	sqlString := `
-		INSERT INTO PLAYER (ID, NAME, PASSWORD_HASH)
+		INSERT INTO USER (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
 	`
 	return id, Execute(sqlString, id, name, passwordHash)
 }
 
-func SetPlayerName(id uuid.UUID, name string) error {
+func SetUserName(id uuid.UUID, name string) error {
 	sqlString := `
-		UPDATE PLAYER
+		UPDATE USER
 		SET
 			NAME = ?
 		WHERE ID = ?
@@ -241,7 +241,7 @@ func SetPlayerName(id uuid.UUID, name string) error {
 	return Execute(sqlString, name, id)
 }
 
-func SetPlayerPassword(id uuid.UUID, password string) error {
+func SetUserPassword(id uuid.UUID, password string) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		log.Println(err)
@@ -249,7 +249,7 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 	}
 
 	sqlString := `
-		UPDATE PLAYER
+		UPDATE USER
 		SET
 			PASSWORD_HASH = ?
 		WHERE ID = ?
@@ -257,9 +257,9 @@ func SetPlayerPassword(id uuid.UUID, password string) error {
 	return Execute(sqlString, passwordHash, id)
 }
 
-func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
+func SetUserColorTheme(id uuid.UUID, colorTheme string) error {
 	sqlString := `
-		UPDATE PLAYER
+		UPDATE USER
 		SET
 			COLOR_THEME = ?
 		WHERE ID = ?
@@ -271,9 +271,9 @@ func SetPlayerColorTheme(id uuid.UUID, colorTheme string) error {
 	}
 }
 
-func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
+func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 	sqlString := `
-		UPDATE PLAYER
+		UPDATE USER
 		SET
 			IS_ADMIN = ?
 		WHERE ID = ?
@@ -281,9 +281,9 @@ func SetPlayerIsAdmin(id uuid.UUID, isAdmin bool) error {
 	return Execute(sqlString, isAdmin, id)
 }
 
-func DeletePlayer(id uuid.UUID) error {
+func DeleteUser(id uuid.UUID) error {
 	sqlString := `
-		DELETE FROM PLAYER
+		DELETE FROM USER
 		WHERE ID = ?
 	`
 	return Execute(sqlString, id)

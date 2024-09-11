@@ -13,11 +13,11 @@ import (
 type RequestContextKey string
 
 const basePageDataRequestContextKey RequestContextKey = "basePageDataRequestContextKey"
-const playerIdRequestContextKey RequestContextKey = "playerIdRequestContextKey"
+const userIdRequestContextKey RequestContextKey = "userIdRequestContextKey"
 
 type BasePageData struct {
 	PageTitle string
-	Player    database.Player
+	User      database.User
 	LoggedIn  bool
 }
 
@@ -25,15 +25,15 @@ func PageMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		basePageData := BasePageData{
 			PageTitle: "Card Judge",
-			Player:    database.Player{},
+			User:      database.User{},
 			LoggedIn:  false,
 		}
 
-		playerId, err := auth.GetCookiePlayerId(r)
+		userId, err := auth.GetCookieUserId(r)
 		if err == nil {
-			player, err := database.GetPlayer(playerId)
+			user, err := database.GetUser(userId)
 			if err == nil {
-				basePageData.Player = player
+				basePageData.User = user
 				basePageData.LoggedIn = true
 			}
 		}
@@ -62,7 +62,7 @@ func PageMiddleware(next http.Handler) http.Handler {
 
 		// required to be admin
 		if r.URL.Path == "/admin" {
-			if !basePageData.Player.IsAdmin {
+			if !basePageData.User.IsAdmin {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
@@ -80,12 +80,12 @@ func GetBasePageData(r *http.Request) BasePageData {
 
 func ApiMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		playerId, _ := auth.GetCookiePlayerId(r)
-		r = r.WithContext(context.WithValue(r.Context(), playerIdRequestContextKey, playerId))
+		userId, _ := auth.GetCookieUserId(r)
+		r = r.WithContext(context.WithValue(r.Context(), userIdRequestContextKey, userId))
 		next.ServeHTTP(w, r)
 	})
 }
 
-func GetPlayerId(r *http.Request) uuid.UUID {
-	return r.Context().Value(playerIdRequestContextKey).(uuid.UUID)
+func GetUserId(r *http.Request) uuid.UUID {
+	return r.Context().Value(userIdRequestContextKey).(uuid.UUID)
 }

@@ -9,11 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-const cookieNamePlayerToken string = "CARD-JUDGE-PLAYER-TOKEN"
+const cookieNameUserToken string = "CARD-JUDGE-USER-TOKEN"
 const cookieNameRedirectURL string = "CARD-JUDGE-REDIRECT-URL"
 
-func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
-	cookieValue, err := getCookie(r, cookieNamePlayerToken)
+func GetCookieUserId(r *http.Request) (uuid.UUID, error) {
+	cookieValue, err := getCookie(r, cookieNameUserToken)
 	if err != nil {
 		return uuid.Nil, errors.New("failed to get cookie")
 	}
@@ -24,24 +24,24 @@ func GetCookiePlayerId(r *http.Request) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("failed to get token")
 	}
 
-	playerId, err := uuid.Parse(tokenValue)
+	userId, err := uuid.Parse(tokenValue)
 	if err != nil {
 		log.Println(err)
 		return uuid.Nil, errors.New("failed to parse token")
 	}
 
-	return playerId, nil
+	return userId, nil
 }
 
-func SetCookiePlayerId(w http.ResponseWriter, playerId uuid.UUID) error {
-	tokenString, err := getValueTokenString(playerId.String())
+func SetCookieUserId(w http.ResponseWriter, userId uuid.UUID) error {
+	tokenString, err := getValueTokenString(userId.String())
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to create token")
 	}
 
 	cookie := http.Cookie{
-		Name:    cookieNamePlayerToken,
+		Name:    cookieNameUserToken,
 		Value:   tokenString,
 		Path:    "/",
 		Expires: time.Now().Add(time.Hour * 12),
@@ -50,9 +50,9 @@ func SetCookiePlayerId(w http.ResponseWriter, playerId uuid.UUID) error {
 	return nil
 }
 
-func RemoveCookiePlayerId(w http.ResponseWriter) {
+func RemoveCookieUserId(w http.ResponseWriter) {
 	cookie := http.Cookie{
-		Name:    cookieNamePlayerToken,
+		Name:    cookieNameUserToken,
 		Value:   "",
 		Path:    "/",
 		Expires: time.Unix(0, 0),
