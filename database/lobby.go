@@ -17,8 +17,6 @@ type Lobby struct {
 
 	Name         string
 	PasswordHash sql.NullString
-	JudgeUserId  sql.Null[uuid.UUID]
-	JudgeCardId  sql.Null[uuid.UUID]
 }
 
 type LobbyDetails struct {
