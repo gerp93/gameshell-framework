@@ -1,14 +1,16 @@
 package database
 
-import "github.com/google/uuid"
+import (
+	"errors"
+	"log"
 
-const MaxCardCount int = 8
+	"github.com/google/uuid"
+)
 
 type playerData struct {
-	PlayerId     uuid.UUID
-	Cards        []Card
-	MaxCardCount int
-	CardCount    int
+	PlayerId uuid.UUID
+	Cards    []Card
+	HandSize int
 }
 
 func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
@@ -19,8 +21,10 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 		return data, err
 	}
 
-	data.MaxCardCount = MaxCardCount
-	data.CardCount = len(data.Cards)
+	data.HandSize, err = getPlayerHandSize(playerId)
+	if err != nil {
+		return data, err
+	}
 
 	return data, nil
 }
@@ -31,7 +35,12 @@ func DrawPlayerHand(playerId uuid.UUID) (data playerData, err error) {
 		return data, err
 	}
 
-	cardsToDraw := MaxCardCount - handCount
+	handSize, err := getPlayerHandSize(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	cardsToDraw := handSize - handCount
 	if cardsToDraw > 0 {
 		sqlString := `
 			INSERT INTO HAND
@@ -90,6 +99,29 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, e
 	}
 
 	return GetPlayerData(playerId)
+}
+
+func getPlayerHandSize(playerId uuid.UUID) (handSize int, err error) {
+	sqlString := `
+		SELECT
+			L.HAND_SIZE
+		FROM LOBBY AS L
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+		WHERE P.ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return handSize, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&handSize); err != nil {
+			log.Println(err)
+			return handSize, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return handSize, nil
 }
 
 func getPlayerHandCount(playerId uuid.UUID) (handCount int, err error) {

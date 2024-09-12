@@ -17,6 +17,7 @@ type Lobby struct {
 
 	Name         string
 	PasswordHash sql.NullString
+	HandSize     int
 }
 
 type LobbyDetails struct {
@@ -32,6 +33,7 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			L.CHANGED_ON_DATE,
 			L.NAME,
 			L.PASSWORD_HASH,
+			L.HAND_SIZE,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
@@ -56,6 +58,7 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			&lobbyDetails.ChangedOnDate,
 			&lobbyDetails.Name,
 			&lobbyDetails.PasswordHash,
+			&lobbyDetails.HandSize,
 			&lobbyDetails.UserCount); err != nil {
 			continue
 		}
@@ -74,6 +77,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
 		SELECT
 			L.ID,
 			L.NAME,
+			L.HAND_SIZE,
 			COUNT(DP.CARD_ID) AS CARD_COUNT
 		FROM LOBBY AS L
 			INNER JOIN DRAW_PILE AS DP ON DP.LOBBY_ID = L.ID
@@ -89,6 +93,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
 		if err := rows.Scan(
 			&data.Id,
 			&data.Name,
+			&data.HandSize,
 			&data.CardCount); err != nil {
 			return data, err
 		}
@@ -146,7 +151,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
 			NAME,
-			PASSWORD_HASH
+			PASSWORD_HASH,
+			HAND_SIZE
 		FROM LOBBY
 		WHERE ID = ?
 	`
@@ -161,7 +167,8 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.CreatedOnDate,
 			&lobby.ChangedOnDate,
 			&lobby.Name,
-			&lobby.PasswordHash); err != nil {
+			&lobby.PasswordHash,
+			&lobby.HandSize); err != nil {
 			log.Println(err)
 			return lobby, errors.New("failed to scan row in query results")
 		}
@@ -194,7 +201,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, password string) (uuid.UUID, error) {
+func CreateLobby(name string, password string, handSize int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -208,13 +215,13 @@ func CreateLobby(name string, password string) (uuid.UUID, error) {
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH)
-		VALUES (?, ?, ?)
+		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE)
+		VALUES (?, ?, ?, ?)
 	`
 	if password == "" {
-		return id, Execute(sqlString, id, name, nil)
+		return id, Execute(sqlString, id, name, nil, handSize)
 	} else {
-		return id, Execute(sqlString, id, name, passwordHash)
+		return id, Execute(sqlString, id, name, passwordHash, handSize)
 	}
 }
 
@@ -316,6 +323,16 @@ func SetLobbyPassword(id uuid.UUID, password string) error {
 	} else {
 		return Execute(sqlString, passwordHash, id)
 	}
+}
+
+func SetLobbyHandSize(id uuid.UUID, handSize int) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET
+			HAND_SIZE = ?
+		WHERE ID = ?
+	`
+	return Execute(sqlString, handSize, id)
 }
 
 func DeleteLobby(lobbyId uuid.UUID) error {
