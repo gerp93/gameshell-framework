@@ -358,26 +358,6 @@ func SetLobbyName(id uuid.UUID, name string) error {
 	return Execute(sqlString, name, id)
 }
 
-func SetLobbyPassword(id uuid.UUID, password string) error {
-	passwordHash, err := auth.GetPasswordHash(password)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to hash password")
-	}
-
-	sqlString := `
-		UPDATE LOBBY
-		SET
-			PASSWORD_HASH = ?
-		WHERE ID = ?
-	`
-	if password == "" {
-		return Execute(sqlString, nil, id)
-	} else {
-		return Execute(sqlString, passwordHash, id)
-	}
-}
-
 func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	sqlString := `
 		UPDATE LOBBY
