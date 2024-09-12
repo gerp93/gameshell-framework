@@ -234,6 +234,28 @@ func getPlayerLobbyId(playerId uuid.UUID) (lobbyId uuid.UUID, err error) {
 	return lobbyId, nil
 }
 
+func getPlayerName(playerId uuid.UUID) (name string, err error) {
+	sqlString := `
+		SELECT
+			U.NAME
+		FROM PLAYER AS P
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+		WHERE P.ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return name, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&name); err != nil {
+			return name, err
+		}
+	}
+
+	return name, nil
+}
+
 func getPlayerHandSize(playerId uuid.UUID) (handSize int, err error) {
 	sqlString := `
 		SELECT
