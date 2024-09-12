@@ -52,6 +52,7 @@ type playerGameBoard struct {
 	BoardCards    []Card
 	PlayerId      uuid.UUID
 	PlayerIsJudge bool
+	PlayerCount   int
 }
 
 func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
@@ -110,6 +111,13 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 	if err != nil {
 		return data, err
 	}
+
+	data.PlayerCount, err = getLobbyPlayerCount(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	data.PlayerCount -= 1 // do not count judge
 
 	return data, nil
 }
@@ -345,6 +353,28 @@ func isPlayerJudge(playerId uuid.UUID) (bool, error) {
 	}
 
 	return rows.Next(), nil
+}
+
+func getLobbyPlayerCount(playerId uuid.UUID) (playerCount int, err error) {
+	sqlString := `
+		SELECT
+			COUNT(LP.ID)
+		FROM PLAYER AS P
+			INNER JOIN PLAYER AS LP ON LP.LOBBY_ID = P.LOBBY_ID
+		WHERE P.ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return playerCount, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&playerCount); err != nil {
+			return playerCount, err
+		}
+	}
+
+	return playerCount, nil
 }
 
 func hasPlayerPlayed(playerId uuid.UUID) (bool, error) {
