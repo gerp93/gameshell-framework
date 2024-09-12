@@ -67,13 +67,13 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 	return result, nil
 }
 
-type LobbyGameInfo struct {
+type lobbyGameInfo struct {
 	Lobby
 	CardCount int
 	JudgeName string
 }
 
-func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
+func GetLobbyGameInfo(lobbyId uuid.UUID) (data lobbyGameInfo, err error) {
 	sqlString := `
 		SELECT
 			L.ID,
