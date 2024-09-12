@@ -74,6 +74,19 @@ func DrawPlayerHand(playerId uuid.UUID) (data playerData, err error) {
 	return GetPlayerData(playerId)
 }
 
+func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, err error) {
+	sqlString := `
+		INSERT INTO BOARD (PLAYER_ID, CARD_ID)
+		VALUES (?, ?)
+	`
+	err = Execute(sqlString, playerId, cardId)
+	if err != nil {
+		return data, err
+	}
+
+	return DiscardPlayerCard(playerId, cardId)
+}
+
 func DiscardPlayerHand(playerId uuid.UUID) (data playerData, err error) {
 	sqlString := `
 		DELETE FROM HAND
