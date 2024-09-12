@@ -76,3 +76,9 @@ func (h *Hub) broadcastMessage(message []byte) {
 		}
 	}
 }
+
+func LobbyBroadcast(lobbyId uuid.UUID, message string) {
+	if _, ok := lobbyHubs[lobbyId]; ok {
+		lobbyHubs[lobbyId].broadcastMessage([]byte(message))
+	}
+}
