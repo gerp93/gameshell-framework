@@ -37,7 +37,10 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
-		ORDER BY L.CHANGED_ON_DATE DESC, L.NAME ASC, COUNT(P.ID) DESC
+		ORDER BY
+			TO_DAYS(L.CHANGED_ON_DATE) DESC,
+			L.NAME ASC,
+			COUNT(P.ID) DESC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
@@ -111,7 +114,9 @@ func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
 		GROUP BY P.USER_ID
-		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
+		ORDER BY
+			COUNT(W.ID) DESC,
+			U.NAME ASC
 	`
 	rows, err := Query(sqlString, lobbyId)
 	if err != nil {

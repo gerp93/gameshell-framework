@@ -52,7 +52,9 @@ func GetUsers(search string) ([]User, error) {
 			IS_ADMIN
 		FROM USER
 		WHERE NAME LIKE ?
-		ORDER BY CHANGED_ON_DATE DESC
+		ORDER BY
+			TO_DAYS(CHANGED_ON_DATE) DESC,
+			NAME ASC
 	`
 	rows, err := Query(sqlString, search)
 	if err != nil {
