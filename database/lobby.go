@@ -70,6 +70,7 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 type LobbyGameInfo struct {
 	Lobby
 	CardCount int
+	JudgeName string
 }
 
 func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
@@ -97,6 +98,11 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data LobbyGameInfo, err error) {
 			&data.CardCount); err != nil {
 			return data, err
 		}
+	}
+
+	data.JudgeName, err = getLobbyJudgeName(lobbyId)
+	if err != nil {
+		return data, err
 	}
 
 	return data, nil
@@ -341,4 +347,28 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 		WHERE ID = ?
 	`
 	return Execute(sqlString, lobbyId)
+}
+
+func getLobbyJudgeName(lobbyId uuid.UUID) (name string, err error) {
+	sqlString := `
+		SELECT
+			U.NAME
+		FROM JUDGE AS J
+			INNER JOIN PLAYER AS P ON P.ID = J.PLAYER_ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+		WHERE P.LOBBY_ID = ?
+	`
+	rows, err := Query(sqlString, lobbyId)
+	if err != nil {
+		return name, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&name); err != nil {
+			log.Println(err)
+			return name, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return name, nil
 }
