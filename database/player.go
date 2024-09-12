@@ -8,32 +8,32 @@ import (
 )
 
 type playerData struct {
-	PlayerId  uuid.UUID
-	Cards     []Card
-	HandSize  int
-	IsJudge   bool
-	HasPlayed bool
+	LobbyHandSize int
+	PlayerId      uuid.UUID
+	PlayerHand    []Card
+	PlayerIsJudge bool
+	PlayerPlayed  bool
 }
 
 func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
+	data.LobbyHandSize, err = getPlayerHandSize(playerId)
+	if err != nil {
+		return data, err
+	}
+
 	data.PlayerId = playerId
 
-	data.Cards, err = getPlayerHand(playerId)
+	data.PlayerHand, err = getPlayerHand(playerId)
 	if err != nil {
 		return data, err
 	}
 
-	data.HandSize, err = getPlayerHandSize(playerId)
+	data.PlayerIsJudge, err = isPlayerJudge(playerId)
 	if err != nil {
 		return data, err
 	}
 
-	data.IsJudge, err = isPlayerJudge(playerId)
-	if err != nil {
-		return data, err
-	}
-
-	data.HasPlayed, err = hasPlayerPlayed(playerId)
+	data.PlayerPlayed, err = hasPlayerPlayed(playerId)
 	if err != nil {
 		return data, err
 	}
