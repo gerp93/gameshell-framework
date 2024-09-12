@@ -9,6 +9,7 @@ import (
 
 type playerData struct {
 	LobbyHandSize int
+	LobbyHasJudge bool
 	PlayerId      uuid.UUID
 	PlayerHand    []Card
 	PlayerIsJudge bool
@@ -17,6 +18,11 @@ type playerData struct {
 
 func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 	data.LobbyHandSize, err = getPlayerHandSize(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	data.LobbyHasJudge, err = playerLobbyHasJudge(playerId)
 	if err != nil {
 		return data, err
 	}
@@ -39,6 +45,40 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 	}
 
 	return data, nil
+}
+
+func PlayerBecomeJudge(playerId uuid.UUID) (data playerData, err error) {
+	hasJudge, err := playerLobbyHasJudge(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	if !hasJudge {
+		sqlString := `
+			INSERT INTO JUDGE
+				(
+					PLAYER_ID,
+					CARD_ID
+				)
+			SELECT DISTINCT
+				P.ID AS PLAYER_ID,
+				C.ID AS CARD_ID
+			FROM DRAW_PILE AS DP
+				INNER JOIN PLAYER AS P ON P.LOBBY_ID = DP.LOBBY_ID
+				INNER JOIN CARD AS C ON C.ID = DP.CARD_ID
+				INNER JOIN CARD_TYPE AS CT ON CT.ID = C.CARD_TYPE_ID
+			WHERE CT.NAME = 'Judge'
+				AND P.ID = ?
+			ORDER BY RAND()
+			LIMIT 1
+		`
+		err = Execute(sqlString, playerId)
+		if err != nil {
+			return data, err
+		}
+	}
+
+	return GetPlayerData(playerId)
 }
 
 func DrawPlayerHand(playerId uuid.UUID) (data playerData, err error) {
@@ -206,6 +246,23 @@ func getPlayerHand(playerId uuid.UUID) ([]Card, error) {
 		result = append(result, card)
 	}
 	return result, nil
+}
+
+func playerLobbyHasJudge(playerId uuid.UUID) (bool, error) {
+	sqlString := `
+		SELECT
+			J.ID
+		FROM JUDGE AS J
+			INNER JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = JP.LOBBY_ID
+		WHERE P.ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return false, err
+	}
+
+	return rows.Next(), nil
 }
 
 func isPlayerJudge(playerId uuid.UUID) (bool, error) {
