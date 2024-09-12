@@ -8,9 +8,11 @@ import (
 )
 
 type playerData struct {
-	PlayerId uuid.UUID
-	Cards    []Card
-	HandSize int
+	PlayerId  uuid.UUID
+	Cards     []Card
+	HandSize  int
+	IsJudge   bool
+	HasPlayed bool
 }
 
 func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
@@ -22,6 +24,16 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 	}
 
 	data.HandSize, err = getPlayerHandSize(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	data.IsJudge, err = isPlayerJudge(playerId)
+	if err != nil {
+		return data, err
+	}
+
+	data.HasPlayed, err = hasPlayerPlayed(playerId)
 	if err != nil {
 		return data, err
 	}
@@ -194,4 +206,34 @@ func getPlayerHand(playerId uuid.UUID) ([]Card, error) {
 		result = append(result, card)
 	}
 	return result, nil
+}
+
+func isPlayerJudge(playerId uuid.UUID) (bool, error) {
+	sqlString := `
+		SELECT
+			ID
+		FROM JUDGE
+		WHERE PLAYER_ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return false, err
+	}
+
+	return rows.Next(), nil
+}
+
+func hasPlayerPlayed(playerId uuid.UUID) (bool, error) {
+	sqlString := `
+		SELECT
+			ID
+		FROM BOARD
+		WHERE PLAYER_ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return false, err
+	}
+
+	return rows.Next(), nil
 }
