@@ -148,6 +148,28 @@ func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
 	return result, nil
 }
 
+func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) error {
+	sqlString := `
+		INSERT INTO WIN (LOBBY_ID, PLAYER_ID)
+		SELECT
+			LOBBY_ID,
+			PLAYER_ID
+		FROM BOARD
+		WHERE LOBBY_ID = ?
+			AND CARD_ID = ?
+	`
+	err := Execute(sqlString, lobbyId, cardId)
+	if err != nil {
+		return err
+	}
+
+	sqlString = `
+		DELETE FROM BOARD
+		WHERE LOBBY_ID = ?
+	`
+	return Execute(sqlString, lobbyId)
+}
+
 func GetLobby(id uuid.UUID) (Lobby, error) {
 	var lobby Lobby
 

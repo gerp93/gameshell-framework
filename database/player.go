@@ -44,22 +44,27 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 type playerGameBoard struct {
 	JudgeCard     Card
 	BoardCards    []Card
+	LobbyId       uuid.UUID
 	PlayerId      uuid.UUID
 	PlayerIsJudge bool
 	PlayerCount   int
 }
 
 func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
+	lobbyId, err := getPlayerLobbyId(playerId)
+	if err != nil {
+		return data, err
+	}
+
 	sqlString := `
 		SELECT
 			C.ID,
 			C.TEXT
-		FROM PLAYER AS P
-			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+		FROM JUDGE AS J
 			INNER JOIN CARD AS C ON C.ID = J.CARD_ID
-		WHERE P.ID = ?
+		WHERE J.LOBBY_ID = ?
 	`
-	rows, err := Query(sqlString, playerId)
+	rows, err := Query(sqlString, lobbyId)
 	if err != nil {
 		return data, err
 	}
@@ -74,16 +79,14 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 
 	sqlString = `
 		SELECT
-			BC.ID,
-			BC.TEXT
+			C.ID,
+			C.TEXT
 		FROM BOARD AS B
-			INNER JOIN CARD AS BC ON BC.ID = B.CARD_ID
-			INNER JOIN PLAYER AS BP ON BP.ID = B.PLAYER_ID
-			INNER JOIN PLAYER AS P ON P.LOBBY_ID = BP.LOBBY_ID
-		WHERE P.ID = ?
-		ORDER BY BC.TEXT
+			INNER JOIN CARD AS C ON C.ID = B.CARD_ID
+		WHERE B.LOBBY_ID = ?
+		ORDER BY C.TEXT
 	`
-	rows, err = Query(sqlString, playerId)
+	rows, err = Query(sqlString, lobbyId)
 	if err != nil {
 		return data, err
 	}
@@ -96,6 +99,11 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 			continue
 		}
 		data.BoardCards = append(data.BoardCards, card)
+	}
+
+	data.LobbyId, err = getPlayerLobbyId(playerId)
+	if err != nil {
+		return data, err
 	}
 
 	data.PlayerId = playerId
@@ -161,11 +169,16 @@ func DrawPlayerHand(playerId uuid.UUID) (data playerData, err error) {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, err error) {
+	lobbyId, err := getPlayerLobbyId(playerId)
+	if err != nil {
+		return data, err
+	}
+
 	sqlString := `
-		INSERT INTO BOARD (PLAYER_ID, CARD_ID)
-		VALUES (?, ?)
+		INSERT INTO BOARD (LOBBY_ID, PLAYER_ID, CARD_ID)
+		VALUES (?, ?, ?)
 	`
-	err = Execute(sqlString, playerId, cardId)
+	err = Execute(sqlString, lobbyId, playerId, cardId)
 	if err != nil {
 		return data, err
 	}
@@ -198,6 +211,27 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, e
 	}
 
 	return GetPlayerData(playerId)
+}
+
+func getPlayerLobbyId(playerId uuid.UUID) (lobbyId uuid.UUID, err error) {
+	sqlString := `
+		SELECT
+			LOBBY_ID
+		FROM PLAYER
+		WHERE ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return lobbyId, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&lobbyId); err != nil {
+			return lobbyId, err
+		}
+	}
+
+	return lobbyId, nil
 }
 
 func getPlayerHandSize(playerId uuid.UUID) (handSize int, err error) {
