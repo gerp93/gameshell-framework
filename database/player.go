@@ -47,6 +47,64 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 	return data, nil
 }
 
+type playerGameBoard struct {
+	JudgeCard  Card
+	BoardCards []Card
+}
+
+func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
+	sqlString := `
+		SELECT
+			JC.ID,
+			JC.TEXT
+		FROM JUDGE AS J
+			INNER JOIN CARD AS JC ON JC.ID = J.CARD_ID
+			INNER JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = JP.LOBBY_ID
+		WHERE P.ID = ?
+	`
+	rows, err := Query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.JudgeCard.Id,
+			&data.JudgeCard.Text); err != nil {
+			return data, err
+		}
+	}
+
+	sqlString = `
+		SELECT
+			BC.ID,
+			BC.TEXT
+		FROM BOARD AS B
+			INNER JOIN CARD AS BC ON BC.ID = B.CARD_ID
+			INNER JOIN PLAYER AS BP ON BP.ID = B.PLAYER_ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = BP.LOBBY_ID
+		WHERE P.ID = ?
+		ORDER BY RAND()
+	`
+	rows, err = Query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var card Card
+		if err := rows.Scan(
+			&card.Id,
+			&card.Text); err != nil {
+			continue
+		}
+		data.BoardCards = append(data.BoardCards, card)
+	}
+
+	return data, nil
+}
+
 func PlayerBecomeJudge(playerId uuid.UUID) (data playerData, err error) {
 	hasJudge, err := playerLobbyHasJudge(playerId)
 	if err != nil {

@@ -108,61 +108,6 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data lobbyGameInfo, err error) {
 	return data, nil
 }
 
-type lobbyGameBoard struct {
-	JudgeCard   Card
-	PlayedCards []Card
-}
-
-func GetLobbyGameBoard(lobbyId uuid.UUID) (data lobbyGameBoard, err error) {
-	sqlString := `
-		SELECT
-			C.ID,
-			C.TEXT
-		FROM JUDGE AS J
-			INNER JOIN CARD AS C ON C.ID = J.CARD_ID
-			INNER JOIN PLAYER AS P ON P.ID = J.PLAYER_ID
-		WHERE P.LOBBY_ID = ?
-	`
-	rows, err := Query(sqlString, lobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&data.JudgeCard.Id,
-			&data.JudgeCard.Text); err != nil {
-			return data, err
-		}
-	}
-
-	sqlString = `
-		SELECT
-			C.ID,
-			C.TEXT
-		FROM BOARD AS B
-			INNER JOIN CARD AS C ON C.ID = B.CARD_ID
-			INNER JOIN PLAYER AS P ON P.ID = B.PLAYER_ID
-		WHERE P.LOBBY_ID = ?
-	`
-	rows, err = Query(sqlString, lobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var card Card
-		if err := rows.Scan(
-			&card.Id,
-			&card.Text); err != nil {
-			continue
-		}
-		data.PlayedCards = append(data.PlayedCards, card)
-	}
-
-	return data, nil
-}
-
 type lobbyGameStats struct {
 	UserId   uuid.UUID
 	UserName string
