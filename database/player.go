@@ -48,8 +48,10 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 }
 
 type playerGameBoard struct {
-	JudgeCard  Card
-	BoardCards []Card
+	JudgeCard     Card
+	BoardCards    []Card
+	PlayerId      uuid.UUID
+	PlayerIsJudge bool
 }
 
 func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
@@ -85,7 +87,7 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 			INNER JOIN PLAYER AS BP ON BP.ID = B.PLAYER_ID
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = BP.LOBBY_ID
 		WHERE P.ID = ?
-		ORDER BY RAND()
+		ORDER BY BC.TEXT
 	`
 	rows, err = Query(sqlString, playerId)
 	if err != nil {
@@ -100,6 +102,13 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 			continue
 		}
 		data.BoardCards = append(data.BoardCards, card)
+	}
+
+	data.PlayerId = playerId
+
+	data.PlayerIsJudge, err = isPlayerJudge(playerId)
+	if err != nil {
+		return data, err
 	}
 
 	return data, nil
