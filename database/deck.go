@@ -24,7 +24,7 @@ type DeckDetails struct {
 	CardCount int
 }
 
-func GetDecks(search string) ([]DeckDetails, error) {
+func SearchDecks(search string) ([]DeckDetails, error) {
 	if search == "" {
 		search = "%"
 	}
@@ -61,7 +61,8 @@ func GetDecks(search string) ([]DeckDetails, error) {
 			&deckDetails.Name,
 			&deckDetails.PasswordHash,
 			&deckDetails.CardCount); err != nil {
-			continue
+			log.Println(err)
+			return result, errors.New("failed to scan row in query results")
 		}
 		result = append(result, deckDetails)
 	}
@@ -91,7 +92,8 @@ func GetUserDecks(userId uuid.UUID) ([]Deck, error) {
 		if err := rows.Scan(
 			&deck.Id,
 			&deck.Name); err != nil {
-			continue
+			log.Println(err)
+			return result, errors.New("failed to scan row in query results")
 		}
 		result = append(result, deck)
 	}
