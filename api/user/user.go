@@ -85,12 +85,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId, err := database.GetUserId(name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	existingUserId := database.GetUserIdByName(name)
 	if existingUserId != uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
@@ -150,12 +145,7 @@ func CreateDefault(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId, err := database.GetUserId(name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	existingUserId := database.GetUserIdByName(name)
 	if existingUserId != uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
@@ -203,12 +193,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := database.GetUserId(name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	userId := database.GetUserIdByName(name)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name does not exist."))
@@ -280,12 +265,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId, err := database.GetUserId(name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	existingUserId := database.GetUserIdByName(name)
 	if existingUserId != uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
