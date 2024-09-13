@@ -1,6 +1,9 @@
 package database
 
 import (
+	"errors"
+	"log"
+
 	"github.com/google/uuid"
 )
 
@@ -42,7 +45,8 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 			&data.PlayerPlayed,
 			&playerCard.Id,
 			&playerCard.Text); err != nil {
-			continue
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
 		}
 		if playerCard.Text != "" {
 			data.PlayerHand = append(data.PlayerHand, playerCard)

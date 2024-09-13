@@ -37,7 +37,7 @@ func Setup() (err error) {
 	}
 
 	// load all users into memory
-	users, err := GetUsers("")
+	users, err := getUsers()
 	if err != nil {
 		return err
 	}

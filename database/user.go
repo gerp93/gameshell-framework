@@ -39,7 +39,7 @@ func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) bool {
 	return helper.IsIdInArray(deckId, deckIds)
 }
 
-func GetUsers(search string) ([]User, error) {
+func SearchUsers(search string) ([]User, error) {
 	if search == "" {
 		search = "%"
 	}
@@ -60,6 +60,42 @@ func GetUsers(search string) ([]User, error) {
 			NAME ASC
 	`
 	rows, err := Query(sqlString, search)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]User, 0)
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(
+			&user.Id,
+			&user.CreatedOnDate,
+			&user.ChangedOnDate,
+			&user.Name,
+			&user.PasswordHash,
+			&user.ColorTheme,
+			&user.IsAdmin); err != nil {
+			log.Println(err)
+			return result, errors.New("failed to scan row in query results")
+		}
+		result = append(result, user)
+	}
+	return result, nil
+}
+
+func getUsers() ([]User, error) {
+	sqlString := `
+		SELECT
+			ID,
+			CREATED_ON_DATE,
+			CHANGED_ON_DATE,
+			NAME,
+			PASSWORD_HASH,
+			COLOR_THEME,
+			IS_ADMIN
+		FROM USER
+	`
+	rows, err := Query(sqlString)
 	if err != nil {
 		return nil, err
 	}

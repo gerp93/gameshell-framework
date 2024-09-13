@@ -25,7 +25,7 @@ type LobbyDetails struct {
 	UserCount int
 }
 
-func GetLobbies(search string) ([]LobbyDetails, error) {
+func SearchLobbies(search string) ([]LobbyDetails, error) {
 	sqlString := `
 		SELECT
 			L.ID,
@@ -60,7 +60,8 @@ func GetLobbies(search string) ([]LobbyDetails, error) {
 			&lobbyDetails.PasswordHash,
 			&lobbyDetails.HandSize,
 			&lobbyDetails.UserCount); err != nil {
-			continue
+			log.Println(err)
+			return result, errors.New("failed to scan row in query results")
 		}
 		result = append(result, lobbyDetails)
 	}
@@ -141,7 +142,8 @@ func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
 			&stats.UserId,
 			&stats.UserName,
 			&stats.Wins); err != nil {
-			continue
+			log.Println(err)
+			return result, errors.New("failed to scan row in query results")
 		}
 		result = append(result, stats)
 	}
