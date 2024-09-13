@@ -79,9 +79,13 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data lobbyGameInfo, err error) {
 			L.ID,
 			L.NAME,
 			L.HAND_SIZE,
-			COUNT(DP.CARD_ID) AS CARD_COUNT
+			COUNT(DP.CARD_ID) AS CARD_COUNT,
+			U.NAME AS JUDGE_NAME
 		FROM LOBBY AS L
 			INNER JOIN DRAW_PILE AS DP ON DP.LOBBY_ID = L.ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+			INNER JOIN PLAYER AS P ON P.ID = J.PLAYER_ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE L.ID = ?
 		GROUP BY L.ID
 	`
@@ -95,14 +99,10 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (data lobbyGameInfo, err error) {
 			&data.Id,
 			&data.Name,
 			&data.HandSize,
-			&data.CardCount); err != nil {
+			&data.CardCount,
+			&data.JudgeName); err != nil {
 			return data, err
 		}
-	}
-
-	data.JudgeName, err = getLobbyJudgeName(lobbyId)
-	if err != nil {
-		return data, err
 	}
 
 	return data, nil
@@ -374,28 +374,4 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 		WHERE ID = ?
 	`
 	return Execute(sqlString, lobbyId)
-}
-
-func getLobbyJudgeName(lobbyId uuid.UUID) (name string, err error) {
-	sqlString := `
-		SELECT
-			U.NAME
-		FROM JUDGE AS J
-			INNER JOIN PLAYER AS P ON P.ID = J.PLAYER_ID
-			INNER JOIN USER AS U ON U.ID = P.USER_ID
-		WHERE P.LOBBY_ID = ?
-	`
-	rows, err := Query(sqlString, lobbyId)
-	if err != nil {
-		return name, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(&name); err != nil {
-			log.Println(err)
-			return name, errors.New("failed to scan row in query results")
-		}
-	}
-
-	return name, nil
 }
