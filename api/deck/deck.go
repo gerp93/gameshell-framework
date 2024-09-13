@@ -133,7 +133,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, deckId) {
+	if !database.UserHasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -198,7 +198,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, deckId) {
+	if !database.UserHasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
@@ -256,7 +256,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.HasDeckAccess(userId, deckId) {
+	if !database.UserHasDeckAccess(userId, deckId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("User does not have access."))
 		return
