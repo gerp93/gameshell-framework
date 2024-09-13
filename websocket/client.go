@@ -141,10 +141,10 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := database.GetUserName(userId)
+	user, err := database.GetUser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user name."))
+		w.Write([]byte("Failed to get user."))
 		return
 	}
 
