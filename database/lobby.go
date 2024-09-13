@@ -150,46 +150,18 @@ func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
 
 func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (playerName string, err error) {
 	sqlString := `
-		SELECT
-			PLAYER_ID
-		FROM BOARD
-		WHERE LOBBY_ID = ?
-			AND CARD_ID = ?
+		CALL SP_PICK_WINNER (?, ?)
 	`
 	rows, err := Query(sqlString, lobbyId, cardId)
 	if err != nil {
 		return playerName, err
 	}
 
-	var playerId uuid.UUID
 	for rows.Next() {
-		if err := rows.Scan(&playerId); err != nil {
+		if err := rows.Scan(&playerName); err != nil {
 			log.Println(err)
 			return playerName, errors.New("failed to scan row in query results")
 		}
-	}
-
-	sqlString = `
-		INSERT INTO WIN (LOBBY_ID, PLAYER_ID)
-		VALUES (?, ?)
-	`
-	err = Execute(sqlString, lobbyId, playerId)
-	if err != nil {
-		return playerName, err
-	}
-
-	sqlString = `
-		DELETE FROM BOARD
-		WHERE LOBBY_ID = ?
-	`
-	err = Execute(sqlString, lobbyId)
-	if err != nil {
-		return playerName, err
-	}
-
-	playerName, err = getPlayerName(playerId)
-	if err != nil {
-		return playerName, err
 	}
 
 	return playerName, nil
