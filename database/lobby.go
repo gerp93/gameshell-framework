@@ -148,6 +148,13 @@ func GetLobbyGameStats(lobbyId uuid.UUID) ([]lobbyGameStats, error) {
 	return result, nil
 }
 
+func SkipJudgeCard(lobbyId uuid.UUID) error {
+	sqlString := `
+		CALL SP_SKIP_JUDGE (?)
+	`
+	return Execute(sqlString, lobbyId)
+}
+
 func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (playerName string, err error) {
 	sqlString := `
 		CALL SP_PICK_WINNER (?, ?)
