@@ -7,86 +7,54 @@ import (
 	"github.com/google/uuid"
 )
 
-type playerData struct {
+type winDetails struct {
+	UserName string
+	WinCount int
+}
+
+type gameData struct {
+	LobbyId            uuid.UUID
+	LobbyName          string
+	LobbyHandSize      int
+	LobbyPlayerCount   int
+	LobbyDrawPileCount int
+
+	JudgeId       uuid.UUID
+	JudgeName     string
+	JudgeCardText string
+
+	BoardCards []Card
+
 	PlayerId      uuid.UUID
-	LobbyHandSize int
+	PlayerHand    []Card
 	PlayerIsJudge bool
 	PlayerPlayed  bool
-	PlayerHand    []Card
+
+	Wins []winDetails
 }
 
-func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
-	data.PlayerId = playerId
-
-	sqlString := `
-		SELECT
-			L.HAND_SIZE,
-			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
-			EXISTS(SELECT ID FROM BOARD WHERE PLAYER_ID = P.ID) AS PLAYER_PLAYED,
-			COALESCE(C.ID, UUID()),
-			COALESCE(C.TEXT, '')
-		FROM PLAYER AS P
-			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-			LEFT JOIN HAND AS H ON H.PLAYER_ID = P.ID
-			LEFT JOIN CARD AS C ON C.ID = H.CARD_ID
-		WHERE P.ID = ?
-		ORDER BY C.TEXT
-	`
-	rows, err := Query(sqlString, playerId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var playerCard Card
-		if err := rows.Scan(
-			&data.LobbyHandSize,
-			&data.PlayerIsJudge,
-			&data.PlayerPlayed,
-			&playerCard.Id,
-			&playerCard.Text); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		if playerCard.Text != "" {
-			data.PlayerHand = append(data.PlayerHand, playerCard)
-		}
-	}
-
-	return data, nil
-}
-
-type playerGameBoard struct {
-	PlayerId      uuid.UUID
-	LobbyId       uuid.UUID
-	PlayerIsJudge bool
-	PlayerCount   int
-	JudgeCardText string
-	BoardCards    []Card
-}
-
-func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
+func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 	data.PlayerId = playerId
 
 	sqlString := `
 		SELECT
 			L.ID AS LOBBY_ID,
+			L.NAME AS LOBBY_NAME,
+			L.HAND_SIZE AS LOBBY_HAND_SIZE,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS LOBBY_PLAYER_COUNT,
+			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
+			J.ID AS JUDGE_ID,
+			JU.NAME AS JUDGE_NAME,
+			JC.TEXT AS JUDGE_CARD_TEXT,
 			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
-			(SELECT COUNT(ID) FROM PLAYER WHERE LOBBY_ID = L.ID) AS PLAYER_COUNT,
-			COALESCE((
-				SELECT JC.TEXT
-				FROM JUDGE AS J
-					INNER JOIN CARD AS JC ON JC.ID = J.CARD_ID
-				WHERE J.LOBBY_ID = P.LOBBY_ID
-			), '') AS JUDGE_CARD_TEXT,
-			COALESCE(BC.ID, UUID()) AS BOARD_CARD_ID,
-			COALESCE(BC.TEXT, '') AS BOARD_CARD_TEXT
+			EXISTS(SELECT ID FROM BOARD WHERE PLAYER_ID = P.ID) AS PLAYER_PLAYED
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-			LEFT JOIN BOARD AS B ON B.LOBBY_ID = P.LOBBY_ID
-			LEFT JOIN CARD AS BC ON BC.ID = B.CARD_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			INNER JOIN CARD AS JC ON JC.ID = J.CARD_ID
+			INNER JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
+			INNER JOIN USER AS JU ON JU.ID = JP.USER_ID
 		WHERE P.ID = ?
-		ORDER BY BC.TEXT
 	`
 	rows, err := Query(sqlString, playerId)
 	if err != nil {
@@ -94,39 +62,116 @@ func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
 	}
 
 	for rows.Next() {
-		var boardCard Card
 		if err := rows.Scan(
 			&data.LobbyId,
-			&data.PlayerIsJudge,
-			&data.PlayerCount,
+			&data.LobbyName,
+			&data.LobbyHandSize,
+			&data.LobbyPlayerCount,
+			&data.LobbyDrawPileCount,
+			&data.JudgeId,
+			&data.JudgeName,
 			&data.JudgeCardText,
-			&boardCard.Id,
-			&boardCard.Text); err != nil {
-			return data, err
-		}
-		if boardCard.Text != "" {
-			data.BoardCards = append(data.BoardCards, boardCard)
+			&data.PlayerIsJudge,
+			&data.PlayerPlayed); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
 		}
 	}
 
-	data.PlayerCount -= 1 // do not count judge
+	data.LobbyPlayerCount -= 1 // do not count judge
 
-	return data, nil
-}
-
-func DrawPlayerHand(playerId uuid.UUID) (data playerData, err error) {
-	sqlString := `
-		CALL SP_DRAW_HAND (?)
+	sqlString = `
+		SELECT
+			C.ID,
+			C.TEXT
+		FROM BOARD AS B
+			INNER JOIN CARD AS C ON C.ID = B.CARD_ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = B.LOBBY_ID
+		WHERE P.ID = ?
+		ORDER BY C.TEXT
 	`
-	err = Execute(sqlString, playerId)
+	rows, err = Query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
 
-	return GetPlayerData(playerId)
+	for rows.Next() {
+		var card Card
+		if err := rows.Scan(
+			&card.Id,
+			&card.Text); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.BoardCards = append(data.BoardCards, card)
+	}
+
+	sqlString = `
+		SELECT
+			C.ID,
+			C.TEXT
+		FROM HAND AS H
+			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
+		WHERE H.PLAYER_ID = ?
+		ORDER BY C.TEXT
+	`
+	rows, err = Query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var card Card
+		if err := rows.Scan(
+			&card.Id,
+			&card.Text); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.PlayerHand = append(data.PlayerHand, card)
+	}
+
+	sqlString = `
+		SELECT
+			U.NAME AS USER_NAME,
+			COUNT(W.ID) AS WINS
+		FROM PLAYER AS P
+			INNER JOIN PLAYER AS LP ON LP.LOBBY_ID = P.LOBBY_ID
+			INNER JOIN USER AS U ON U.ID = LP.USER_ID
+			LEFT JOIN WIN AS W ON W.PLAYER_ID = LP.ID
+		WHERE P.ID = ?
+		GROUP BY LP.USER_ID
+		ORDER BY
+			COUNT(W.ID) DESC,
+			U.NAME ASC
+	`
+	rows, err = Query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var win winDetails
+		if err := rows.Scan(
+			&win.UserName,
+			&win.WinCount); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.Wins = append(data.Wins, win)
+	}
+
+	return data, nil
 }
 
-func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, err error) {
+func DrawPlayerHand(playerId uuid.UUID) error {
+	sqlString := `
+		CALL SP_DRAW_HAND (?)
+	`
+	return Execute(sqlString, playerId)
+}
+
+func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := `
 		INSERT INTO BOARD (LOBBY_ID, PLAYER_ID, CARD_ID)
 		SELECT
@@ -136,37 +181,27 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, err 
 		FROM PLAYER
 		WHERE ID = ?
 	`
-	err = Execute(sqlString, cardId, playerId)
+	err := Execute(sqlString, cardId, playerId)
 	if err != nil {
-		return data, err
+		return err
 	}
 
 	return DiscardPlayerCard(playerId, cardId)
 }
 
-func DiscardPlayerHand(playerId uuid.UUID) (data playerData, err error) {
+func DiscardPlayerHand(playerId uuid.UUID) error {
 	sqlString := `
 		DELETE FROM HAND
 		WHERE PLAYER_ID = ?
 	`
-	err = Execute(sqlString, playerId)
-	if err != nil {
-		return data, err
-	}
-
-	return GetPlayerData(playerId)
+	return Execute(sqlString, playerId)
 }
 
-func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) (data playerData, err error) {
+func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := `
 		DELETE FROM HAND
 		WHERE PLAYER_ID = ?
 			AND CARD_ID = ?
 	`
-	err = Execute(sqlString, playerId, cardId)
-	if err != nil {
-		return data, err
-	}
-
-	return GetPlayerData(playerId)
+	return Execute(sqlString, playerId, cardId)
 }
