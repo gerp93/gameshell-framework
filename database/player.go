@@ -53,80 +53,56 @@ func GetPlayerData(playerId uuid.UUID) (data playerData, err error) {
 }
 
 type playerGameBoard struct {
-	JudgeCard     Card
-	BoardCards    []Card
-	LobbyId       uuid.UUID
 	PlayerId      uuid.UUID
+	LobbyId       uuid.UUID
 	PlayerIsJudge bool
 	PlayerCount   int
+	JudgeCardText string
+	BoardCards    []Card
 }
 
 func GetPlayerGameBoard(playerId uuid.UUID) (data playerGameBoard, err error) {
-	lobbyId, err := getPlayerLobbyId(playerId)
-	if err != nil {
-		return data, err
-	}
+	data.PlayerId = playerId
 
 	sqlString := `
 		SELECT
-			C.ID,
-			C.TEXT
-		FROM JUDGE AS J
-			INNER JOIN CARD AS C ON C.ID = J.CARD_ID
-		WHERE J.LOBBY_ID = ?
+			L.ID AS LOBBY_ID,
+			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
+			(SELECT COUNT(ID) FROM PLAYER WHERE LOBBY_ID = L.ID) AS PLAYER_COUNT,
+			COALESCE((
+				SELECT JC.TEXT
+				FROM JUDGE AS J
+					INNER JOIN CARD AS JC ON JC.ID = J.CARD_ID
+				WHERE J.LOBBY_ID = P.LOBBY_ID
+			), '') AS JUDGE_CARD_TEXT,
+			COALESCE(BC.ID, UUID()) AS BOARD_CARD_ID,
+			COALESCE(BC.TEXT, '') AS BOARD_CARD_TEXT
+		FROM PLAYER AS P
+			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+			LEFT JOIN BOARD AS B ON B.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN CARD AS BC ON BC.ID = B.CARD_ID
+		WHERE P.ID = ?
+		ORDER BY BC.TEXT
 	`
-	rows, err := Query(sqlString, lobbyId)
+	rows, err := Query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
 
 	for rows.Next() {
+		var boardCard Card
 		if err := rows.Scan(
-			&data.JudgeCard.Id,
-			&data.JudgeCard.Text); err != nil {
+			&data.LobbyId,
+			&data.PlayerIsJudge,
+			&data.PlayerCount,
+			&data.JudgeCardText,
+			&boardCard.Id,
+			&boardCard.Text); err != nil {
 			return data, err
 		}
-	}
-
-	sqlString = `
-		SELECT
-			C.ID,
-			C.TEXT
-		FROM BOARD AS B
-			INNER JOIN CARD AS C ON C.ID = B.CARD_ID
-		WHERE B.LOBBY_ID = ?
-		ORDER BY C.TEXT
-	`
-	rows, err = Query(sqlString, lobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var card Card
-		if err := rows.Scan(
-			&card.Id,
-			&card.Text); err != nil {
-			continue
+		if boardCard.Text != "" {
+			data.BoardCards = append(data.BoardCards, boardCard)
 		}
-		data.BoardCards = append(data.BoardCards, card)
-	}
-
-	data.LobbyId, err = getPlayerLobbyId(playerId)
-	if err != nil {
-		return data, err
-	}
-
-	data.PlayerId = playerId
-
-	data.PlayerIsJudge, err = isPlayerJudge(playerId)
-	if err != nil {
-		return data, err
-	}
-
-	data.PlayerCount, err = getLobbyPlayerCount(playerId)
-	if err != nil {
-		return data, err
 	}
 
 	data.PlayerCount -= 1 // do not count judge
@@ -232,41 +208,4 @@ func getPlayerName(playerId uuid.UUID) (name string, err error) {
 	}
 
 	return name, nil
-}
-
-func isPlayerJudge(playerId uuid.UUID) (bool, error) {
-	sqlString := `
-		SELECT
-			ID
-		FROM JUDGE
-		WHERE PLAYER_ID = ?
-	`
-	rows, err := Query(sqlString, playerId)
-	if err != nil {
-		return false, err
-	}
-
-	return rows.Next(), nil
-}
-
-func getLobbyPlayerCount(playerId uuid.UUID) (playerCount int, err error) {
-	sqlString := `
-		SELECT
-			COUNT(LP.ID)
-		FROM PLAYER AS P
-			INNER JOIN PLAYER AS LP ON LP.LOBBY_ID = P.LOBBY_ID
-		WHERE P.ID = ?
-	`
-	rows, err := Query(sqlString, playerId)
-	if err != nil {
-		return playerCount, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(&playerCount); err != nil {
-			return playerCount, err
-		}
-	}
-
-	return playerCount, nil
 }
