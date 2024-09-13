@@ -23,7 +23,7 @@ type User struct {
 	IsAdmin      bool
 }
 
-func HasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) bool {
+func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) bool {
 	lobbyIds, err := getUserLobbyAccess(userId)
 	if err != nil {
 		return false
@@ -31,7 +31,7 @@ func HasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) bool {
 	return helper.IsIdInArray(lobbyId, lobbyIds)
 }
 
-func HasDeckAccess(userId uuid.UUID, deckId uuid.UUID) bool {
+func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) bool {
 	deckIds, err := getUserDeckAccess(userId)
 	if err != nil {
 		return false
