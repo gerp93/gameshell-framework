@@ -172,7 +172,27 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+
 	sqlString := `
+		INSERT INTO CARD_PLAY (CARD_ID, PLAYER_USER_ID, JUDGE_USER_ID)
+		SELECT
+			H.CARD_ID,
+			PLAYER_USER.ID,
+			JUDGE_USER.ID
+		FROM HAND H
+			INNER JOIN PLAYER P on P.ID = H.PLAYER_ID
+			INNER JOIN LOBBY L ON L.ID = P.LOBBY_ID
+			INNER JOIN JUDGE J ON J.LOBBY_ID = L.ID
+			INNER JOIN USER PLAYER_USER on P.USER_ID = PLAYER_USER.ID
+			INNER JOIN PLAYER JUDGE_PLAYER on J.PLAYER_ID = JUDGE_PLAYER.ID
+			INNER JOIN USER JUDGE_USER on judge_player.USER_ID = JUDGE_USER.ID
+		WHERE h.CARD_ID = ?
+		AND h.PLAYER_ID = ?
+	`
+
+	Execute(sqlString, cardId, playerId)
+
+	sqlString = `
 		INSERT INTO BOARD (LOBBY_ID, PLAYER_ID, CARD_ID)
 		SELECT
 			LOBBY_ID,
@@ -186,22 +206,50 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 		return err
 	}
 
-	return DiscardPlayerCard(playerId, cardId)
+	return DiscardPlayerCard(playerId, cardId, false)
 }
 
 func DiscardPlayerHand(playerId uuid.UUID) error {
+
+
 	sqlString := `
+	INSERT INTO CARD_DISCARD(CARD_ID, PLAYER_USER_ID)
+	SELECT H.CARD_ID, P.USER_ID FROM HAND H
+		INNER JOIN PLAYER P ON P.ID = H.PLAYER_ID
+	WHERE H.PLAYER_ID = ?
+	`
+ 	Execute(sqlString, playerId)
+
+	sqlString = `
 		DELETE FROM HAND
 		WHERE PLAYER_ID = ?
 	`
 	return Execute(sqlString, playerId)
 }
 
-func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := `
-		DELETE FROM HAND
-		WHERE PLAYER_ID = ?
-			AND CARD_ID = ?
+
+
+func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool) error {
+
+	sqlString := ""
+
+	if recordDiscard {
+
+		sqlString = `
+		INSERT INTO CARD_DISCARD(CARD_ID, PLAYER_USER_ID)
+		SELECT H.CARD_ID, P.USER_ID FROM HAND H
+			INNER JOIN PLAYER P ON p.ID = H.PLAYER_ID
+		WHERE H.PLAYER_ID = ?
+			AND H.CARD_ID = ?
+		`
+		
+		 Execute(sqlString, playerId, cardId)
+	}
+
+	sqlString = `
+	DELETE FROM HAND
+	WHERE PLAYER_ID = ?
+		AND CARD_ID = ?	
 	`
 	return Execute(sqlString, playerId, cardId)
 }
