@@ -196,15 +196,14 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 }
 
 func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, err error) {
-	playerId, err = uuid.NewUUID()
+	playerId, err = GetPlayerId(lobbyId, userId)
 	if err != nil {
 		log.Println(err)
-		return playerId, errors.New("failed to generate new id")
+		return playerId, errors.New("failed to get id")
 	}
 
 	sqlString := `
-		INSERT IGNORE INTO PLAYER (ID, LOBBY_ID, USER_ID)
-		VALUES (?, ?, ?)
+		CALL SP_ADD_PLAYER (?,?,?)
 	`
 	err = Execute(sqlString, playerId, lobbyId, userId)
 	if err != nil {
@@ -216,9 +215,10 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-		DELETE FROM PLAYER
-		WHERE LOBBY_ID = ?
-			AND USER_ID = ?
+        UPDATE PLAYER 
+        SET ACTIVE = 0
+        WHERE LOBBY_ID = ?
+        AND USER_ID = ?
 	`
 	return Execute(sqlString, lobbyId, userId)
 }

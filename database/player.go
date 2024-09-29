@@ -3,9 +3,15 @@ package database
 import (
 	"errors"
 	"log"
+	"fmt"
 
 	"github.com/google/uuid"
 )
+
+
+type Player struct {
+	Id            uuid.UUID
+}
 
 type winDetails struct {
 	UserName string
@@ -41,7 +47,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			L.ID AS LOBBY_ID,
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS LOBBY_PLAYER_COUNT,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID AND ACTIVE = 1) AS LOBBY_PLAYER_COUNT,
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			J.ID AS JUDGE_ID,
 			JU.NAME AS JUDGE_NAME,
@@ -140,6 +146,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			INNER JOIN USER AS U ON U.ID = LP.USER_ID
 			LEFT JOIN WIN AS W ON W.PLAYER_ID = LP.ID
 		WHERE P.ID = ?
+		AND LP.ACTIVE = 1
 		GROUP BY LP.USER_ID
 		ORDER BY
 			COUNT(W.ID) DESC,
@@ -227,8 +234,6 @@ func DiscardPlayerHand(playerId uuid.UUID) error {
 	return Execute(sqlString, playerId)
 }
 
-
-
 func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool) error {
 
 	sqlString := ""
@@ -252,4 +257,52 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool)
 		AND CARD_ID = ?	
 	`
 	return Execute(sqlString, playerId, cardId)
+}
+
+
+func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	sqlString := `
+	SELECT ID FROM PLAYER
+	WHERE LOBBY_ID = ?
+	AND USER_ID = ?
+	`
+	rows, err := Query(sqlString, lobbyId, userId)
+	if err != nil {
+		fmt.Println("here 1")
+		return id, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			fmt.Println("here 2")
+			log.Println(err)
+			return id, errors.New("failed to scan row in query results")
+		}
+	}
+
+	fmt.Println(id)
+	if id == GetDefaultUuid() {  // if not found (i.e. is default value of 000...000), generate a new one in go.  There's probably a better way to do this
+		id, err = uuid.NewUUID()
+		if err != nil {
+			log.Println(err)
+			return id, errors.New("failed to generate new player id")
+		}
+	}
+
+	fmt.Println(id)
+	return id, nil
+}
+
+
+func GetDefaultUuid() (uuid.UUID) {
+
+	id, err := uuid.Parse("00000000-0000-0000-0000-000000000000")
+		if err != nil {
+			log.Println(err)
+			return id
+		}
+		return id
+
 }
