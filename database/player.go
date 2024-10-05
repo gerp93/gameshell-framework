@@ -7,6 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type Player struct {
+	Id uuid.UUID
+}
+
 type winDetails struct {
 	UserName string
 	WinCount int
@@ -41,7 +45,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			L.ID AS LOBBY_ID,
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS LOBBY_PLAYER_COUNT,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID AND ACTIVE = 1) AS LOBBY_PLAYER_COUNT,
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			J.ID AS JUDGE_ID,
 			JU.NAME AS JUDGE_NAME,
@@ -140,6 +144,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			INNER JOIN USER AS U ON U.ID = LP.USER_ID
 			LEFT JOIN WIN AS W ON W.PLAYER_ID = LP.ID
 		WHERE P.ID = ?
+		AND LP.ACTIVE = 1
 		GROUP BY LP.USER_ID
 		ORDER BY
 			COUNT(W.ID) DESC,
@@ -172,7 +177,27 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+
 	sqlString := `
+		INSERT INTO CARD_PLAY (CARD_ID, PLAYER_USER_ID, JUDGE_USER_ID)
+		SELECT
+			H.CARD_ID,
+			PLAYER_USER.ID,
+			JUDGE_USER.ID
+		FROM HAND H
+			INNER JOIN PLAYER P on P.ID = H.PLAYER_ID
+			INNER JOIN LOBBY L ON L.ID = P.LOBBY_ID
+			INNER JOIN JUDGE J ON J.LOBBY_ID = L.ID
+			INNER JOIN USER PLAYER_USER on P.USER_ID = PLAYER_USER.ID
+			INNER JOIN PLAYER JUDGE_PLAYER on J.PLAYER_ID = JUDGE_PLAYER.ID
+			INNER JOIN USER JUDGE_USER on judge_player.USER_ID = JUDGE_USER.ID
+		WHERE h.CARD_ID = ?
+		AND h.PLAYER_ID = ?
+	`
+
+	Execute(sqlString, cardId, playerId)
+
+	sqlString = `
 		INSERT INTO BOARD (LOBBY_ID, PLAYER_ID, CARD_ID)
 		SELECT
 			LOBBY_ID,
@@ -186,22 +211,78 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 		return err
 	}
 
-	return DiscardPlayerCard(playerId, cardId)
+	return DiscardPlayerCard(playerId, cardId, false)
 }
 
 func DiscardPlayerHand(playerId uuid.UUID) error {
+
 	sqlString := `
+	INSERT INTO CARD_DISCARD(CARD_ID, PLAYER_USER_ID)
+	SELECT H.CARD_ID, P.USER_ID FROM HAND H
+		INNER JOIN PLAYER P ON P.ID = H.PLAYER_ID
+	WHERE H.PLAYER_ID = ?
+	`
+	Execute(sqlString, playerId)
+
+	sqlString = `
 		DELETE FROM HAND
 		WHERE PLAYER_ID = ?
 	`
 	return Execute(sqlString, playerId)
 }
 
-func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := `
-		DELETE FROM HAND
-		WHERE PLAYER_ID = ?
-			AND CARD_ID = ?
+func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool) error {
+
+	sqlString := ""
+
+	if recordDiscard {
+
+		sqlString = `
+		INSERT INTO CARD_DISCARD(CARD_ID, PLAYER_USER_ID)
+		SELECT H.CARD_ID, P.USER_ID FROM HAND H
+			INNER JOIN PLAYER P ON p.ID = H.PLAYER_ID
+		WHERE H.PLAYER_ID = ?
+			AND H.CARD_ID = ?
+		`
+
+		Execute(sqlString, playerId, cardId)
+	}
+
+	sqlString = `
+	DELETE FROM HAND
+	WHERE PLAYER_ID = ?
+		AND CARD_ID = ?	
 	`
 	return Execute(sqlString, playerId, cardId)
+}
+
+func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	sqlString := `
+	SELECT ID FROM PLAYER
+	WHERE LOBBY_ID = ?
+	AND USER_ID = ?
+	`
+	rows, err := Query(sqlString, lobbyId, userId)
+	if err != nil {
+		return id, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			log.Println(err)
+			return id, errors.New("failed to scan row in query results")
+		}
+	}
+
+	if id == uuid.Nil {
+		id, err = uuid.NewUUID()
+		if err != nil {
+			log.Println(err)
+			return id, errors.New("failed to generate new player id")
+		}
+	}
+
+	return id, nil
 }
