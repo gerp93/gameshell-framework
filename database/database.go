@@ -8,11 +8,9 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 )
 
 var dbcs string
-var allUsers map[uuid.UUID]User = make(map[uuid.UUID]User)
 
 func Setup() (err error) {
 	// get connection string
@@ -22,7 +20,7 @@ func Setup() (err error) {
 	databaseName := os.Getenv("CARD_JUDGE_SQL_DATABASE")
 	dbcs = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 
-	// ping to test connection
+	// open database connection
 	db, err := sql.Open("mysql", dbcs)
 	if err != nil {
 		log.Println(err)
@@ -30,20 +28,11 @@ func Setup() (err error) {
 	}
 	defer db.Close()
 
+	// ping to test connection
 	err = db.Ping()
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to ping database")
-	}
-
-	// load all users into memory
-	users, err := getUsers()
-	if err != nil {
-		return err
-	}
-
-	for _, user := range users {
-		allUsers[user.Id] = user
 	}
 
 	return nil
