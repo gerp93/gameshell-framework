@@ -36,7 +36,7 @@ func SearchLobbies(search string) ([]LobbyDetails, error) {
 			L.HAND_SIZE,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
-			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.ACTIVE = 1
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY
