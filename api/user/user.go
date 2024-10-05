@@ -85,8 +85,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId := database.GetUserIdByName(name)
-	if existingUserId != uuid.Nil {
+	if database.UserNameExists(name) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
 		return
@@ -145,8 +144,7 @@ func CreateDefault(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId := database.GetUserIdByName(name)
-	if existingUserId != uuid.Nil {
+	if database.UserNameExists(name) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
 		return
@@ -193,10 +191,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := database.GetUserIdByName(name)
-	if userId == uuid.Nil {
+	if !database.UserNameExists(name) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name does not exist."))
+		return
+	}
+
+	userId, err := database.GetUserIdByName(name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -265,8 +269,7 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUserId := database.GetUserIdByName(name)
-	if existingUserId != uuid.Nil {
+	if database.UserNameExists(name) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name already exists."))
 		return
