@@ -70,7 +70,7 @@ func SearchLobbies(search string) ([]LobbyDetails, error) {
 
 func SkipJudgeCard(lobbyId uuid.UUID) error {
 	sqlString := `
-		CALL SP_SKIP_JUDGE (?)
+		CALL SP_SKIP_JUDGE_CARD (?)
 	`
 	return execute(sqlString, lobbyId)
 }
@@ -196,14 +196,14 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 }
 
 func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, err error) {
-	playerId, err = GetPlayerId(lobbyId, userId)
+	playerId, err = getPlayerId(lobbyId, userId)
 	if err != nil {
 		log.Println(err)
-		return playerId, errors.New("failed to get id")
+		return playerId, errors.New("failed to get player id")
 	}
 
 	sqlString := `
-		CALL SP_ADD_PLAYER (?,?,?)
+		CALL SP_ADD_PLAYER (?, ?, ?)
 	`
 	err = execute(sqlString, playerId, lobbyId, userId)
 	if err != nil {
@@ -215,10 +215,10 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-        UPDATE PLAYER
-        SET ACTIVE = 0
-        WHERE LOBBY_ID = ?
-        AND USER_ID = ?
+		UPDATE PLAYER
+		SET ACTIVE = 0
+		WHERE LOBBY_ID = ?
+			AND USER_ID = ?
 	`
 	return execute(sqlString, lobbyId, userId)
 }
