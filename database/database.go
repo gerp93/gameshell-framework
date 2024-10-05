@@ -10,43 +10,39 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var dbcs string
+var database *sql.DB
 
-func Setup() (err error) {
+func CreateDatabaseConnection() (*sql.DB, error) {
 	// get connection string
 	userName := os.Getenv("CARD_JUDGE_SQL_USER")
 	userPassword := os.Getenv("CARD_JUDGE_SQL_PASSWORD")
 	serverHost := os.Getenv("CARD_JUDGE_SQL_HOST")
 	databaseName := os.Getenv("CARD_JUDGE_SQL_DATABASE")
-	dbcs = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 
 	// open database connection
-	db, err := sql.Open("mysql", dbcs)
+	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Println(err)
-		return errors.New("failed to open database connection")
+		return db, errors.New("failed to open database connection")
 	}
-	defer db.Close()
+
+	// set global variable for database connection
+	database = db
 
 	// ping to test connection
 	err = db.Ping()
 	if err != nil {
 		log.Println(err)
-		return errors.New("failed to ping database")
+		db.Close()
+		return database, errors.New("failed to ping database")
 	}
 
-	return nil
+	return database, nil
 }
 
 func Query(sqlString string, params ...any) (rows *sql.Rows, err error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New("failed to open database connection")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(sqlString)
+	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("failed to prepare database statement")
@@ -63,14 +59,7 @@ func Query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 }
 
 func Execute(sqlString string, params ...any) (err error) {
-	db, err := sql.Open("mysql", dbcs)
-	if err != nil {
-		log.Println(err)
-		return errors.New("failed to open database connection")
-	}
-	defer db.Close()
-
-	statement, err := db.Prepare(sqlString)
+	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to prepare database statement")
