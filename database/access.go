@@ -16,7 +16,7 @@ func getUserLobbyAccess(userId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
 		WHERE L.PASSWORD_HASH IS NULL
 			OR UAL.USER_ID = ?
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 		INSERT INTO USER_ACCESS_LOBBY (USER_ID, LOBBY_ID)
 		VALUES (?, ?)
 	`
-	return Execute(sqlString, userId, lobbyId)
+	return execute(sqlString, userId, lobbyId)
 }
 
 func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
@@ -51,7 +51,7 @@ func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
 		WHERE D.PASSWORD_HASH IS NULL
 			OR UAD.USER_ID = ?
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,5 +74,5 @@ func AddUserDeckAccess(userId uuid.UUID, deckId uuid.UUID) error {
 		INSERT INTO USER_ACCESS_DECK (USER_ID, DECK_ID)
 		VALUES (?, ?)
 	`
-	return Execute(sqlString, userId, deckId)
+	return execute(sqlString, userId, deckId)
 }

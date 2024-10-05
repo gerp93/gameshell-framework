@@ -46,7 +46,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			D.NAME ASC,
 			COUNT(C.ID) DESC
 	`
-	rows, err := Query(sqlString, search)
+	rows, err := query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func GetUserDecks(userId uuid.UUID) ([]Deck, error) {
 			OR UAD.USER_ID = ?
 		ORDER BY NAME ASC
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 		FROM DECK
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, id)
+	rows, err := query(sqlString, id)
 	if err != nil {
 		return deck, err
 	}
@@ -142,7 +142,7 @@ func GetDeckPasswordHash(id uuid.UUID) (sql.NullString, error) {
 		FROM DECK
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, id)
+	rows, err := query(sqlString, id)
 	if err != nil {
 		return passwordHash, err
 	}
@@ -175,9 +175,9 @@ func CreateDeck(name string, password string) (uuid.UUID, error) {
 		VALUES (?, ?, ?)
 	`
 	if password == "" {
-		return id, Execute(sqlString, id, name, nil)
+		return id, execute(sqlString, id, name, nil)
 	} else {
-		return id, Execute(sqlString, id, name, passwordHash)
+		return id, execute(sqlString, id, name, passwordHash)
 	}
 }
 
@@ -190,7 +190,7 @@ func GetDeckId(name string) (uuid.UUID, error) {
 		FROM DECK
 		WHERE NAME = ?
 	`
-	rows, err := Query(sqlString, name)
+	rows, err := query(sqlString, name)
 	if err != nil {
 		return id, err
 	}
@@ -212,7 +212,7 @@ func SetDeckName(id uuid.UUID, name string) error {
 			NAME = ?
 		WHERE ID = ?
 	`
-	return Execute(sqlString, name, id)
+	return execute(sqlString, name, id)
 }
 
 func SetDeckPassword(id uuid.UUID, password string) error {
@@ -229,9 +229,9 @@ func SetDeckPassword(id uuid.UUID, password string) error {
 		WHERE ID = ?
 	`
 	if password == "" {
-		return Execute(sqlString, nil, id)
+		return execute(sqlString, nil, id)
 	} else {
-		return Execute(sqlString, passwordHash, id)
+		return execute(sqlString, passwordHash, id)
 	}
 }
 
@@ -240,5 +240,5 @@ func DeleteDeck(id uuid.UUID) error {
 		DELETE FROM DECK
 		WHERE ID = ?
 	`
-	return Execute(sqlString, id)
+	return execute(sqlString, id)
 }
