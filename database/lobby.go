@@ -44,7 +44,7 @@ func SearchLobbies(search string) ([]LobbyDetails, error) {
 			L.NAME ASC,
 			COUNT(P.ID) DESC
 	`
-	rows, err := Query(sqlString, search)
+	rows, err := query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +72,14 @@ func SkipJudgeCard(lobbyId uuid.UUID) error {
 	sqlString := `
 		CALL SP_SKIP_JUDGE (?)
 	`
-	return Execute(sqlString, lobbyId)
+	return execute(sqlString, lobbyId)
 }
 
 func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (playerName string, err error) {
 	sqlString := `
 		CALL SP_PICK_WINNER (?, ?)
 	`
-	rows, err := Query(sqlString, lobbyId, cardId)
+	rows, err := query(sqlString, lobbyId, cardId)
 	if err != nil {
 		return playerName, err
 	}
@@ -108,7 +108,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		FROM LOBBY
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, id)
+	rows, err := query(sqlString, id)
 	if err != nil {
 		return lobby, err
 	}
@@ -138,7 +138,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 		FROM LOBBY
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, id)
+	rows, err := query(sqlString, id)
 	if err != nil {
 		return passwordHash, err
 	}
@@ -171,9 +171,9 @@ func CreateLobby(name string, password string, handSize int) (uuid.UUID, error) 
 		VALUES (?, ?, ?, ?)
 	`
 	if password == "" {
-		return id, Execute(sqlString, id, name, nil, handSize)
+		return id, execute(sqlString, id, name, nil, handSize)
 	} else {
-		return id, Execute(sqlString, id, name, passwordHash, handSize)
+		return id, execute(sqlString, id, name, passwordHash, handSize)
 	}
 }
 
@@ -187,7 +187,7 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 			FROM CARD
 			WHERE DECK_ID = ?
 		`
-		err := Execute(sqlString, lobbyId, deckId)
+		err := execute(sqlString, lobbyId, deckId)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 	sqlString := `
 		CALL SP_ADD_PLAYER (?,?,?)
 	`
-	err = Execute(sqlString, playerId, lobbyId, userId)
+	err = execute(sqlString, playerId, lobbyId, userId)
 	if err != nil {
 		return playerId, err
 	}
@@ -215,12 +215,12 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
-        UPDATE PLAYER 
+        UPDATE PLAYER
         SET ACTIVE = 0
         WHERE LOBBY_ID = ?
         AND USER_ID = ?
 	`
-	return Execute(sqlString, lobbyId, userId)
+	return execute(sqlString, lobbyId, userId)
 }
 
 func GetLobbyId(name string) (uuid.UUID, error) {
@@ -232,7 +232,7 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 		FROM LOBBY
 		WHERE NAME = ?
 	`
-	rows, err := Query(sqlString, name)
+	rows, err := query(sqlString, name)
 	if err != nil {
 		return id, err
 	}
@@ -254,7 +254,7 @@ func SetLobbyName(id uuid.UUID, name string) error {
 			NAME = ?
 		WHERE ID = ?
 	`
-	return Execute(sqlString, name, id)
+	return execute(sqlString, name, id)
 }
 
 func SetLobbyHandSize(id uuid.UUID, handSize int) error {
@@ -264,7 +264,7 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 			HAND_SIZE = ?
 		WHERE ID = ?
 	`
-	return Execute(sqlString, handSize, id)
+	return execute(sqlString, handSize, id)
 }
 
 func DeleteLobby(lobbyId uuid.UUID) error {
@@ -272,5 +272,5 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 		DELETE FROM LOBBY
 		WHERE ID = ?
 	`
-	return Execute(sqlString, lobbyId)
+	return execute(sqlString, lobbyId)
 }

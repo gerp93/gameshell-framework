@@ -60,7 +60,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			INNER JOIN USER AS JU ON JU.ID = JP.USER_ID
 		WHERE P.ID = ?
 	`
-	rows, err := Query(sqlString, playerId)
+	rows, err := query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
@@ -94,7 +94,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		WHERE P.ID = ?
 		ORDER BY C.TEXT
 	`
-	rows, err = Query(sqlString, playerId)
+	rows, err = query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
@@ -119,7 +119,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		WHERE H.PLAYER_ID = ?
 		ORDER BY C.TEXT
 	`
-	rows, err = Query(sqlString, playerId)
+	rows, err = query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
@@ -150,7 +150,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			COUNT(W.ID) DESC,
 			U.NAME ASC
 	`
-	rows, err = Query(sqlString, playerId)
+	rows, err = query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
@@ -173,7 +173,7 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 	sqlString := `
 		CALL SP_DRAW_HAND (?)
 	`
-	return Execute(sqlString, playerId)
+	return execute(sqlString, playerId)
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
@@ -195,7 +195,7 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 		AND h.PLAYER_ID = ?
 	`
 
-	Execute(sqlString, cardId, playerId)
+	execute(sqlString, cardId, playerId)
 
 	sqlString = `
 		INSERT INTO BOARD (LOBBY_ID, PLAYER_ID, CARD_ID)
@@ -206,7 +206,7 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 		FROM PLAYER
 		WHERE ID = ?
 	`
-	err := Execute(sqlString, cardId, playerId)
+	err := execute(sqlString, cardId, playerId)
 	if err != nil {
 		return err
 	}
@@ -222,13 +222,13 @@ func DiscardPlayerHand(playerId uuid.UUID) error {
 		INNER JOIN PLAYER P ON P.ID = H.PLAYER_ID
 	WHERE H.PLAYER_ID = ?
 	`
-	Execute(sqlString, playerId)
+	execute(sqlString, playerId)
 
 	sqlString = `
 		DELETE FROM HAND
 		WHERE PLAYER_ID = ?
 	`
-	return Execute(sqlString, playerId)
+	return execute(sqlString, playerId)
 }
 
 func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool) error {
@@ -245,15 +245,15 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool)
 			AND H.CARD_ID = ?
 		`
 
-		Execute(sqlString, playerId, cardId)
+		execute(sqlString, playerId, cardId)
 	}
 
 	sqlString = `
 	DELETE FROM HAND
 	WHERE PLAYER_ID = ?
-		AND CARD_ID = ?	
+		AND CARD_ID = ?
 	`
-	return Execute(sqlString, playerId, cardId)
+	return execute(sqlString, playerId, cardId)
 }
 
 func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
@@ -264,7 +264,7 @@ func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	WHERE LOBBY_ID = ?
 	AND USER_ID = ?
 	`
-	rows, err := Query(sqlString, lobbyId, userId)
+	rows, err := query(sqlString, lobbyId, userId)
 	if err != nil {
 		return id, err
 	}

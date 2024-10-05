@@ -58,7 +58,7 @@ func SearchUsers(search string) ([]User, error) {
 			TO_DAYS(CHANGED_ON_DATE) DESC,
 			NAME ASC
 	`
-	rows, err := Query(sqlString, search)
+	rows, err := query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func GetUser(userId uuid.UUID) (user User, err error) {
 		FROM USER
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return user, err
 	}
@@ -126,7 +126,7 @@ func GetUserPasswordHash(userId uuid.UUID) (string, error) {
 		FROM USER
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return passwordHash, err
 	}
@@ -150,7 +150,7 @@ func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
 		FROM USER
 		WHERE ID = ?
 	`
-	rows, err := Query(sqlString, userId)
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return isAdmin, err
 	}
@@ -174,7 +174,7 @@ func GetUserIdByName(name string) (uuid.UUID, error) {
 		FROM USER
 		WHERE NAME = ?
 	`
-	rows, err := Query(sqlString, name)
+	rows, err := query(sqlString, name)
 	if err != nil {
 		return userId, err
 	}
@@ -200,7 +200,7 @@ func UserNameExists(name string) bool {
 		FROM USER
 		WHERE NAME = ?
 	`
-	rows, err := Query(sqlString, name)
+	rows, err := query(sqlString, name)
 	if err != nil {
 		return false
 	}
@@ -225,7 +225,7 @@ func CreateUser(name string, password string) (uuid.UUID, error) {
 		INSERT INTO USER (ID, NAME, PASSWORD_HASH)
 		VALUES (?, ?, ?)
 	`
-	err = Execute(sqlString, id, name, passwordHash)
+	err = execute(sqlString, id, name, passwordHash)
 	if err != nil {
 		return id, err
 	}
@@ -240,7 +240,7 @@ func SetUserName(id uuid.UUID, name string) error {
 			NAME = ?
 		WHERE ID = ?
 	`
-	err := Execute(sqlString, name, id)
+	err := execute(sqlString, name, id)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func SetUserPassword(id uuid.UUID, password string) error {
 			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
-	err = Execute(sqlString, passwordHash, id)
+	err = execute(sqlString, passwordHash, id)
 	if err != nil {
 		return err
 	}
@@ -277,9 +277,9 @@ func SetUserColorTheme(id uuid.UUID, colorTheme string) (err error) {
 		WHERE ID = ?
 	`
 	if colorTheme == "" {
-		err = Execute(sqlString, nil, id)
+		err = execute(sqlString, nil, id)
 	} else {
-		err = Execute(sqlString, colorTheme, id)
+		err = execute(sqlString, colorTheme, id)
 	}
 	if err != nil {
 		return err
@@ -295,7 +295,7 @@ func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 			IS_ADMIN = ?
 		WHERE ID = ?
 	`
-	err := Execute(sqlString, isAdmin, id)
+	err := execute(sqlString, isAdmin, id)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ func DeleteUser(id uuid.UUID) error {
 		DELETE FROM USER
 		WHERE ID = ?
 	`
-	err := Execute(sqlString, id)
+	err := execute(sqlString, id)
 	if err != nil {
 		return err
 	}

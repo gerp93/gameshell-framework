@@ -41,7 +41,7 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 	return database, nil
 }
 
-func Query(sqlString string, params ...any) (rows *sql.Rows, err error) {
+func query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)
@@ -58,7 +58,7 @@ func Query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 	return rows, nil
 }
 
-func Execute(sqlString string, params ...any) (err error) {
+func execute(sqlString string, params ...any) (err error) {
 	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)
