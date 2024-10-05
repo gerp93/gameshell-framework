@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -267,19 +266,16 @@ func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	`
 	rows, err := Query(sqlString, lobbyId, userId)
 	if err != nil {
-		fmt.Println("here 1")
 		return id, err
 	}
 
 	for rows.Next() {
 		if err := rows.Scan(&id); err != nil {
-			fmt.Println("here 2")
 			log.Println(err)
 			return id, errors.New("failed to scan row in query results")
 		}
 	}
 
-	fmt.Println(id)
 	if id == uuid.Nil {
 		id, err = uuid.NewUUID()
 		if err != nil {
@@ -288,6 +284,5 @@ func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 		}
 	}
 
-	fmt.Println(id)
 	return id, nil
 }
