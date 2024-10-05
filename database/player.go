@@ -2,15 +2,14 @@ package database
 
 import (
 	"errors"
-	"log"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 )
 
-
 type Player struct {
-	Id            uuid.UUID
+	Id uuid.UUID
 }
 
 type winDetails struct {
@@ -218,14 +217,13 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 
 func DiscardPlayerHand(playerId uuid.UUID) error {
 
-
 	sqlString := `
 	INSERT INTO CARD_DISCARD(CARD_ID, PLAYER_USER_ID)
 	SELECT H.CARD_ID, P.USER_ID FROM HAND H
 		INNER JOIN PLAYER P ON P.ID = H.PLAYER_ID
 	WHERE H.PLAYER_ID = ?
 	`
- 	Execute(sqlString, playerId)
+	Execute(sqlString, playerId)
 
 	sqlString = `
 		DELETE FROM HAND
@@ -247,8 +245,8 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool)
 		WHERE H.PLAYER_ID = ?
 			AND H.CARD_ID = ?
 		`
-		
-		 Execute(sqlString, playerId, cardId)
+
+		Execute(sqlString, playerId, cardId)
 	}
 
 	sqlString = `
@@ -258,7 +256,6 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID, recordDiscard bool)
 	`
 	return Execute(sqlString, playerId, cardId)
 }
-
 
 func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
@@ -283,7 +280,7 @@ func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	}
 
 	fmt.Println(id)
-	if id == GetDefaultUuid() {  // if not found (i.e. is default value of 000...000), generate a new one in go.  There's probably a better way to do this
+	if id == uuid.Nil {
 		id, err = uuid.NewUUID()
 		if err != nil {
 			log.Println(err)
@@ -293,16 +290,4 @@ func GetPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 
 	fmt.Println(id)
 	return id, nil
-}
-
-
-func GetDefaultUuid() (uuid.UUID) {
-
-	id, err := uuid.Parse("00000000-0000-0000-0000-000000000000")
-		if err != nil {
-			log.Println(err)
-			return id
-		}
-		return id
-
 }
