@@ -32,7 +32,9 @@ func PageMiddleware(next http.Handler) http.Handler {
 		userId, err := auth.GetCookieUserId(r)
 		if err == nil {
 			user, err := database.GetUser(userId)
-			if err == nil {
+			if user.Id == uuid.Nil {
+				auth.RemoveCookieUserId(w)
+			} else if err == nil {
 				basePageData.User = user
 				basePageData.LoggedIn = true
 			}
