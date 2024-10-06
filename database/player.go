@@ -14,7 +14,7 @@ type winDetails struct {
 
 type handCard struct {
 	Card
-	Locked bool
+	IsLocked bool
 }
 
 type gameData struct {
@@ -46,7 +46,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			L.ID AS LOBBY_ID,
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID AND ACTIVE = 1) AS LOBBY_PLAYER_COUNT,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID AND IS_ACTIVE = 1) AS LOBBY_PLAYER_COUNT,
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			J.ID AS JUDGE_ID,
 			JU.NAME AS JUDGE_NAME,
@@ -115,7 +115,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		SELECT
 			C.ID,
 			C.TEXT,
-			H.LOCKED
+			H.IS_LOCKED
 		FROM HAND AS H
 			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
 		WHERE H.PLAYER_ID = ?
@@ -131,7 +131,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		if err := rows.Scan(
 			&card.Id,
 			&card.Text,
-			&card.Locked); err != nil {
+			&card.IsLocked); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
@@ -147,7 +147,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			INNER JOIN USER AS U ON U.ID = LP.USER_ID
 			LEFT JOIN WIN AS W ON W.PLAYER_ID = LP.ID
 		WHERE P.ID = ?
-			AND LP.ACTIVE = 1
+			AND LP.IS_ACTIVE = 1
 		GROUP BY LP.USER_ID
 		ORDER BY
 			COUNT(W.ID) DESC,
@@ -200,14 +200,14 @@ func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	return execute(sqlString, playerId, cardId)
 }
 
-func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, locked bool) error {
+func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 	sqlString := `
 		UPDATE HAND
-		SET LOCKED = ?
+		SET IS_LOCKED = ?
 		WHERE PLAYER_ID = ?
 			AND CARD_ID = ?
 	`
-	return execute(sqlString, locked, playerId, cardId)
+	return execute(sqlString, isLocked, playerId, cardId)
 }
 
 func getPlayerId(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {

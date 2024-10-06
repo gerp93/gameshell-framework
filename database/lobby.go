@@ -36,7 +36,7 @@ func SearchLobbies(search string) ([]LobbyDetails, error) {
 			L.HAND_SIZE,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
-			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.ACTIVE = 1
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY
@@ -216,7 +216,7 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := `
 		UPDATE PLAYER
-		SET ACTIVE = 0
+		SET IS_ACTIVE = 0
 		WHERE LOBBY_ID = ?
 			AND USER_ID = ?
 	`
