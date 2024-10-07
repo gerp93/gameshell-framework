@@ -70,17 +70,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 }
 
 func GetUserDecks(userId uuid.UUID) ([]Deck, error) {
-	sqlString := `
-		SELECT DISTINCT
-			D.ID,
-			D.NAME
-		FROM DECK AS D
-			INNER JOIN CARD AS C ON C.DECK_ID = D.ID
-			LEFT JOIN USER_ACCESS_DECK AS UAD ON UAD.DECK_ID = D.ID
-		WHERE D.PASSWORD_HASH IS NULL
-			OR UAD.USER_ID = ?
-		ORDER BY NAME ASC
-	`
+	sqlString := "CALL SP_GET_DECK_ACCESS (?)"
 	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err

@@ -8,14 +8,7 @@ import (
 )
 
 func getUserLobbyAccess(userId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
-	sqlString := `
-		SELECT DISTINCT
-			L.ID
-		FROM LOBBY AS L
-			LEFT JOIN USER_ACCESS_LOBBY AS UAL ON UAL.LOBBY_ID = L.ID
-		WHERE L.PASSWORD_HASH IS NULL
-			OR UAL.USER_ID = ?
-	`
+	sqlString := "CALL SP_GET_LOBBY_ACCESS (?)"
 	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
@@ -24,7 +17,8 @@ func getUserLobbyAccess(userId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
 	lobbyIds = make([]uuid.UUID, 0)
 	for rows.Next() {
 		var lobbyId uuid.UUID
-		if err := rows.Scan(&lobbyId); err != nil {
+		var lobbyName string
+		if err := rows.Scan(&lobbyId, &lobbyName); err != nil {
 			log.Println(err)
 			return lobbyIds, errors.New("failed to scan row in query results")
 		}
@@ -43,14 +37,7 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 }
 
 func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
-	sqlString := `
-		SELECT DISTINCT
-			D.ID
-		FROM DECK AS D
-			LEFT JOIN USER_ACCESS_DECK AS UAD ON UAD.DECK_ID = D.ID
-		WHERE D.PASSWORD_HASH IS NULL
-			OR UAD.USER_ID = ?
-	`
+	sqlString := "CALL SP_GET_DECK_ACCESS (?)"
 	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
@@ -59,7 +46,8 @@ func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
 	deckIds = make([]uuid.UUID, 0)
 	for rows.Next() {
 		var deckId uuid.UUID
-		if err := rows.Scan(&deckId); err != nil {
+		var deckName string
+		if err := rows.Scan(&deckId, &deckName); err != nil {
 			log.Println(err)
 			return deckIds, errors.New("failed to scan row in query results")
 		}
