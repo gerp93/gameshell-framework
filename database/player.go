@@ -185,30 +185,22 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 }
 
 func DrawPlayerHand(playerId uuid.UUID) error {
-	sqlString := `
-		CALL SP_DRAW_HAND (?)
-	`
+	sqlString := "CALL SP_DRAW_HAND (?)"
 	return execute(sqlString, playerId)
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := `
-		CALL SP_PLAY_CARD (?, ?)
-	`
+	sqlString := "CALL SP_PLAY_CARD (?, ?)"
 	return execute(sqlString, playerId, cardId)
 }
 
 func DiscardPlayerHand(playerId uuid.UUID) error {
-	sqlString := `
-		CALL SP_DISCARD_HAND (?)
-	`
+	sqlString := "CALL SP_DISCARD_HAND (?)"
 	return execute(sqlString, playerId)
 }
 
 func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := `
-		CALL SP_DISCARD_CARD (?, ?)
-	`
+	sqlString := "CALL SP_DISCARD_CARD (?, ?)"
 	return execute(sqlString, playerId, cardId)
 }
 

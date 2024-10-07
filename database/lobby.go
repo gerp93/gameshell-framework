@@ -69,16 +69,12 @@ func SearchLobbies(search string) ([]LobbyDetails, error) {
 }
 
 func SkipJudgeCard(lobbyId uuid.UUID) error {
-	sqlString := `
-		CALL SP_SKIP_JUDGE_CARD (?)
-	`
+	sqlString := "CALL SP_SKIP_JUDGE_CARD (?)"
 	return execute(sqlString, lobbyId)
 }
 
 func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (playerName string, err error) {
-	sqlString := `
-		CALL SP_PICK_WINNER (?, ?)
-	`
+	sqlString := "CALL SP_PICK_WINNER (?, ?)"
 	rows, err := query(sqlString, lobbyId, cardId)
 	if err != nil {
 		return playerName, err
@@ -202,9 +198,7 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 		return playerId, errors.New("failed to get player id")
 	}
 
-	sqlString := `
-		CALL SP_ADD_PLAYER (?, ?, ?)
-	`
+	sqlString := "CALL SP_ADD_PLAYER (?, ?, ?)"
 	err = execute(sqlString, playerId, lobbyId, userId)
 	if err != nil {
 		return playerId, err
