@@ -146,7 +146,7 @@ func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
 
 	sqlString := `
 		SELECT
-			PASSWORD_HASH
+			IS_ADMIN
 		FROM USER
 		WHERE ID = ?
 	`
