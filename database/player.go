@@ -19,7 +19,12 @@ type Player struct {
 	IsActive bool
 }
 
-type winDetails struct {
+type lobbyPlayerDetail struct {
+	UserName     string
+	CardsOnBoard int
+}
+
+type winDetail struct {
 	UserName string
 	WinCount int
 }
@@ -33,7 +38,7 @@ type gameData struct {
 	LobbyId            uuid.UUID
 	LobbyName          string
 	LobbyHandSize      int
-	LobbyPlayerCount   int
+	LobbyPlayerDetails []lobbyPlayerDetail
 	LobbyDrawPileCount int
 
 	JudgeId       uuid.UUID
@@ -41,13 +46,14 @@ type gameData struct {
 	JudgeCardText string
 
 	BoardCards []Card
+	BoardReady bool
 
 	PlayerId      uuid.UUID
 	PlayerHand    []handCard
 	PlayerIsJudge bool
 	PlayerPlayed  bool
 
-	Wins []winDetails
+	Wins []winDetail
 }
 
 func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
@@ -58,7 +64,6 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			L.ID AS LOBBY_ID,
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID AND IS_ACTIVE = 1) AS LOBBY_PLAYER_COUNT,
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			J.ID AS JUDGE_ID,
 			JU.NAME AS JUDGE_NAME,
@@ -83,7 +88,6 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			&data.LobbyId,
 			&data.LobbyName,
 			&data.LobbyHandSize,
-			&data.LobbyPlayerCount,
 			&data.LobbyDrawPileCount,
 			&data.JudgeId,
 			&data.JudgeName,
@@ -95,7 +99,36 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		}
 	}
 
-	data.LobbyPlayerCount -= 1 // do not count judge
+	sqlString = `
+		SELECT
+			U.NAME AS USER_NAME,
+			COUNT(B.CARD_ID) AS CARDS_ON_BOARD
+		FROM LOBBY AS L
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+			LEFT JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
+			LEFT JOIN BOARD AS B ON B.PLAYER_ID = P.ID
+		WHERE L.ID = ?
+			AND P.IS_ACTIVE = 1
+			AND J.ID IS NULL
+		GROUP BY U.ID
+		ORDER BY U.NAME ASC
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var lpd lobbyPlayerDetail
+		if err := rows.Scan(
+			&lpd.UserName,
+			&lpd.CardsOnBoard); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.LobbyPlayerDetails = append(data.LobbyPlayerDetails, lpd)
+	}
 
 	sqlString = `
 		SELECT
@@ -122,6 +155,28 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		}
 		data.BoardCards = append(data.BoardCards, card)
 	}
+
+	sqlString = `
+		SELECT
+			COUNT(*) AS PLAYERS_IN_LOBBY
+		FROM PLAYER
+		WHERE LOBBY_ID = ?
+			AND IS_ACTIVE = 1
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	var playersInLobby int
+	for rows.Next() {
+		if err := rows.Scan(&playersInLobby); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+	}
+
+	data.BoardReady = len(data.BoardCards) == (playersInLobby - 1)
 
 	sqlString = `
 		SELECT
@@ -171,7 +226,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 	}
 
 	for rows.Next() {
-		var win winDetails
+		var win winDetail
 		if err := rows.Scan(
 			&win.UserName,
 			&win.WinCount); err != nil {
