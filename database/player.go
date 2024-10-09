@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"log"
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,9 +41,10 @@ type gameData struct {
 	LobbyHandSize      int
 	LobbyDrawPileCount int
 
-	JudgeId       uuid.UUID
-	JudgeName     string
-	JudgeCardText string
+	JudgeId             uuid.UUID
+	JudgeName           string
+	JudgeCardText       string
+	JudgeCardBlankCount int
 
 	BoardPlayers []boardPlayers
 	BoardCards   []Card
@@ -97,6 +99,12 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
+	}
+
+	blankRegExp := regexp.MustCompile(`__+`)
+	data.JudgeCardBlankCount = len(blankRegExp.FindAllString(data.JudgeCardText, -1))
+	if data.JudgeCardBlankCount < 1 {
+		data.JudgeCardBlankCount = 1
 	}
 
 	sqlString = `
