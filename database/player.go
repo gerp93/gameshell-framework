@@ -19,14 +19,9 @@ type Player struct {
 	IsActive bool
 }
 
-type lobbyPlayerDetail struct {
-	UserName     string
-	CardsOnBoard int
-}
-
-type winDetail struct {
-	UserName string
-	WinCount int
+type boardPlayers struct {
+	UserName         string
+	CardsPlayedCount int
 }
 
 type handCard struct {
@@ -34,19 +29,24 @@ type handCard struct {
 	IsLocked bool
 }
 
+type winDetail struct {
+	UserName string
+	WinCount int
+}
+
 type gameData struct {
 	LobbyId            uuid.UUID
 	LobbyName          string
 	LobbyHandSize      int
-	LobbyPlayerDetails []lobbyPlayerDetail
 	LobbyDrawPileCount int
 
 	JudgeId       uuid.UUID
 	JudgeName     string
 	JudgeCardText string
 
-	BoardCards []Card
-	BoardReady bool
+	BoardPlayers []boardPlayers
+	BoardCards   []Card
+	BoardReady   bool
 
 	PlayerId      uuid.UUID
 	PlayerHand    []handCard
@@ -120,14 +120,14 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 	}
 
 	for rows.Next() {
-		var lpd lobbyPlayerDetail
+		var bp boardPlayers
 		if err := rows.Scan(
-			&lpd.UserName,
-			&lpd.CardsOnBoard); err != nil {
+			&bp.UserName,
+			&bp.CardsPlayedCount); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
-		data.LobbyPlayerDetails = append(data.LobbyPlayerDetails, lpd)
+		data.BoardPlayers = append(data.BoardPlayers, bp)
 	}
 
 	sqlString = `
