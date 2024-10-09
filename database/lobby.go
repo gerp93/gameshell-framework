@@ -198,22 +198,13 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, er
 		return playerId, errors.New("failed to get player id")
 	}
 
-	sqlString := "CALL SP_ADD_PLAYER (?, ?, ?)"
+	sqlString := "CALL SP_SET_PLAYER_ACTIVE (?, ?, ?)"
 	err = execute(sqlString, playerId, lobbyId, userId)
-	if err != nil {
-		return playerId, err
-	}
-
 	return playerId, err
 }
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
-	sqlString := `
-		UPDATE PLAYER
-		SET IS_ACTIVE = 0
-		WHERE LOBBY_ID = ?
-			AND USER_ID = ?
-	`
+	sqlString := "CALL SP_SET_PLAYER_INACTIVE (?, ?)"
 	return execute(sqlString, lobbyId, userId)
 }
 
