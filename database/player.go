@@ -110,6 +110,7 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		WHERE L.ID = ?
 			AND P.IS_ACTIVE = 1
 			AND J.ID IS NULL
+		ORDER BY U.NAME ASC
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -162,16 +163,6 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		}
 	}
 
-	sort.Slice(data.BoardPlays, func(i, j int) bool {
-		if len(data.BoardPlays[i].Cards) == 0 {
-			return true
-		}
-		if len(data.BoardPlays[j].Cards) == 0 {
-			return false
-		}
-		return data.BoardPlays[i].Cards[0].Text < data.BoardPlays[j].Cards[0].Text
-	})
-
 	blankRegExp := regexp.MustCompile(`__+`)
 	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.JudgeCardText, -1))
 	if data.CardsToPlayCount < 1 {
@@ -179,6 +170,18 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 	}
 	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
 	data.BoardReady = totalCardsPlayedCount == len(data.BoardPlays)*data.CardsToPlayCount
+
+	if data.BoardReady {
+		sort.Slice(data.BoardPlays, func(i, j int) bool {
+			if len(data.BoardPlays[i].Cards) == 0 {
+				return true
+			}
+			if len(data.BoardPlays[j].Cards) == 0 {
+				return false
+			}
+			return data.BoardPlays[i].Cards[0].Text < data.BoardPlays[j].Cards[0].Text
+		})
+	}
 
 	sqlString = `
 		SELECT
