@@ -41,7 +41,7 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 	return database, nil
 }
 
-func query(sqlString string, params ...any) (rows *sql.Rows, err error) {
+func query(sqlString string, params ...any) (*sql.Rows, error) {
 	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)
@@ -49,7 +49,7 @@ func query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 	}
 	defer statement.Close()
 
-	rows, err = statement.Query(params...)
+	rows, err := statement.Query(params...)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("failed to query statement in database")
@@ -58,7 +58,7 @@ func query(sqlString string, params ...any) (rows *sql.Rows, err error) {
 	return rows, nil
 }
 
-func execute(sqlString string, params ...any) (err error) {
+func execute(sqlString string, params ...any) error {
 	statement, err := database.Prepare(sqlString)
 	if err != nil {
 		log.Println(err)

@@ -286,7 +286,9 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 	return execute(sqlString, lobbyId)
 }
 
-func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
+func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
+	var data gameData
+
 	sqlString := `
 		SELECT
 			L.ID AS LOBBY_ID,
@@ -498,7 +500,9 @@ func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 	return execute(sqlString, isLocked, playerId, cardId)
 }
 
-func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (playerName string, err error) {
+func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
+	var playerName string
+
 	sqlString := "CALL SP_PICK_WINNER (?, ?)"
 	rows, err := query(sqlString, lobbyId, cardId)
 	if err != nil {

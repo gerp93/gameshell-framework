@@ -82,7 +82,9 @@ func SearchUsers(search string) ([]User, error) {
 	return result, nil
 }
 
-func GetUser(userId uuid.UUID) (user User, err error) {
+func GetUser(userId uuid.UUID) (User, error) {
+	var user User
+
 	sqlString := `
 		SELECT
 			ID,
@@ -269,13 +271,14 @@ func SetUserPassword(id uuid.UUID, password string) error {
 	return nil
 }
 
-func SetUserColorTheme(id uuid.UUID, colorTheme string) (err error) {
+func SetUserColorTheme(id uuid.UUID, colorTheme string) error {
 	sqlString := `
 		UPDATE USER
 		SET
 			COLOR_THEME = ?
 		WHERE ID = ?
 	`
+	var err error
 	if colorTheme == "" {
 		err = execute(sqlString, nil, id)
 	} else {
