@@ -209,24 +209,24 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	return nil
 }
 
-func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (playerId uuid.UUID, err error) {
+func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	player, err := GetPlayer(lobbyId, userId)
 	if err != nil {
 		log.Println(err)
-		return playerId, errors.New("failed to get player")
+		return player.Id, errors.New("failed to get player")
 	}
 
 	if player.Id == uuid.Nil {
-		playerId, err = uuid.NewUUID()
+		player.Id, err = uuid.NewUUID()
 		if err != nil {
 			log.Println(err)
-			return playerId, errors.New("failed to generate new player id")
+			return player.Id, errors.New("failed to generate new player id")
 		}
 	}
 
 	sqlString := "CALL SP_SET_PLAYER_ACTIVE (?, ?, ?)"
-	err = execute(sqlString, playerId, lobbyId, userId)
-	return playerId, err
+	err = execute(sqlString, player.Id, lobbyId, userId)
+	return player.Id, err
 }
 
 func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
