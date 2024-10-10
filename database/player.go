@@ -249,6 +249,11 @@ func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	return execute(sqlString, playerId, cardId)
 }
 
+func WithdrawalPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+	sqlString := "CALL SP_WITHDRAWAL_CARD (?, ?)"
+	return execute(sqlString, playerId, cardId)
+}
+
 func DiscardPlayerHand(playerId uuid.UUID) error {
 	sqlString := "CALL SP_DISCARD_HAND (?)"
 	return execute(sqlString, playerId)
