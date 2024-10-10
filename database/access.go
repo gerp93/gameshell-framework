@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func getUserLobbyAccess(userId uuid.UUID) (lobbyIds []uuid.UUID, err error) {
+func getUserLobbyAccess(userId uuid.UUID) ([]uuid.UUID, error) {
 	sqlString := "CALL SP_GET_LOBBY_ACCESS (?)"
 	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	lobbyIds = make([]uuid.UUID, 0)
+	lobbyIds := make([]uuid.UUID, 0)
 	for rows.Next() {
 		var lobbyId uuid.UUID
 		var lobbyName string
@@ -36,14 +36,14 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 	return execute(sqlString, userId, lobbyId)
 }
 
-func getUserDeckAccess(userId uuid.UUID) (deckIds []uuid.UUID, err error) {
+func getUserDeckAccess(userId uuid.UUID) ([]uuid.UUID, error) {
 	sqlString := "CALL SP_GET_DECK_ACCESS (?)"
 	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	deckIds = make([]uuid.UUID, 0)
+	deckIds := make([]uuid.UUID, 0)
 	for rows.Next() {
 		var deckId uuid.UUID
 		var deckName string
