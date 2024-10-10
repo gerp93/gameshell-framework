@@ -39,6 +39,8 @@ type gameData struct {
 	PlayerHand    []handCard
 	PlayerPlays   []Card
 
+	CardsToPlayCount int
+
 	Wins []winDetail
 }
 
@@ -125,8 +127,8 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 		data.BoardPlays = append(data.BoardPlays, bp)
 	}
 
-	totalPlayedCount := 0
-	playerPlayedCount := 0
+	totalCardsPlayedCount := 0
+	playerCardsPlayedCount := 0
 	for i, bp := range data.BoardPlays {
 		sqlString = `
 			SELECT
@@ -152,9 +154,9 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 			}
 			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, card)
 
-			totalPlayedCount += 1
+			totalCardsPlayedCount += 1
 			if bp.PlayerId == playerId {
-				playerPlayedCount += 1
+				playerCardsPlayedCount += 1
 				data.PlayerPlays = append(data.PlayerPlays, card)
 			}
 		}
@@ -171,12 +173,12 @@ func GetPlayerGameData(playerId uuid.UUID) (data gameData, err error) {
 	})
 
 	blankRegExp := regexp.MustCompile(`__+`)
-	toPlayCount := len(blankRegExp.FindAllString(data.JudgeCardText, -1))
-	if toPlayCount < 1 {
-		toPlayCount = 1
+	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.JudgeCardText, -1))
+	if data.CardsToPlayCount < 1 {
+		data.CardsToPlayCount = 1
 	}
-	data.PlayerIsReady = playerPlayedCount == toPlayCount
-	data.BoardReady = totalPlayedCount == len(data.BoardPlays)*toPlayCount
+	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
+	data.BoardReady = totalCardsPlayedCount == len(data.BoardPlays)*data.CardsToPlayCount
 
 	sqlString = `
 		SELECT
