@@ -3,6 +3,7 @@ package apiDeck
 import (
 	"net/http"
 	"text/template"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
@@ -56,6 +57,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	var name string
 	var password string
 	var passwordConfirm string
+	var isPublicReadOnly bool
 	for key, val := range r.Form {
 		if key == "name" {
 			name = val[0]
@@ -63,8 +65,17 @@ func Create(w http.ResponseWriter, r *http.Request) {
 			password = val[0]
 		} else if key == "passwordConfirm" {
 			passwordConfirm = val[0]
+		} else if key == "isPublicReadOnly" {
+			isPublicReadOnly, err = strconv.ParseBool(val[0])
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
 		}
 	}
+
+
 
 	if name == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -99,7 +110,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := database.CreateDeck(name, password)
+	id, err := database.CreateDeck(name, password, isPublicReadOnly)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -230,6 +241,58 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = database.SetDeckPassword(deckId, password)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+func SetPublicReadOnly(w http.ResponseWriter, r *http.Request) {
+	deckIdString := r.PathValue("deckId")
+	deckId, err := uuid.Parse(deckIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get deck id from path."))
+		return
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get user id."))
+		return
+	}
+
+	if !database.UserHasDeckAccess(userId, deckId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var isPublicReadOnly bool
+	for key, val := range r.Form {
+		if key == "isPublicReadOnly" {
+			isPublicReadOnly, err = strconv.ParseBool(val[0])
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+		}
+	}
+
+	err = database.SetIsPublicReadOnly(deckId, isPublicReadOnly)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
