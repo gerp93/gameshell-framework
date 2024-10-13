@@ -42,7 +42,7 @@ type gameData struct {
 	PlayerIsJudge bool
 	PlayerIsReady bool
 	PlayerHand    []handCard
-	PlayerPlays   []Card
+	PlayerPlays   []playCard
 
 	CardsToPlayCount int
 
@@ -52,7 +52,12 @@ type gameData struct {
 type boardPlay struct {
 	PlayerId       uuid.UUID
 	PlayerUserName string
-	Cards          []Card
+	Cards          []playCard
+}
+
+type playCard struct {
+	Card
+	IsSurprise bool
 }
 
 type handCard struct {
@@ -360,7 +365,8 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 		sqlString = `
 			SELECT
 				C.ID AS CARD_ID,
-				C.TEXT AS CARD_TEXT
+				C.TEXT AS CARD_TEXT,
+				B.IS_SURPRISE
 			FROM BOARD AS B
 				INNER JOIN CARD AS C ON C.ID = B.CARD_ID
 			WHERE B.PLAYER_ID = ?
@@ -372,19 +378,20 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 		}
 
 		for rows.Next() {
-			var card Card
+			var playCard playCard
 			if err := rows.Scan(
-				&card.Id,
-				&card.Text); err != nil {
+				&playCard.Id,
+				&playCard.Text,
+				&playCard.IsSurprise); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
-			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, card)
+			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, playCard)
 
 			totalCardsPlayedCount += 1
 			if bp.PlayerId == playerId {
 				playerCardsPlayedCount += 1
-				data.PlayerPlays = append(data.PlayerPlays, card)
+				data.PlayerPlays = append(data.PlayerPlays, playCard)
 			}
 		}
 	}
@@ -476,8 +483,13 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_CARD (?, ?)"
+	sqlString := "CALL SP_PLAY_CARD (?, ?, 0)"
 	return execute(sqlString, playerId, cardId)
+}
+
+func PlaySurpriseCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PLAY_SURPRISE_CARD (?)"
+	return execute(sqlString, playerId)
 }
 
 func WithdrawalPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
