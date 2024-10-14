@@ -75,12 +75,16 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if password != "" {
-		if password != passwordConfirm {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Passwords do not match."))
-			return
-		}
+	if password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("No password found."))
+		return
+	}
+
+	if password != passwordConfirm {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Passwords do not match."))
+		return
 	}
 
 	userId := api.GetUserId(r)
@@ -224,12 +228,16 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if password != "" {
-		if password != passwordConfirm {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Passwords do not match."))
-			return
-		}
+	if password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("No password found."))
+		return
+	}
+
+	if password != passwordConfirm {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Passwords do not match."))
+		return
 	}
 
 	err = database.SetDeckPassword(deckId, password)

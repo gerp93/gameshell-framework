@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"log"
 	"time"
@@ -16,7 +15,7 @@ type Deck struct {
 	ChangedOnDate time.Time
 
 	Name             string
-	PasswordHash     sql.NullString
+	PasswordHash     string
 	IsPublicReadOnly bool
 }
 
@@ -129,8 +128,8 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 	return deck, nil
 }
 
-func GetDeckPasswordHash(id uuid.UUID) (sql.NullString, error) {
-	var passwordHash sql.NullString
+func GetDeckPasswordHash(id uuid.UUID) (string, error) {
+	var passwordHash string
 
 	sqlString := `
 		SELECT
@@ -170,11 +169,7 @@ func CreateDeck(name string, password string, isPublicReadOnly bool) (uuid.UUID,
 		INSERT INTO DECK (ID, NAME, PASSWORD_HASH, IS_PUBLIC_READONLY)
 		VALUES (?, ?, ?, ?)
 	`
-	if password == "" {
-		return id, execute(sqlString, id, name, nil, isPublicReadOnly)
-	} else {
-		return id, execute(sqlString, id, name, passwordHash, isPublicReadOnly)
-	}
+	return id, execute(sqlString, id, name, passwordHash, isPublicReadOnly)
 }
 
 func GetDeckId(name string) (uuid.UUID, error) {
@@ -234,11 +229,7 @@ func SetDeckPassword(id uuid.UUID, password string) error {
 			PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
-	if password == "" {
-		return execute(sqlString, nil, id)
-	} else {
-		return execute(sqlString, passwordHash, id)
-	}
+	return execute(sqlString, passwordHash, id)
 }
 
 func DeleteDeck(id uuid.UUID) error {
