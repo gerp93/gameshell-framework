@@ -39,10 +39,12 @@ type gameData struct {
 	BoardIsReady bool
 	BoardPlays   []boardPlay
 
-	PlayerIsJudge bool
-	PlayerIsReady bool
-	PlayerHand    []handCard
-	PlayerPlays   []Card
+	PlayerIsJudge                bool
+	PlayerIsReady                bool
+	PlayerHand                   []handCard
+	PlayerPlays                  []playCard
+	PlayerSurpriseCardsRemaining int
+	PlayerWildCardsRemaining     int
 
 	CardsToPlayCount int
 
@@ -52,7 +54,13 @@ type gameData struct {
 type boardPlay struct {
 	PlayerId       uuid.UUID
 	PlayerUserName string
-	Cards          []Card
+	Cards          []playCard
+}
+
+type playCard struct {
+	Card
+	IsSurprise bool
+	IsWild bool
 }
 
 type handCard struct {
@@ -167,7 +175,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, password string, handSize int) (uuid.UUID, error) {
+func CreateLobby(name string, password string, handSize int, surpriseCardLimit int, wildCardLimit int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -181,13 +189,13 @@ func CreateLobby(name string, password string, handSize int) (uuid.UUID, error) 
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE, SURPRISE_CARD_LIMIT, WILD_CARD_LIMIT)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
 	if password == "" {
-		return id, execute(sqlString, id, name, nil, handSize)
+		return id, execute(sqlString, id, name, nil, handSize, surpriseCardLimit, wildCardLimit)
 	} else {
-		return id, execute(sqlString, id, name, passwordHash, handSize)
+		return id, execute(sqlString, id, name, passwordHash, handSize, surpriseCardLimit, wildCardLimit)
 	}
 }
 
@@ -278,6 +286,22 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	return execute(sqlString, handSize, id)
 }
 
+func SetLobbySurpriseCardLimit(id uuid.UUID, surpriseCardLimit int) error {
+	sqlString := `
+		CALL SP_SET_SURPRISE_CARD_LIMIT(?,?);
+	`
+	return execute(sqlString, id, surpriseCardLimit)
+
+}
+
+func SetLobbyWildCardLimit(id uuid.UUID, wildCardLimit int) error {
+	sqlString := `
+		CALL SP_SET_WILD_CARD_LIMIT(?,?);
+	`
+	return execute(sqlString, id, wildCardLimit)
+
+}
+
 func DeleteLobby(lobbyId uuid.UUID) error {
 	sqlString := `
 		DELETE FROM LOBBY
@@ -297,7 +321,9 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			JU.NAME AS JUDGE_NAME,
 			JC.TEXT AS JUDGE_CARD_TEXT,
-			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE
+			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
+			P.SURPRISE_CARDS_REMAINING,
+			P.WILD_CARDS_REMAINING
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
@@ -319,7 +345,9 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			&data.LobbyDrawPileCount,
 			&data.JudgeName,
 			&data.JudgeCardText,
-			&data.PlayerIsJudge); err != nil {
+			&data.PlayerIsJudge,
+			&data.PlayerSurpriseCardsRemaining,
+			&data.PlayerWildCardsRemaining); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
@@ -360,7 +388,9 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 		sqlString = `
 			SELECT
 				C.ID AS CARD_ID,
-				C.TEXT AS CARD_TEXT
+				C.TEXT AS CARD_TEXT,
+				B.IS_SURPRISE,
+				B.IS_WILD
 			FROM BOARD AS B
 				INNER JOIN CARD AS C ON C.ID = B.CARD_ID
 			WHERE B.PLAYER_ID = ?
@@ -372,19 +402,21 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 		}
 
 		for rows.Next() {
-			var card Card
+			var playCard playCard
 			if err := rows.Scan(
-				&card.Id,
-				&card.Text); err != nil {
+				&playCard.Id,
+				&playCard.Text,
+				&playCard.IsSurprise,
+				&playCard.IsWild); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
-			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, card)
+			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, playCard)
 
 			totalCardsPlayedCount += 1
 			if bp.PlayerId == playerId {
 				playerCardsPlayedCount += 1
-				data.PlayerPlays = append(data.PlayerPlays, card)
+				data.PlayerPlays = append(data.PlayerPlays, playCard)
 			}
 		}
 	}
@@ -476,8 +508,18 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_CARD (?, ?)"
+	sqlString := "CALL SP_PLAY_CARD (?, ?, 0, 0)"
 	return execute(sqlString, playerId, cardId)
+}
+
+func PlaySurpriseCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PLAY_SURPRISE_CARD (?)"
+	return execute(sqlString, playerId)
+}
+
+func PlayWildCard(playerId uuid.UUID, text string) error {
+	sqlString := "CALL SP_PLAY_WILD_CARD (?, ?)"
+	return execute(sqlString, playerId, text)
 }
 
 func WithdrawalPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
@@ -502,7 +544,6 @@ func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 
 func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
 	var playerName string
-
 	sqlString := "CALL SP_PICK_WINNER (?, ?)"
 	rows, err := query(sqlString, lobbyId, cardId)
 	if err != nil {
