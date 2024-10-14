@@ -2,7 +2,6 @@ package apiDeck
 
 import (
 	"net/http"
-	"strconv"
 	"text/template"
 
 	"github.com/google/uuid"
@@ -66,12 +65,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		} else if key == "passwordConfirm" {
 			passwordConfirm = val[0]
 		} else if key == "isPublicReadOnly" {
-			isPublicReadOnly, err = strconv.ParseBool(val[0])
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-				return
-			}
+			isPublicReadOnly = val[0] == "1"
 		}
 	}
 
@@ -249,7 +243,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func SetPublicReadOnly(w http.ResponseWriter, r *http.Request) {
+func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
 	deckIdString := r.PathValue("deckId")
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
@@ -281,12 +275,7 @@ func SetPublicReadOnly(w http.ResponseWriter, r *http.Request) {
 	var isPublicReadOnly bool
 	for key, val := range r.Form {
 		if key == "isPublicReadOnly" {
-			isPublicReadOnly, err = strconv.ParseBool(val[0])
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-				return
-			}
+			isPublicReadOnly = val[0] == "1"
 		}
 	}
 
