@@ -42,6 +42,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 		FROM DECK AS D
 			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
 		WHERE D.NAME LIKE ?
+		AND NOT IS_HIDDEN
 		GROUP BY D.ID
 		ORDER BY
 			TO_DAYS(D.CHANGED_ON_DATE) DESC,
