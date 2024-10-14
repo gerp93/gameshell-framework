@@ -60,7 +60,7 @@ type boardPlay struct {
 type playCard struct {
 	Card
 	IsSurprise bool
-	IsWild bool
+	IsWild     bool
 }
 
 type handCard struct {
