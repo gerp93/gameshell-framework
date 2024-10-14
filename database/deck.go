@@ -15,9 +15,9 @@ type Deck struct {
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
 
-	Name         		string
-	PasswordHash 		sql.NullString
-	IsPublicReadOnly 	bool
+	Name             string
+	PasswordHash     sql.NullString
+	IsPublicReadOnly bool
 }
 
 type DeckDetails struct {

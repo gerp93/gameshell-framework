@@ -2,8 +2,8 @@ package apiDeck
 
 import (
 	"net/http"
-	"text/template"
 	"strconv"
+	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
@@ -74,8 +74,6 @@ func Create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-
 
 	if name == "" {
 		w.WriteHeader(http.StatusBadRequest)
