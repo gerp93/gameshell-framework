@@ -38,7 +38,7 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 
 func getUserDeckAccess(userId uuid.UUID) ([]uuid.UUID, error) {
 	sqlString := "CALL SP_GET_DECK_ACCESS (?, ?)"
-	rows, err := query(sqlString, userId, "DECK")
+	rows, err := query(sqlString, userId, false)
 	if err != nil {
 		return nil, err
 	}
