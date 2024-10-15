@@ -288,14 +288,14 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	return execute(sqlString, handSize, id)
 }
 
-func SetLobbySpecialCardLimit(id uuid.UUID, surpriseCardLimit int) error {
+func SetLobbySpecialCardLimit(id uuid.UUID, specialCardLimit int) error {
 	sqlString := `
 		UPDATE LOBBY
 		SET
 			SPECIAL_CARD_LIMIT = ?
 		WHERE ID = ?
 	`
-	return execute(sqlString, surpriseCardLimit, id)
+	return execute(sqlString, specialCardLimit, id)
 
 }
 
@@ -523,6 +523,11 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_PLAY_CARD (?, ?, NULL)"
 	return execute(sqlString, playerId, cardId)
+}
+
+func PlayStealCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PLAY_STEAL_CARD (?)"
+	return execute(sqlString, playerId)
 }
 
 func PlaySurpriseCard(playerId uuid.UUID) error {
