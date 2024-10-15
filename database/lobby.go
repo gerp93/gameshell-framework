@@ -38,6 +38,7 @@ type gameData struct {
 	JudgeCardText string
 
 	BoardIsReady bool
+	BoardIsEmpty bool
 	BoardPlays   []boardPlay
 
 	PlayerIsJudge               bool
@@ -438,6 +439,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 	}
 	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
 	data.BoardIsReady = totalCardsPlayedCount == len(data.BoardPlays)*data.CardsToPlayCount
+	data.BoardIsEmpty = totalCardsPlayedCount == 0
 
 	if data.PlayerIsReady {
 		data.PlayerCanPlaySpecial = false
