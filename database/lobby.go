@@ -62,8 +62,7 @@ type boardPlay struct {
 
 type playCard struct {
 	Card
-	IsSurprise bool
-	IsWild     bool
+	SpecialCategory sql.NullString
 }
 
 type handCard struct {
@@ -400,8 +399,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			SELECT
 				C.ID AS CARD_ID,
 				C.TEXT AS CARD_TEXT,
-				B.IS_SURPRISE,
-				B.IS_WILD
+				B.SPECIAL_CATEGORY
 			FROM BOARD AS B
 				INNER JOIN CARD AS C ON C.ID = B.CARD_ID
 			WHERE B.PLAYER_ID = ?
@@ -417,8 +415,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			if err := rows.Scan(
 				&playCard.Id,
 				&playCard.Text,
-				&playCard.IsSurprise,
-				&playCard.IsWild); err != nil {
+				&playCard.SpecialCategory); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
@@ -524,7 +521,7 @@ func DrawPlayerHand(playerId uuid.UUID) error {
 }
 
 func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_CARD (?, ?, 0, 0)"
+	sqlString := "CALL SP_PLAY_CARD (?, ?, NULL)"
 	return execute(sqlString, playerId, cardId)
 }
 
