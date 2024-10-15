@@ -73,7 +73,7 @@ body.light-theme select {
   background-color: var(--light-bg);
 }
 
-body.light-theme tr:hover {
+body.light-theme tbody > tr:hover {
   background-color: var(--light-bg-hover);
 }
 
@@ -140,7 +140,7 @@ body.dark-theme select {
   background: var(--dark-bg);
 }
 
-body.dark-theme tr:hover {
+body.dark-theme tbody > tr:hover {
   background-color: var(--dark-bg-hover);
 }
 
