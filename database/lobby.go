@@ -28,11 +28,11 @@ type lobbyDetails struct {
 }
 
 type gameData struct {
-	LobbyId               uuid.UUID
-	LobbyName             string
-	LobbyHandSize         int
-	LobbySpecialCardLimit int
-	LobbyDrawPileCount    int
+	LobbyId            uuid.UUID
+	LobbyName          string
+	LobbyHandSize      int
+	LobbyCreditLimit   int
+	LobbyDrawPileCount int
 
 	JudgeName     string
 	JudgeCardText string
@@ -41,13 +41,11 @@ type gameData struct {
 	BoardIsEmpty bool
 	BoardPlays   []boardPlay
 
-	PlayerIsJudge               bool
-	PlayerIsReady               bool
-	PlayerHand                  []handCard
-	PlayerPlays                 []playCard
-	PlayerSpecialCardsPlayed    int
-	PlayerSpecialCardsRemaining int
-	PlayerCanPlaySpecial        bool
+	PlayerIsJudge bool
+	PlayerIsReady bool
+	PlayerHand    []handCard
+	PlayerPlays   []playCard
+	PlayerCredits int
 
 	CardsToPlayCount int
 
@@ -177,7 +175,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, password string, handSize int, specialCardLimit int) (uuid.UUID, error) {
+func CreateLobby(name string, password string, handSize int, creditLimit int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -191,13 +189,13 @@ func CreateLobby(name string, password string, handSize int, specialCardLimit in
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE, SPECIAL_CARD_LIMIT)
+		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT)
 		VALUES (?, ?, ?, ?, ?)
 	`
 	if password == "" {
-		return id, execute(sqlString, id, name, nil, handSize, specialCardLimit)
+		return id, execute(sqlString, id, name, nil, handSize, creditLimit)
 	} else {
-		return id, execute(sqlString, id, name, passwordHash, handSize, specialCardLimit)
+		return id, execute(sqlString, id, name, passwordHash, handSize, creditLimit)
 	}
 }
 
@@ -288,14 +286,14 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	return execute(sqlString, handSize, id)
 }
 
-func SetLobbySpecialCardLimit(id uuid.UUID, specialCardLimit int) error {
+func SetLobbyCreditLimit(id uuid.UUID, creditLimit int) error {
 	sqlString := `
 		UPDATE LOBBY
 		SET
-			SPECIAL_CARD_LIMIT = ?
+			CREDIT_LIMIT = ?
 		WHERE ID = ?
 	`
-	return execute(sqlString, specialCardLimit, id)
+	return execute(sqlString, creditLimit, id)
 
 }
 
@@ -315,12 +313,12 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			L.ID AS LOBBY_ID,
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			L.SPECIAL_CARD_LIMIT AS LOBBY_SPECIAL_CARD_LIMIT,
+			L.CREDIT_LIMIT AS LOBBY_CREDIT_LIMIT,
 			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
 			JU.NAME AS JUDGE_NAME,
 			JC.TEXT AS JUDGE_CARD_TEXT,
 			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
-			P.SPECIAL_CARDS_PLAYED AS PLAYEYR_SPECIAL_CARDS_PLAYED
+			P.CREDITS_SPENT AS PLAYEYR_CREDITS_SPENT
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
@@ -334,33 +332,26 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 		return data, err
 	}
 
+	var playerCreditsSpent int
 	for rows.Next() {
 		if err := rows.Scan(
 			&data.LobbyId,
 			&data.LobbyName,
 			&data.LobbyHandSize,
-			&data.LobbySpecialCardLimit,
+			&data.LobbyCreditLimit,
 			&data.LobbyDrawPileCount,
 			&data.JudgeName,
 			&data.JudgeCardText,
 			&data.PlayerIsJudge,
-			&data.PlayerSpecialCardsPlayed); err != nil {
+			&playerCreditsSpent); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
 	}
 
-	data.PlayerSpecialCardsRemaining = data.LobbySpecialCardLimit - data.PlayerSpecialCardsPlayed
-
-	data.PlayerCanPlaySpecial = true
-	if data.LobbySpecialCardLimit >= 0 {
-		if data.PlayerSpecialCardsRemaining < 1 {
-			data.PlayerCanPlaySpecial = false
-		}
-	}
-
-	if data.PlayerIsJudge || data.PlayerIsReady {
-		data.PlayerCanPlaySpecial = false
+	data.PlayerCredits = data.LobbyCreditLimit - playerCreditsSpent
+	if data.PlayerCredits < 0 {
+		data.PlayerCredits = 0
 	}
 
 	sqlString = `
@@ -437,10 +428,6 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
 	data.BoardIsReady = totalCardsPlayedCount == len(data.BoardPlays)*data.CardsToPlayCount
 	data.BoardIsEmpty = totalCardsPlayedCount == 0
-
-	if data.PlayerIsReady {
-		data.PlayerCanPlaySpecial = false
-	}
 
 	if data.BoardIsReady {
 		sort.Slice(data.BoardPlays, func(i, j int) bool {
