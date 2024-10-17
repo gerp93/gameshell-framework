@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/auth"
-	"github.com/grantfbarnes/card-judge/helper"
 )
 
 type User struct {
@@ -20,22 +19,6 @@ type User struct {
 	PasswordHash string
 	ColorTheme   sql.NullString
 	IsAdmin      bool
-}
-
-func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) bool {
-	lobbyIds, err := getUserLobbyAccess(userId)
-	if err != nil {
-		return false
-	}
-	return helper.IsIdInArray(lobbyId, lobbyIds)
-}
-
-func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) bool {
-	deckIds, err := getUserDeckAccess(userId)
-	if err != nil {
-		return false
-	}
-	return helper.IsIdInArray(deckId, deckIds)
 }
 
 func SearchUsers(search string) ([]User, error) {
