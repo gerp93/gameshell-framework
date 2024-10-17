@@ -28,11 +28,13 @@ type lobbyDetails struct {
 }
 
 type gameData struct {
-	LobbyId            uuid.UUID
-	LobbyName          string
-	LobbyHandSize      int
-	LobbyCreditLimit   int
-	LobbyDrawPileCount int
+	LobbyId          uuid.UUID
+	LobbyName        string
+	LobbyHandSize    int
+	LobbyCreditLimit int
+
+	DrawPileJudgeCount  int
+	DrawPilePlayerCount int
 
 	JudgeName     sql.NullString
 	JudgeCardText sql.NullString
@@ -314,7 +316,20 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			L.NAME AS LOBBY_NAME,
 			L.HAND_SIZE AS LOBBY_HAND_SIZE,
 			L.CREDIT_LIMIT AS LOBBY_CREDIT_LIMIT,
-			(SELECT COUNT(*) FROM DRAW_PILE WHERE LOBBY_ID = L.ID) AS LOBBY_DRAW_PILE_COUNT,
+			(
+				SELECT COUNT(*)
+				FROM DRAW_PILE AS DP
+					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+				WHERE DP.LOBBY_ID = L.ID
+					AND DPC.CATEGORY = 'JUDGE'
+			) AS DRAW_PILE_JUDGE_COUNT,
+			(
+				SELECT COUNT(*)
+				FROM DRAW_PILE AS DP
+					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+				WHERE DP.LOBBY_ID = L.ID
+					AND DPC.CATEGORY = 'PLAYER'
+			) AS DRAW_PILE_PLAYER_COUNT,
 			JU.NAME AS JUDGE_NAME,
 			JC.TEXT AS JUDGE_CARD_TEXT,
 			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
@@ -339,7 +354,8 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			&data.LobbyName,
 			&data.LobbyHandSize,
 			&data.LobbyCreditLimit,
-			&data.LobbyDrawPileCount,
+			&data.DrawPileJudgeCount,
+			&data.DrawPilePlayerCount,
 			&data.JudgeName,
 			&data.JudgeCardText,
 			&data.PlayerIsJudge,
