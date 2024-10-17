@@ -34,8 +34,8 @@ type gameData struct {
 	LobbyCreditLimit   int
 	LobbyDrawPileCount int
 
-	JudgeName     string
-	JudgeCardText string
+	JudgeName     sql.NullString
+	JudgeCardText sql.NullString
 
 	BoardIsReady bool
 	BoardIsEmpty bool
@@ -321,10 +321,10 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			P.CREDITS_SPENT AS PLAYEYR_CREDITS_SPENT
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
-			INNER JOIN CARD AS JC ON JC.ID = J.CARD_ID
-			INNER JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
-			INNER JOIN USER AS JU ON JU.ID = JP.USER_ID
+			LEFT JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN CARD AS JC ON JC.ID = J.CARD_ID
+			LEFT JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
+			LEFT JOIN USER AS JU ON JU.ID = JP.USER_ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)
@@ -421,7 +421,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 	}
 
 	blankRegExp := regexp.MustCompile(`__+`)
-	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.JudgeCardText, -1))
+	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.JudgeCardText.String, -1))
 	if data.CardsToPlayCount < 1 {
 		data.CardsToPlayCount = 1
 	}
