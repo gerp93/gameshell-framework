@@ -40,7 +40,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
 			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
-		WHERE D.ID <> '00000000-0000-0000-0000-000000000000'
+		WHERE D.ID <> ?
 			AND D.NAME LIKE ?
 		GROUP BY D.ID
 		ORDER BY
@@ -48,7 +48,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			D.NAME ASC,
 			COUNT(C.ID) DESC
 	`
-	rows, err := query(sqlString, search)
+	rows, err := query(sqlString, uuid.Nil, search)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +72,9 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 	return result, nil
 }
 
-func GetUserDecks(userId uuid.UUID) ([]Deck, error) {
-	sqlString := "CALL SP_GET_DECK_ACCESS (?, ?)"
-	rows, err := query(sqlString, userId, true)
+func GetReadableDecks(userId uuid.UUID) ([]Deck, error) {
+	sqlString := "CALL SP_GET_READABLE_DECKS (?)"
+	rows, err := query(sqlString, userId)
 	if err != nil {
 		return nil, err
 	}

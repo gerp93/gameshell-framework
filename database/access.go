@@ -7,25 +7,23 @@ import (
 	"github.com/google/uuid"
 )
 
-func getUserLobbyAccess(userId uuid.UUID) ([]uuid.UUID, error) {
-	sqlString := "CALL SP_GET_LOBBY_ACCESS (?)"
-	rows, err := query(sqlString, userId)
+func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) (bool, error) {
+	hasAccess := false
+
+	sqlString := "CALL SP_USER_HAS_LOBBY_ACCESS (?, ?)"
+	rows, err := query(sqlString, userId, lobbyId)
 	if err != nil {
-		return nil, err
+		return hasAccess, err
 	}
 
-	lobbyIds := make([]uuid.UUID, 0)
 	for rows.Next() {
-		var lobbyId uuid.UUID
-		var lobbyName string
-		if err := rows.Scan(&lobbyId, &lobbyName); err != nil {
+		if err := rows.Scan(&hasAccess); err != nil {
 			log.Println(err)
-			return lobbyIds, errors.New("failed to scan row in query results")
+			return hasAccess, errors.New("failed to scan row in query results")
 		}
-		lobbyIds = append(lobbyIds, lobbyId)
 	}
 
-	return lobbyIds, nil
+	return hasAccess, nil
 }
 
 func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
@@ -36,25 +34,23 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 	return execute(sqlString, userId, lobbyId)
 }
 
-func getUserDeckAccess(userId uuid.UUID) ([]uuid.UUID, error) {
-	sqlString := "CALL SP_GET_DECK_ACCESS (?, ?)"
-	rows, err := query(sqlString, userId, false)
+func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) (bool, error) {
+	hasAccess := false
+
+	sqlString := "CALL SP_USER_HAS_DECK_ACCESS (?, ?)"
+	rows, err := query(sqlString, userId, deckId)
 	if err != nil {
-		return nil, err
+		return hasAccess, err
 	}
 
-	deckIds := make([]uuid.UUID, 0)
 	for rows.Next() {
-		var deckId uuid.UUID
-		var deckName string
-		if err := rows.Scan(&deckId, &deckName); err != nil {
+		if err := rows.Scan(&hasAccess); err != nil {
 			log.Println(err)
-			return deckIds, errors.New("failed to scan row in query results")
+			return hasAccess, errors.New("failed to scan row in query results")
 		}
-		deckIds = append(deckIds, deckId)
 	}
 
-	return deckIds, nil
+	return hasAccess, nil
 }
 
 func AddUserDeckAccess(userId uuid.UUID, deckId uuid.UUID) error {
