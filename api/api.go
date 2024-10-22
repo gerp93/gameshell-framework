@@ -43,6 +43,7 @@ func PageMiddleware(next http.Handler) http.Handler {
 		// required to be logged in
 		if r.URL.Path == "/manage" ||
 			r.URL.Path == "/admin" ||
+			r.URL.Path == "/stats" ||
 			r.URL.Path == "/lobbies" ||
 			r.URL.Path == "/decks" ||
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
