@@ -33,11 +33,12 @@ type gameData struct {
 	LobbyHandSize    int
 	LobbyCreditLimit int
 
-	DrawPileJudgeCount  int
-	DrawPilePlayerCount int
+	DrawPilePromptCount   int
+	DrawPileResponseCount int
 
-	JudgeName     sql.NullString
-	JudgeCardText sql.NullString
+	JudgeName sql.NullString
+
+	PromptCardText sql.NullString
 
 	BoardIsReady bool
 	BoardIsEmpty bool
@@ -321,17 +322,17 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 				FROM DRAW_PILE AS DP
 					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'JUDGE'
-			) AS DRAW_PILE_JUDGE_COUNT,
+					AND DPC.CATEGORY = 'PROMPT'
+			) AS DRAW_PILE_PROMPT_COUNT,
 			(
 				SELECT COUNT(*)
 				FROM DRAW_PILE AS DP
 					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'PLAYER'
-			) AS DRAW_PILE_PLAYER_COUNT,
+					AND DPC.CATEGORY = 'RESPONSE'
+			) AS DRAW_PILE_RESPONSE_COUNT,
 			JU.NAME AS JUDGE_NAME,
-			JC.TEXT AS JUDGE_CARD_TEXT,
+			JC.TEXT AS PROMPT_CARD_TEXT,
 			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
 			P.CREDITS_SPENT AS PLAYEYR_CREDITS_SPENT
 		FROM PLAYER AS P
@@ -354,10 +355,10 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			&data.LobbyName,
 			&data.LobbyHandSize,
 			&data.LobbyCreditLimit,
-			&data.DrawPileJudgeCount,
-			&data.DrawPilePlayerCount,
+			&data.DrawPilePromptCount,
+			&data.DrawPileResponseCount,
 			&data.JudgeName,
-			&data.JudgeCardText,
+			&data.PromptCardText,
 			&data.PlayerIsJudge,
 			&playerCreditsSpent); err != nil {
 			log.Println(err)
@@ -437,7 +438,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 	}
 
 	blankRegExp := regexp.MustCompile(`__+`)
-	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.JudgeCardText.String, -1))
+	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.PromptCardText.String, -1))
 	if data.CardsToPlayCount < 1 {
 		data.CardsToPlayCount = 1
 	}
@@ -518,12 +519,12 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 	return data, nil
 }
 
-func DrawPlayerHand(playerId uuid.UUID) error {
+func DrawHand(playerId uuid.UUID) error {
 	sqlString := "CALL SP_DRAW_HAND (?)"
 	return execute(sqlString, playerId)
 }
 
-func PlayPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_PLAY_CARD (?, ?, NULL)"
 	return execute(sqlString, playerId, cardId)
 }
@@ -543,17 +544,17 @@ func PlayWildCard(playerId uuid.UUID, text string) error {
 	return execute(sqlString, playerId, text)
 }
 
-func WithdrawalPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+func WithdrawalCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_WITHDRAWAL_CARD (?, ?)"
 	return execute(sqlString, playerId, cardId)
 }
 
-func DiscardPlayerCard(playerId uuid.UUID, cardId uuid.UUID) error {
+func DiscardCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_DISCARD_CARD (?, ?)"
 	return execute(sqlString, playerId, cardId)
 }
 
-func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
+func LockCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 	sqlString := `
 		UPDATE HAND
 		SET IS_LOCKED = ?
@@ -563,7 +564,7 @@ func LockPlayerCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 	return execute(sqlString, isLocked, playerId, cardId)
 }
 
-func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
+func PickWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
 	var playerName string
 	sqlString := "CALL SP_PICK_WINNER (?, ?)"
 	rows, err := query(sqlString, lobbyId, cardId)
@@ -581,12 +582,12 @@ func PickLobbyWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
 	return playerName, nil
 }
 
-func DiscardPlayerHand(playerId uuid.UUID) error {
+func DiscardHand(playerId uuid.UUID) error {
 	sqlString := "CALL SP_DISCARD_HAND (?)"
 	return execute(sqlString, playerId)
 }
 
-func SkipJudgeCard(lobbyId uuid.UUID) error {
-	sqlString := "CALL SP_SKIP_JUDGE_CARD (?)"
+func SkipPrompt(lobbyId uuid.UUID) error {
+	sqlString := "CALL SP_SKIP_PROMPT (?)"
 	return execute(sqlString, lobbyId)
 }
