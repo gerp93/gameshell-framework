@@ -1,6 +1,7 @@
 package apiDeck
 
 import (
+	"encoding/csv"
 	"net/http"
 	"text/template"
 
@@ -8,6 +9,50 @@ import (
 	"github.com/grantfbarnes/card-judge/api"
 	"github.com/grantfbarnes/card-judge/database"
 )
+
+func GetCardExport(w http.ResponseWriter, r *http.Request) {
+	deckIdString := r.PathValue("deckId")
+	deckId, err := uuid.Parse(deckIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get deck id from path."))
+		return
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to get user id."))
+		return
+	}
+
+	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to check deck access."))
+		return
+	}
+
+	if !hasDeckAccess {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("User does not have access."))
+		return
+	}
+
+	cards, err := database.GetCardsInDeckExport(deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+	for _, card := range cards {
+		writer.Write([]string{card.Category, card.Text})
+	}
+}
 
 func Search(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
