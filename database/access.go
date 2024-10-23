@@ -10,7 +10,7 @@ import (
 func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) (bool, error) {
 	hasAccess := false
 
-	sqlString := "CALL SP_USER_HAS_LOBBY_ACCESS (?, ?)"
+	sqlString := "SELECT FN_USER_HAS_LOBBY_ACCESS (?, ?)"
 	rows, err := query(sqlString, userId, lobbyId)
 	if err != nil {
 		return hasAccess, err
@@ -37,7 +37,7 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) (bool, error) {
 	hasAccess := false
 
-	sqlString := "CALL SP_USER_HAS_DECK_ACCESS (?, ?)"
+	sqlString := "SELECT FN_USER_HAS_DECK_ACCESS (?, ?)"
 	rows, err := query(sqlString, userId, deckId)
 	if err != nil {
 		return hasAccess, err
