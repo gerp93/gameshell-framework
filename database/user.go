@@ -150,6 +150,33 @@ func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
 	return isAdmin, nil
 }
 
+func AddUserLoginAttempt(ipAddress string, userName string) error {
+	sqlString := `
+		INSERT INTO LOGIN_ATTEMPT (IP_ADDRESS, USER_NAME)
+		VALUES (?, ?)
+	`
+	return execute(sqlString, ipAddress, userName)
+}
+
+func AllowUserLoginAttempt(ipAddress string, userName string) (bool, error) {
+	allowLogin := false
+
+	sqlString := "CALL SP_ALLOW_LOGIN_ATTEMPT (?, ?)"
+	rows, err := query(sqlString, ipAddress, userName)
+	if err != nil {
+		return allowLogin, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&allowLogin); err != nil {
+			log.Println(err)
+			return allowLogin, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return allowLogin, nil
+}
+
 func GetUserIdByName(name string) (uuid.UUID, error) {
 	var userId uuid.UUID
 
