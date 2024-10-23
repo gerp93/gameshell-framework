@@ -191,6 +191,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	allowLogin, err := database.AllowUserLoginAttempt(r.RemoteAddr, name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	if !allowLogin {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Too many login attempts, please wait an hour to try again."))
+		return
+	}
+
+	err = database.AddUserLoginAttempt(r.RemoteAddr, name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	if !database.UserNameExists(name) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User name does not exist."))
