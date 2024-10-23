@@ -41,6 +41,16 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 	return database, nil
 }
 
+func RunFile(filePath string) error {
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed to read file")
+	}
+
+	return execute(string(bytes))
+}
+
 func query(sqlString string, params ...any) (*sql.Rows, error) {
 	statement, err := database.Prepare(sqlString)
 	if err != nil {
