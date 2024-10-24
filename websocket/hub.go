@@ -42,7 +42,7 @@ func (h *Hub) run() {
 		case client := <-h.unregister:
 			h.unregisterClient(client)
 			if len(h.clients) == 0 {
-				database.DeleteLobby(h.lobbyId)
+				_ = database.DeleteLobby(h.lobbyId)
 				delete(lobbyHubs, h.lobbyId)
 				return
 			}
@@ -62,7 +62,7 @@ func (h *Hub) unregisterClient(client *Client) {
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
 		close(client.send)
-		database.RemoveUserFromLobby(h.lobbyId, client.user.Id)
+		_ = database.RemoveUserFromLobby(h.lobbyId, client.user.Id)
 	}
 	h.broadcastMessage([]byte("Player Left: " + client.user.Name))
 	h.broadcastMessage([]byte("refresh"))

@@ -27,7 +27,7 @@ type lobbyDetails struct {
 	UserCount int
 }
 
-type gameData struct {
+type GameData struct {
 	LobbyId          uuid.UUID
 	LobbyName        string
 	LobbyHandSize    int
@@ -308,8 +308,8 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 	return execute(sqlString, lobbyId)
 }
 
-func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
-	var data gameData
+func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
+	var data GameData
 
 	sqlString := `
 		SELECT
@@ -334,7 +334,7 @@ func GetPlayerGameData(playerId uuid.UUID) (gameData, error) {
 			JU.NAME AS JUDGE_NAME,
 			JC.TEXT AS PROMPT_CARD_TEXT,
 			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
-			P.CREDITS_SPENT AS PLAYEYR_CREDITS_SPENT
+			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 			LEFT JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID

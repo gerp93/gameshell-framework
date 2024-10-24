@@ -21,7 +21,7 @@ type BasePageData struct {
 	LoggedIn  bool
 }
 
-func PageMiddleware(next http.Handler) http.Handler {
+func MiddlewareForPages(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		basePageData := BasePageData{
 			PageTitle: "Card Judge",
@@ -81,7 +81,7 @@ func GetBasePageData(r *http.Request) BasePageData {
 	return r.Context().Value(basePageDataRequestContextKey).(BasePageData)
 }
 
-func ApiMiddleware(next http.Handler) http.Handler {
+func MiddlewareForAPIs(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userId, _ := auth.GetCookieUserId(r)
 		r = r.WithContext(context.WithValue(r.Context(), userIdRequestContextKey, userId))
