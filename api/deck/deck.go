@@ -15,34 +15,34 @@ func GetCardExport(w http.ResponseWriter, r *http.Request) {
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get deck id from path."))
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to check deck access."))
+		_, _ = w.Write([]byte("Failed to check deck access."))
 		return
 	}
 
 	if !hasDeckAccess {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("User does not have access."))
+		_, _ = w.Write([]byte("User does not have access."))
 		return
 	}
 
 	cards, err := database.GetCardsInDeckExport(deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -50,7 +50,7 @@ func GetCardExport(w http.ResponseWriter, r *http.Request) {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
 	for _, card := range cards {
-		writer.Write([]string{card.Category, card.Text})
+		_ = writer.Write([]string{card.Category, card.Text})
 	}
 }
 
@@ -58,7 +58,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
+		_, _ = w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -74,7 +74,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	decks, err := database.SearchDecks(search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -83,18 +83,18 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to parse HTML."))
+		_, _ = w.Write([]byte("Failed to parse HTML."))
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "deck-table-rows", decks)
+	_ = tmpl.ExecuteTemplate(w, "deck-table-rows", decks)
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
+		_, _ = w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -116,52 +116,52 @@ func Create(w http.ResponseWriter, r *http.Request) {
 
 	if name == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No name found."))
+		_, _ = w.Write([]byte("No name found."))
 		return
 	}
 
 	if password == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No password found."))
+		_, _ = w.Write([]byte("No password found."))
 		return
 	}
 
 	if password != passwordConfirm {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Passwords do not match."))
+		_, _ = w.Write([]byte("Passwords do not match."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	existingDeckId, err := database.GetDeckId(name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 	if existingDeckId != uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Deck name already exists."))
+		_, _ = w.Write([]byte("Deck name already exists."))
 		return
 	}
 
 	id, err := database.CreateDeck(name, password, isPublicReadOnly)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
 	err = database.AddUserDeckAccess(userId, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -174,34 +174,34 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get deck id from path."))
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to check deck access."))
+		_, _ = w.Write([]byte("Failed to check deck access."))
 		return
 	}
 
 	if !hasDeckAccess {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("User does not have access."))
+		_, _ = w.Write([]byte("User does not have access."))
 		return
 	}
 
 	err = r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
+		_, _ = w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -214,26 +214,26 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 
 	if name == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No name found."))
+		_, _ = w.Write([]byte("No name found."))
 		return
 	}
 
 	existingDeckId, err := database.GetDeckId(name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 	if existingDeckId != uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Deck name already exists."))
+		_, _ = w.Write([]byte("Deck name already exists."))
 		return
 	}
 
 	err = database.SetDeckName(deckId, name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -246,34 +246,34 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get deck id from path."))
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to check deck access."))
+		_, _ = w.Write([]byte("Failed to check deck access."))
 		return
 	}
 
 	if !hasDeckAccess {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("User does not have access."))
+		_, _ = w.Write([]byte("User does not have access."))
 		return
 	}
 
 	err = r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
+		_, _ = w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -289,20 +289,20 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 
 	if password == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No password found."))
+		_, _ = w.Write([]byte("No password found."))
 		return
 	}
 
 	if password != passwordConfirm {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Passwords do not match."))
+		_, _ = w.Write([]byte("Passwords do not match."))
 		return
 	}
 
 	err = database.SetDeckPassword(deckId, password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -315,34 +315,34 @@ func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get deck id from path."))
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to check deck access."))
+		_, _ = w.Write([]byte("Failed to check deck access."))
 		return
 	}
 
 	if !hasDeckAccess {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("User does not have access."))
+		_, _ = w.Write([]byte("User does not have access."))
 		return
 	}
 
 	err = r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to parse form."))
+		_, _ = w.Write([]byte("Failed to parse form."))
 		return
 	}
 
@@ -356,7 +356,7 @@ func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
 	err = database.SetIsPublicReadOnly(deckId, isPublicReadOnly)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -369,34 +369,34 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	deckId, err := uuid.Parse(deckIdString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get deck id from path."))
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
 		return
 	}
 
 	userId := api.GetUserId(r)
 	if userId == uuid.Nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Failed to get user id."))
+		_, _ = w.Write([]byte("Failed to get user id."))
 		return
 	}
 
 	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to check deck access."))
+		_, _ = w.Write([]byte("Failed to check deck access."))
 		return
 	}
 
 	if !hasDeckAccess {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("User does not have access."))
+		_, _ = w.Write([]byte("User does not have access."))
 		return
 	}
 
 	err = database.DeleteDeck(deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
