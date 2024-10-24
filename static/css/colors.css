@@ -1,7 +1,7 @@
 :root {
-  --topbar-text: rgb(255, 255, 255);
-  --topbar-bg: rgb(50, 50, 50);
-  --topbar-hover: rgb(70, 70, 70);
+  --top-bar-text: rgb(255, 255, 255);
+  --top-bar-bg: rgb(50, 50, 50);
+  --top-bar-hover: rgb(70, 70, 70);
 
   --light-text: rgb(0, 0, 0);
   --light-bg: rgb(245, 245, 245);
