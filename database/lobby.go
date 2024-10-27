@@ -19,7 +19,12 @@ type Lobby struct {
 
 	Name         string
 	PasswordHash sql.NullString
-	HandSize     int
+
+	HandSize    int
+	CreditLimit int
+
+	JudgePosition int
+	PromptCardId  uuid.UUID
 }
 
 type lobbyDetails struct {
@@ -36,32 +41,36 @@ type GameData struct {
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
 
+	PlayerCount int
+
 	JudgeName sql.NullString
 
 	PromptCardText sql.NullString
 
-	BoardIsReady bool
-	BoardIsEmpty bool
-	BoardPlays   []boardPlay
+	BoardIsReady   bool
+	BoardIsEmpty   bool
+	BoardResponses []boardResponse
 
-	PlayerIsJudge bool
-	PlayerIsReady bool
-	PlayerHand    []handCard
-	PlayerPlays   []playCard
-	PlayerCredits int
+	PlayerIsJudge   bool
+	PlayerIsReady   bool
+	PlayerHand      []handCard
+	PlayerResponses []boardResponse
+	PlayerCredits   int
 
 	CardsToPlayCount int
 
 	Wins []winDetail
 }
 
-type boardPlay struct {
+type boardResponse struct {
+	ResponseId     uuid.UUID
 	PlayerId       uuid.UUID
 	PlayerUserName string
-	Cards          []playCard
+	ResponseCards  []boardResponseCard
 }
 
-type playCard struct {
+type boardResponseCard struct {
+	ResponseCardId uuid.UUID
 	Card
 	SpecialCategory sql.NullString
 }
@@ -85,6 +94,9 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.NAME,
 			L.PASSWORD_HASH,
 			L.HAND_SIZE,
+			L.CREDIT_LIMIT,
+			L.JUDGE_POSITION,
+			L.PROMPT_CARD_ID,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
@@ -110,6 +122,9 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.Name,
 			&ld.PasswordHash,
 			&ld.HandSize,
+			&ld.CreditLimit,
+			&ld.JudgePosition,
+			&ld.PromptCardId,
 			&ld.UserCount); err != nil {
 			log.Println(err)
 			return result, errors.New("failed to scan row in query results")
@@ -129,7 +144,10 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			CHANGED_ON_DATE,
 			NAME,
 			PASSWORD_HASH,
-			HAND_SIZE
+			HAND_SIZE,
+			CREDIT_LIMIT,
+			JUDGE_POSITION,
+			PROMPT_CARD_ID
 		FROM LOBBY
 		WHERE ID = ?
 	`
@@ -145,7 +163,10 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.ChangedOnDate,
 			&lobby.Name,
 			&lobby.PasswordHash,
-			&lobby.HandSize); err != nil {
+			&lobby.HandSize,
+			&lobby.CreditLimit,
+			&lobby.JudgePosition,
+			&lobby.PromptCardId); err != nil {
 			log.Println(err)
 			return lobby, errors.New("failed to scan row in query results")
 		}
@@ -313,34 +334,32 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 	sqlString := `
 		SELECT
-			L.ID AS LOBBY_ID,
-			L.NAME AS LOBBY_NAME,
-			L.HAND_SIZE AS LOBBY_HAND_SIZE,
-			L.CREDIT_LIMIT AS LOBBY_CREDIT_LIMIT,
-			(
-				SELECT COUNT(*)
+			L.ID                                                AS LOBBY_ID,
+			L.NAME                                              AS LOBBY_NAME,
+			L.HAND_SIZE                                         AS LOBBY_HAND_SIZE,
+			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
+			(SELECT COUNT(*)
 				FROM DRAW_PILE AS DP
-					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'PROMPT'
-			) AS DRAW_PILE_PROMPT_COUNT,
-			(
-				SELECT COUNT(*)
+				AND DPC.CATEGORY = 'PROMPT')                    AS DRAW_PILE_PROMPT_COUNT,
+			(SELECT COUNT(*)
 				FROM DRAW_PILE AS DP
-					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'RESPONSE'
-			) AS DRAW_PILE_RESPONSE_COUNT,
-			JU.NAME AS JUDGE_NAME,
-			JC.TEXT AS PROMPT_CARD_TEXT,
-			EXISTS(SELECT ID FROM JUDGE WHERE PLAYER_ID = P.ID) AS PLAYER_IS_JUDGE,
-			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT
+				AND DPC.CATEGORY = 'RESPONSE')                  AS DRAW_PILE_RESPONSE_COUNT,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS PLAYER_COUNT,
+			(SELECT JU.NAME
+				FROM USER AS JU
+						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
+						INNER JOIN JUDGE AS J ON J.PLAYER_ID = JP.ID
+				WHERE JP.LOBBY_ID = L.ID)                       AS JUDGE_NAME,
+			PC.TEXT                                             AS PROMPT_CARD_TEXT,
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT
 		FROM PLAYER AS P
-			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-			LEFT JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
-			LEFT JOIN CARD AS JC ON JC.ID = J.CARD_ID
-			LEFT JOIN PLAYER AS JP ON JP.ID = J.PLAYER_ID
-			LEFT JOIN USER AS JU ON JU.ID = JP.USER_ID
+				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+				LEFT JOIN CARD AS PC ON PC.ID = L.PROMPT_CARD_ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)
@@ -357,6 +376,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.LobbyCreditLimit,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
+			&data.PlayerCount,
 			&data.JudgeName,
 			&data.PromptCardText,
 			&data.PlayerIsJudge,
@@ -373,16 +393,18 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 	sqlString = `
 		SELECT
-			P.ID AS PLAYER_ID,
+			R.ID   AS RESPONSE_ID,
+			P.ID   AS PLAYER_ID,
 			U.NAME AS PLAYER_USER_NAME
 		FROM LOBBY AS L
-			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
-			INNER JOIN USER AS U ON U.ID = P.USER_ID
-			LEFT JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
+				INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+				LEFT JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
 		WHERE L.ID = ?
 			AND P.IS_ACTIVE = 1
 			AND J.ID IS NULL
-		ORDER BY U.NAME ASC
+		ORDER BY U.NAME
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -390,50 +412,57 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	for rows.Next() {
-		var bp boardPlay
+		var br boardResponse
 		if err := rows.Scan(
-			&bp.PlayerId,
-			&bp.PlayerUserName); err != nil {
+			&br.ResponseId,
+			&br.PlayerId,
+			&br.PlayerUserName); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
-		data.BoardPlays = append(data.BoardPlays, bp)
+		data.BoardResponses = append(data.BoardResponses, br)
 	}
 
 	totalCardsPlayedCount := 0
 	playerCardsPlayedCount := 0
-	for i, bp := range data.BoardPlays {
+	for i, br := range data.BoardResponses {
 		sqlString = `
 			SELECT
-				C.ID AS CARD_ID,
+				RC.ID  AS RESPONSE_CARD_ID,
+				C.ID   AS CARD_ID,
 				C.TEXT AS CARD_TEXT,
-				B.SPECIAL_CATEGORY
-			FROM BOARD AS B
-				INNER JOIN CARD AS C ON C.ID = B.CARD_ID
-			WHERE B.PLAYER_ID = ?
-			ORDER BY B.CREATED_ON_DATE ASC
+				RC.SPECIAL_CATEGORY
+			FROM RESPONSE AS R
+					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+					INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
+			WHERE R.PLAYER_ID = ?
+			ORDER BY RC.CREATED_ON_DATE
 		`
-		rows, err = query(sqlString, bp.PlayerId)
+		rows, err = query(sqlString, br.PlayerId)
 		if err != nil {
 			return data, err
 		}
 
 		for rows.Next() {
-			var playCard playCard
+			var responseCard boardResponseCard
 			if err := rows.Scan(
-				&playCard.Id,
-				&playCard.Text,
-				&playCard.SpecialCategory); err != nil {
+				&responseCard.ResponseCardId,
+				&responseCard.Id,
+				&responseCard.Text,
+				&responseCard.SpecialCategory); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
-			data.BoardPlays[i].Cards = append(data.BoardPlays[i].Cards, playCard)
+			data.BoardResponses[i].ResponseCards = append(data.BoardResponses[i].ResponseCards, responseCard)
 
 			totalCardsPlayedCount += 1
-			if bp.PlayerId == playerId {
+			if br.PlayerId == playerId {
 				playerCardsPlayedCount += 1
-				data.PlayerPlays = append(data.PlayerPlays, playCard)
 			}
+		}
+
+		if br.PlayerId == playerId {
+			data.PlayerResponses = append(data.PlayerResponses, data.BoardResponses[i])
 		}
 	}
 
@@ -443,18 +472,18 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		data.CardsToPlayCount = 1
 	}
 	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
-	data.BoardIsReady = totalCardsPlayedCount == len(data.BoardPlays)*data.CardsToPlayCount
+	data.BoardIsReady = totalCardsPlayedCount == (data.PlayerCount-1)*data.CardsToPlayCount
 	data.BoardIsEmpty = totalCardsPlayedCount == 0
 
 	if data.BoardIsReady {
-		sort.Slice(data.BoardPlays, func(i, j int) bool {
-			if len(data.BoardPlays[i].Cards) == 0 {
+		sort.Slice(data.BoardResponses, func(i, j int) bool {
+			if len(data.BoardResponses[i].ResponseCards) == 0 {
 				return true
 			}
-			if len(data.BoardPlays[j].Cards) == 0 {
+			if len(data.BoardResponses[j].ResponseCards) == 0 {
 				return false
 			}
-			return data.BoardPlays[i].Cards[0].Text < data.BoardPlays[j].Cards[0].Text
+			return data.BoardResponses[i].ResponseCards[0].Text < data.BoardResponses[j].ResponseCards[0].Text
 		})
 	}
 
@@ -487,20 +516,17 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 	sqlString = `
 		SELECT
-			U.NAME AS USER_NAME,
+			U.NAME      AS USER_NAME,
 			COUNT(W.ID) AS WINS
 		FROM PLAYER AS P
-			INNER JOIN PLAYER AS LP ON LP.LOBBY_ID = P.LOBBY_ID
-			INNER JOIN USER AS U ON U.ID = LP.USER_ID
-			LEFT JOIN WIN AS W ON W.PLAYER_ID = LP.ID
-		WHERE P.ID = ?
-			AND LP.IS_ACTIVE = 1
-		GROUP BY LP.USER_ID
-		ORDER BY
-			COUNT(W.ID) DESC,
-			U.NAME ASC
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
+		WHERE P.LOBBY_ID = ?
+			AND P.IS_ACTIVE = 1
+		GROUP BY P.USER_ID
+		ORDER BY COUNT(W.ID) DESC
 	`
-	rows, err = query(sqlString, playerId)
+	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
 		return data, err
 	}
@@ -525,28 +551,28 @@ func DrawHand(playerId uuid.UUID) error {
 }
 
 func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_CARD (?, ?, NULL)"
+	sqlString := "CALL SP_RESPOND_WITH_CARD (?, ?, NULL)"
 	return execute(sqlString, playerId, cardId)
 }
 
 func PlayStealCard(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_STEAL_CARD (?)"
+	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
 	return execute(sqlString, playerId)
 }
 
 func PlaySurpriseCard(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PLAY_SURPRISE_CARD (?)"
+	sqlString := "CALL SP_RESPOND_WITH_SURPRISE_CARD (?)"
 	return execute(sqlString, playerId)
 }
 
 func PlayWildCard(playerId uuid.UUID, text string) error {
-	sqlString := "CALL SP_PLAY_WILD_CARD (?, ?)"
+	sqlString := "CALL SP_RESPOND_WITH_WILD_CARD (?, ?)"
 	return execute(sqlString, playerId, text)
 }
 
-func WithdrawalCard(playerId uuid.UUID, cardId uuid.UUID) error {
-	sqlString := "CALL SP_WITHDRAWAL_CARD (?, ?)"
-	return execute(sqlString, playerId, cardId)
+func WithdrawCard(responseCardId uuid.UUID) error {
+	sqlString := "CALL SP_WITHDRAW_CARD (?)"
+	return execute(sqlString, responseCardId)
 }
 
 func DiscardCard(playerId uuid.UUID, cardId uuid.UUID) error {
@@ -564,10 +590,10 @@ func LockCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 	return execute(sqlString, isLocked, playerId, cardId)
 }
 
-func PickWinner(lobbyId uuid.UUID, cardId uuid.UUID) (string, error) {
+func PickWinner(responseId uuid.UUID) (string, error) {
 	var playerName string
-	sqlString := "CALL SP_PICK_WINNER (?, ?)"
-	rows, err := query(sqlString, lobbyId, cardId)
+	sqlString := "CALL SP_PICK_WINNER (?)"
+	rows, err := query(sqlString, responseId)
 	if err != nil {
 		return playerName, err
 	}
