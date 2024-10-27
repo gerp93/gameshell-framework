@@ -57,6 +57,8 @@ type GameData struct {
 	CardsToPlayCount int
 
 	Wins []winDetail
+
+	UpcomingJudges []string
 }
 
 type boardResponse struct {
@@ -512,7 +514,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
 		GROUP BY P.USER_ID
-		ORDER BY COUNT(W.ID) DESC
+		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -528,6 +530,34 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 		data.Wins = append(data.Wins, win)
+	}
+
+	sqlString = `
+		SELECT U.NAME
+		FROM LOBBY AS L
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+				INNER JOIN (SELECT
+								LOBBY_ID,
+								USER_ID,
+								RANK() OVER (PARTITION BY LOBBY_ID ORDER BY CREATED_ON_DATE) AS JOIN_ORDER
+							FROM PLAYER
+							WHERE IS_ACTIVE = 1) AS T ON T.LOBBY_ID = L.ID
+				INNER JOIN USER AS U ON U.ID = T.USER_ID
+		WHERE L.ID = ?
+		ORDER BY T.JOIN_ORDER <= J.POSITION, T.JOIN_ORDER
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var judgeName string
+		if err := rows.Scan(&judgeName); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.UpcomingJudges = append(data.UpcomingJudges, judgeName)
 	}
 
 	return data, nil
