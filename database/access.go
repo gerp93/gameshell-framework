@@ -8,18 +8,17 @@ import (
 )
 
 func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) (bool, error) {
-	hasAccess := false
-
 	sqlString := "SELECT FN_USER_HAS_LOBBY_ACCESS (?, ?)"
 	rows, err := query(sqlString, userId, lobbyId)
 	if err != nil {
-		return hasAccess, err
+		return false, err
 	}
 
+	hasAccess := false
 	for rows.Next() {
 		if err := rows.Scan(&hasAccess); err != nil {
 			log.Println(err)
-			return hasAccess, errors.New("failed to scan row in query results")
+			return false, errors.New("failed to scan row in query results")
 		}
 	}
 
@@ -35,18 +34,17 @@ func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 }
 
 func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) (bool, error) {
-	hasAccess := false
-
 	sqlString := "SELECT FN_USER_HAS_DECK_ACCESS (?, ?)"
 	rows, err := query(sqlString, userId, deckId)
 	if err != nil {
-		return hasAccess, err
+		return false, err
 	}
 
+	hasAccess := false
 	for rows.Next() {
 		if err := rows.Scan(&hasAccess); err != nil {
 			log.Println(err)
-			return hasAccess, errors.New("failed to scan row in query results")
+			return false, errors.New("failed to scan row in query results")
 		}
 	}
 
