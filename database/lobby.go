@@ -22,9 +22,6 @@ type Lobby struct {
 
 	HandSize    int
 	CreditLimit int
-
-	JudgePosition int
-	PromptCardId  uuid.UUID
 }
 
 type lobbyDetails struct {
@@ -95,8 +92,6 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.PASSWORD_HASH,
 			L.HAND_SIZE,
 			L.CREDIT_LIMIT,
-			L.JUDGE_POSITION,
-			L.PROMPT_CARD_ID,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
@@ -123,8 +118,6 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.PasswordHash,
 			&ld.HandSize,
 			&ld.CreditLimit,
-			&ld.JudgePosition,
-			&ld.PromptCardId,
 			&ld.UserCount); err != nil {
 			log.Println(err)
 			return result, errors.New("failed to scan row in query results")
@@ -145,9 +138,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			NAME,
 			PASSWORD_HASH,
 			HAND_SIZE,
-			CREDIT_LIMIT,
-			JUDGE_POSITION,
-			PROMPT_CARD_ID
+			CREDIT_LIMIT
 		FROM LOBBY
 		WHERE ID = ?
 	`
@@ -164,9 +155,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.Name,
 			&lobby.PasswordHash,
 			&lobby.HandSize,
-			&lobby.CreditLimit,
-			&lobby.JudgePosition,
-			&lobby.PromptCardId); err != nil {
+			&lobby.CreditLimit); err != nil {
 			log.Println(err)
 			return lobby, errors.New("failed to scan row in query results")
 		}
@@ -352,14 +341,13 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			(SELECT JU.NAME
 				FROM USER AS JU
 						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
-						INNER JOIN JUDGE AS J ON J.PLAYER_ID = JP.ID
-				WHERE JP.LOBBY_ID = L.ID)                       AS JUDGE_NAME,
-			PC.TEXT                                             AS PROMPT_CARD_TEXT,
+				WHERE JP.ID = J.PLAYER_ID)                      AS JUDGE_NAME,
+			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS PROMPT_CARD_TEXT,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
 			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT
 		FROM PLAYER AS P
 				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-				LEFT JOIN CARD AS PC ON PC.ID = L.PROMPT_CARD_ID
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)

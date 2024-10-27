@@ -159,18 +159,17 @@ func AddUserLoginAttempt(ipAddress string, userName string) error {
 }
 
 func AllowUserLoginAttempt(ipAddress string, userName string) (bool, error) {
-	allowLogin := false
-
 	sqlString := "SELECT FN_GET_LOGIN_ATTEMPT_IS_ALLOWED (?, ?)"
 	rows, err := query(sqlString, ipAddress, userName)
 	if err != nil {
-		return allowLogin, err
+		return false, err
 	}
 
+	allowLogin := false
 	for rows.Next() {
 		if err := rows.Scan(&allowLogin); err != nil {
 			log.Println(err)
-			return allowLogin, errors.New("failed to scan row in query results")
+			return false, errors.New("failed to scan row in query results")
 		}
 	}
 
