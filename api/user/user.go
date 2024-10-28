@@ -91,25 +91,24 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := database.CreateUser(name, password)
+	err = database.CreateUser(name, password, false)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = auth.SetCookieUserId(w, id)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Header().Add("HX-Refresh", "true")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Your request has been submitted. Please wait for an administrator to approve this account."))
 }
 
-func CreateDefault(w http.ResponseWriter, r *http.Request) {
+func CreateAdmin(w http.ResponseWriter, r *http.Request) {
+	if !isAdmin(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -150,7 +149,7 @@ func CreateDefault(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = database.CreateUser(name, password)
+	err = database.CreateUser(name, password, true)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
@@ -221,6 +220,19 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	isApproved, err := database.GetUserIsApproved(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	if !isApproved {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("User account is not yet approved by an administrator."))
 		return
 	}
 
@@ -377,6 +389,32 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = database.SetUserPassword(userId, "password")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("&#9989;"))
+}
+
+func Approve(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isAdmin(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = database.ApproveUser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
