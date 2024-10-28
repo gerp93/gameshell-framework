@@ -18,6 +18,7 @@ type User struct {
 	Name         string
 	PasswordHash string
 	ColorTheme   sql.NullString
+	IsApproved   bool
 	IsAdmin      bool
 }
 
@@ -34,6 +35,7 @@ func SearchUsers(search string) ([]User, error) {
 			NAME,
 			PASSWORD_HASH,
 			COLOR_THEME,
+			IS_APPROVED,
 			IS_ADMIN
 		FROM USER
 		WHERE NAME LIKE ?
@@ -56,6 +58,7 @@ func SearchUsers(search string) ([]User, error) {
 			&user.Name,
 			&user.PasswordHash,
 			&user.ColorTheme,
+			&user.IsApproved,
 			&user.IsAdmin); err != nil {
 			log.Println(err)
 			return result, errors.New("failed to scan row in query results")
@@ -76,6 +79,7 @@ func GetUser(userId uuid.UUID) (User, error) {
 			NAME,
 			PASSWORD_HASH,
 			COLOR_THEME,
+			IS_APPROVED,
 			IS_ADMIN
 		FROM USER
 		WHERE ID = ?
@@ -93,6 +97,7 @@ func GetUser(userId uuid.UUID) (User, error) {
 			&user.Name,
 			&user.PasswordHash,
 			&user.ColorTheme,
+			&user.IsApproved,
 			&user.IsAdmin); err != nil {
 			log.Println(err)
 			return user, errors.New("failed to scan row in query results")
@@ -124,6 +129,30 @@ func GetUserPasswordHash(userId uuid.UUID) (string, error) {
 	}
 
 	return passwordHash, nil
+}
+
+func GetUserIsApproved(userId uuid.UUID) (bool, error) {
+	var isApproved bool
+
+	sqlString := `
+		SELECT
+			IS_APPROVED
+		FROM USER
+		WHERE ID = ?
+	`
+	rows, err := query(sqlString, userId)
+	if err != nil {
+		return isApproved, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&isApproved); err != nil {
+			log.Println(err)
+			return isApproved, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return isApproved, nil
 }
 
 func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
@@ -219,29 +248,27 @@ func UserNameExists(name string) bool {
 	return rows.Next()
 }
 
-func CreateUser(name string, password string) (uuid.UUID, error) {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		log.Println(err)
-		return id, errors.New("failed to generate new id")
-	}
-
+func CreateUser(name string, password string, isApproved bool) error {
 	passwordHash, err := auth.GetPasswordHash(password)
 	if err != nil {
 		log.Println(err)
-		return id, errors.New("failed to hash password")
+		return errors.New("failed to hash password")
 	}
 
 	sqlString := `
-		INSERT INTO USER (ID, NAME, PASSWORD_HASH)
+		INSERT INTO USER (NAME, PASSWORD_HASH, IS_APPROVED)
 		VALUES (?, ?, ?)
 	`
-	err = execute(sqlString, id, name, passwordHash)
-	if err != nil {
-		return id, err
-	}
+	return execute(sqlString, name, passwordHash, isApproved)
+}
 
-	return id, nil
+func ApproveUser(id uuid.UUID) error {
+	sqlString := `
+		UPDATE USER
+		SET IS_APPROVED = 1
+		WHERE ID = ?
+	`
+	return execute(sqlString, id)
 }
 
 func SetUserName(id uuid.UUID, name string) error {
