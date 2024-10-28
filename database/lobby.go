@@ -460,6 +460,9 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	data.PlayerIsReady = playerCardsPlayedCount == (data.JudgeBlankCount * data.JudgeResponseCount)
 	data.BoardIsReady = totalCardsPlayedCount == (data.TotalPlayerCount-1)*data.JudgeBlankCount*data.JudgeResponseCount
 	data.BoardIsEmpty = totalCardsPlayedCount == 0
+	if data.BoardIsEmpty {
+		data.BoardIsReady = false
+	}
 
 	if data.BoardIsReady {
 		sort.Slice(data.BoardResponses, func(i, j int) bool {
@@ -481,7 +484,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		FROM HAND AS H
 			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
 		WHERE H.PLAYER_ID = ?
-		ORDER BY C.TEXT
+		ORDER BY H.IS_LOCKED DESC, C.TEXT
 	`
 	rows, err = query(sqlString, playerId)
 	if err != nil {
@@ -622,6 +625,24 @@ func PickWinner(responseId uuid.UUID) (string, error) {
 	return playerName, nil
 }
 
+func PickRandomWinner(lobbyId uuid.UUID) (string, error) {
+	var playerName string
+	sqlString := "CALL SP_PICK_RANDOM_WINNER (?)"
+	rows, err := query(sqlString, lobbyId)
+	if err != nil {
+		return playerName, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&playerName); err != nil {
+			log.Println(err)
+			return playerName, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return playerName, nil
+}
+
 func DiscardHand(playerId uuid.UUID) error {
 	sqlString := "CALL SP_DISCARD_HAND (?)"
 	return execute(sqlString, playerId)
@@ -633,10 +654,6 @@ func SkipPrompt(lobbyId uuid.UUID) error {
 }
 
 func SetJudgeResponseCount(lobbyId uuid.UUID, responseCount int) error {
-	sqlString := `
-		UPDATE JUDGE
-		SET RESPONSE_COUNT = ?
-		WHERE LOBBY_ID = ?
-	`
-	return execute(sqlString, responseCount, lobbyId)
+	sqlString := "CALL SP_SET_RESPONSE_COUNT (?, ?)"
+	return execute(sqlString, lobbyId, responseCount)
 }
