@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"regexp"
 	"sort"
 	"time"
 
@@ -38,11 +37,12 @@ type GameData struct {
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
 
-	PlayerCount int
+	TotalPlayerCount int
 
-	JudgeName sql.NullString
-
-	PromptCardText sql.NullString
+	JudgeName          sql.NullString
+	JudgeCardText      sql.NullString
+	JudgeBlankCount    int
+	JudgeResponseCount int
 
 	BoardIsReady   bool
 	BoardIsEmpty   bool
@@ -53,8 +53,6 @@ type GameData struct {
 	PlayerHand      []handCard
 	PlayerResponses []boardResponse
 	PlayerCredits   int
-
-	CardsToPlayCount int
 
 	Wins []winDetail
 
@@ -309,7 +307,6 @@ func SetLobbyCreditLimit(id uuid.UUID, creditLimit int) error {
 		WHERE ID = ?
 	`
 	return execute(sqlString, creditLimit, id)
-
 }
 
 func DeleteLobby(lobbyId uuid.UUID) error {
@@ -339,12 +336,14 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
 				AND DPC.CATEGORY = 'RESPONSE')                  AS DRAW_PILE_RESPONSE_COUNT,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS PLAYER_COUNT,
+			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS TOTAL_PLAYER_COUNT,
 			(SELECT JU.NAME
 				FROM USER AS JU
 						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
 				WHERE JP.ID = J.PLAYER_ID)                      AS JUDGE_NAME,
-			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS PROMPT_CARD_TEXT,
+			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS JUDGE_CARD_TEXT,
+			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
+			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
 			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT
 		FROM PLAYER AS P
@@ -366,9 +365,11 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.LobbyCreditLimit,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
-			&data.PlayerCount,
+			&data.TotalPlayerCount,
 			&data.JudgeName,
-			&data.PromptCardText,
+			&data.JudgeCardText,
+			&data.JudgeBlankCount,
+			&data.JudgeResponseCount,
 			&data.PlayerIsJudge,
 			&playerCreditsSpent); err != nil {
 			log.Println(err)
@@ -394,7 +395,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		WHERE L.ID = ?
 			AND P.IS_ACTIVE = 1
 			AND J.ID IS NULL
-		ORDER BY U.NAME
+		ORDER BY U.NAME, R.CREATED_ON_DATE
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -425,10 +426,10 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			FROM RESPONSE AS R
 					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 					INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
-			WHERE R.PLAYER_ID = ?
+			WHERE R.ID = ?
 			ORDER BY RC.CREATED_ON_DATE
 		`
-		rows, err = query(sqlString, br.PlayerId)
+		rows, err = query(sqlString, br.ResponseId)
 		if err != nil {
 			return data, err
 		}
@@ -456,13 +457,8 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		}
 	}
 
-	blankRegExp := regexp.MustCompile(`__+`)
-	data.CardsToPlayCount = len(blankRegExp.FindAllString(data.PromptCardText.String, -1))
-	if data.CardsToPlayCount < 1 {
-		data.CardsToPlayCount = 1
-	}
-	data.PlayerIsReady = playerCardsPlayedCount == data.CardsToPlayCount
-	data.BoardIsReady = totalCardsPlayedCount == (data.PlayerCount-1)*data.CardsToPlayCount
+	data.PlayerIsReady = playerCardsPlayedCount == (data.JudgeBlankCount * data.JudgeResponseCount)
+	data.BoardIsReady = totalCardsPlayedCount == (data.TotalPlayerCount-1)*data.JudgeBlankCount*data.JudgeResponseCount
 	data.BoardIsEmpty = totalCardsPlayedCount == 0
 
 	if data.BoardIsReady {
@@ -634,4 +630,13 @@ func DiscardHand(playerId uuid.UUID) error {
 func SkipPrompt(lobbyId uuid.UUID) error {
 	sqlString := "CALL SP_SKIP_PROMPT (?)"
 	return execute(sqlString, lobbyId)
+}
+
+func SetJudgeResponseCount(lobbyId uuid.UUID, responseCount int) error {
+	sqlString := `
+		UPDATE JUDGE
+		SET RESPONSE_COUNT = ?
+		WHERE LOBBY_ID = ?
+	`
+	return execute(sqlString, responseCount, lobbyId)
 }
