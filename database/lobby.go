@@ -48,11 +48,14 @@ type GameData struct {
 	BoardIsEmpty   bool
 	BoardResponses []boardResponse
 
-	PlayerIsJudge   bool
-	PlayerIsReady   bool
-	PlayerHand      []handCard
-	PlayerResponses []boardResponse
-	PlayerCredits   int
+	PlayerId               uuid.UUID
+	PlayerIsJudge          bool
+	PlayerIsReady          bool
+	PlayerHand             []handCard
+	PlayerResponses        []boardResponse
+	PlayerCreditsSpent     int
+	PlayerExtraResponses   int
+	PlayerCreditsRemaining int
 
 	Wins []winDetail
 
@@ -344,8 +347,10 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS JUDGE_CARD_TEXT,
 			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
+			P.ID                                                AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
-			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT
+			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
+			P.EXTRA_RESPONSES                                   AS PLAYER_EXTRA_RESPONSES
 		FROM PLAYER AS P
 				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
@@ -356,7 +361,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		return data, err
 	}
 
-	var playerCreditsSpent int
 	for rows.Next() {
 		if err := rows.Scan(
 			&data.LobbyId,
@@ -370,16 +374,18 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.JudgeCardText,
 			&data.JudgeBlankCount,
 			&data.JudgeResponseCount,
+			&data.PlayerId,
 			&data.PlayerIsJudge,
-			&playerCreditsSpent); err != nil {
+			&data.PlayerCreditsSpent,
+			&data.PlayerExtraResponses); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
 	}
 
-	data.PlayerCredits = data.LobbyCreditLimit - playerCreditsSpent
-	if data.PlayerCredits < 0 {
-		data.PlayerCredits = 0
+	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
+	if data.PlayerCreditsRemaining < 0 {
+		data.PlayerCreditsRemaining = 0
 	}
 
 	sqlString = `
@@ -415,7 +421,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	totalCardsPlayedCount := 0
-	playerCardsPlayedCount := 0
 	for i, br := range data.BoardResponses {
 		sqlString = `
 			SELECT
@@ -447,9 +452,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			data.BoardResponses[i].ResponseCards = append(data.BoardResponses[i].ResponseCards, responseCard)
 
 			totalCardsPlayedCount += 1
-			if br.PlayerId == playerId {
-				playerCardsPlayedCount += 1
-			}
 		}
 
 		if br.PlayerId == playerId {
@@ -457,11 +459,42 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		}
 	}
 
-	data.PlayerIsReady = playerCardsPlayedCount == (data.JudgeBlankCount * data.JudgeResponseCount)
-	data.BoardIsReady = totalCardsPlayedCount == (data.TotalPlayerCount-1)*data.JudgeBlankCount*data.JudgeResponseCount
 	data.BoardIsEmpty = totalCardsPlayedCount == 0
-	if data.BoardIsEmpty {
-		data.BoardIsReady = false
+	data.BoardIsReady = !data.BoardIsEmpty
+
+	sqlString = `
+		SELECT P.ID AS PLAYER_ID,
+			IF(COUNT(RC.ID) = -- CARDS PLAYED
+				(J.BLANK_COUNT * -- CARDS PER RESPONSE
+				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
+				, 1, 0) AS PLAYER_IS_READY
+		FROM RESPONSE AS R
+				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+		WHERE J.LOBBY_ID = ?
+		GROUP BY P.ID
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var playerId uuid.UUID
+		var isReady bool
+		if err := rows.Scan(&playerId, &isReady); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+
+		if !isReady {
+			data.BoardIsReady = false
+		}
+
+		if playerId == data.PlayerId {
+			data.PlayerIsReady = isReady
+		}
 	}
 
 	if data.BoardIsReady {
@@ -570,6 +603,11 @@ func DrawHand(playerId uuid.UUID) error {
 func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_RESPOND_WITH_CARD (?, ?, NULL)"
 	return execute(sqlString, playerId, cardId)
+}
+
+func AddExtraResponse(playerId uuid.UUID) error {
+	sqlString := "CALL SP_ADD_EXTRA_RESPONSE (?)"
+	return execute(sqlString, playerId)
 }
 
 func PlayStealCard(playerId uuid.UUID) error {
