@@ -13,10 +13,11 @@ type Player struct {
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
 
-	Name     string
-	LobbyId  uuid.UUID
-	UserId   uuid.UUID
-	IsActive bool
+	Name         string
+	LobbyId      uuid.UUID
+	UserId       uuid.UUID
+	IsActive     bool
+	CreditsSpent int
 }
 
 func GetPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
@@ -30,7 +31,8 @@ func GetPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			U.NAME,
 			P.LOBBY_ID,
 			P.USER_ID,
-			P.IS_ACTIVE
+			P.IS_ACTIVE,
+			P.CREDITS_SPENT
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
@@ -49,7 +51,8 @@ func GetPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.Name,
 			&player.LobbyId,
 			&player.UserId,
-			&player.IsActive); err != nil {
+			&player.IsActive,
+			&player.CreditsSpent); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}
