@@ -65,6 +65,7 @@ type GameData struct {
 
 type boardResponse struct {
 	ResponseId     uuid.UUID
+	IsRevealed     bool
 	PlayerId       uuid.UUID
 	PlayerUserName string
 	ResponseCards  []boardResponseCard
@@ -395,9 +396,10 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 	sqlString = `
 		SELECT
-			R.ID   AS RESPONSE_ID,
-			P.ID   AS PLAYER_ID,
-			U.NAME AS PLAYER_USER_NAME
+			R.ID          AS RESPONSE_ID,
+			R.IS_REVEALED AS IS_REVEALED,
+			P.ID          AS PLAYER_ID,
+			U.NAME        AS PLAYER_USER_NAME
 		FROM LOBBY AS L
 				INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
 				INNER JOIN USER AS U ON U.ID = P.USER_ID
@@ -417,6 +419,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		var br boardResponse
 		if err := rows.Scan(
 			&br.ResponseId,
+			&br.IsRevealed,
 			&br.PlayerId,
 			&br.PlayerUserName); err != nil {
 			log.Println(err)
@@ -654,6 +657,15 @@ func LockCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 			AND CARD_ID = ?
 	`
 	return execute(sqlString, isLocked, playerId, cardId)
+}
+
+func RevealResponse(responseId uuid.UUID) error {
+	sqlString := `
+		UPDATE RESPONSE
+		SET IS_REVEALED = 1
+		WHERE ID = ?
+	`
+	return execute(sqlString, responseId)
 }
 
 func PickWinner(responseId uuid.UUID) (string, error) {
