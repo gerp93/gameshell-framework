@@ -58,8 +58,8 @@ type GameData struct {
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
 
-	Wins []winDetail
-
+	Wins           []nameCountRow
+	Credits        []nameCountRow
 	UpcomingJudges []string
 }
 
@@ -84,9 +84,9 @@ type handCard struct {
 	IsLocked bool
 }
 
-type winDetail struct {
-	UserName string
-	WinCount int
+type nameCountRow struct {
+	Name  string
+	Count int
 }
 
 func SearchLobbies(search string) ([]lobbyDetails, error) {
@@ -568,14 +568,37 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	for rows.Next() {
-		var win winDetail
-		if err := rows.Scan(
-			&win.UserName,
-			&win.WinCount); err != nil {
+		var row nameCountRow
+		if err := rows.Scan(&row.Name, &row.Count); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
-		data.Wins = append(data.Wins, win)
+		data.Wins = append(data.Wins, row)
+	}
+
+	sqlString = `
+		SELECT
+			U.NAME,
+			GREATEST(L.CREDIT_LIMIT - P.CREDITS_SPENT, 0) AS CREDITS
+		FROM PLAYER AS P
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+		WHERE P.LOBBY_ID = ?
+			AND P.IS_ACTIVE = 1
+		ORDER BY CREDITS DESC
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var row nameCountRow
+		if err := rows.Scan(&row.Name, &row.Count); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.Credits = append(data.Credits, row)
 	}
 
 	sqlString = `
