@@ -73,11 +73,13 @@ type boardResponse struct {
 type boardResponseCard struct {
 	ResponseCardId uuid.UUID
 	Card
+	DeckName        string
 	SpecialCategory sql.NullString
 }
 
 type handCard struct {
 	Card
+	DeckName string
 	IsLocked bool
 }
 
@@ -430,10 +432,12 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 				RC.ID  AS RESPONSE_CARD_ID,
 				C.ID   AS CARD_ID,
 				C.TEXT AS CARD_TEXT,
+				D.NAME AS DECK_NAME,
 				RC.SPECIAL_CATEGORY
 			FROM RESPONSE AS R
 					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 					INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
+					INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 			WHERE R.ID = ?
 			ORDER BY RC.CREATED_ON_DATE
 		`
@@ -448,6 +452,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 				&responseCard.ResponseCardId,
 				&responseCard.Id,
 				&responseCard.Text,
+				&responseCard.DeckName,
 				&responseCard.SpecialCategory); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
@@ -516,9 +521,11 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		SELECT
 			C.ID,
 			C.TEXT,
+			D.NAME,
 			H.IS_LOCKED
 		FROM HAND AS H
 			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
+			INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 		WHERE H.PLAYER_ID = ?
 		ORDER BY H.IS_LOCKED DESC, C.TEXT
 	`
@@ -532,6 +539,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		if err := rows.Scan(
 			&card.Id,
 			&card.Text,
+			&card.DeckName,
 			&card.IsLocked); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
