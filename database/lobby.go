@@ -63,6 +63,7 @@ type GameData struct {
 	Wins           []nameCountRow
 	Credits        []nameCountRow
 	UpcomingJudges []string
+	KickVotes      []kickVote
 }
 
 type boardResponse struct {
@@ -89,6 +90,12 @@ type handCard struct {
 type nameCountRow struct {
 	Name  string
 	Count int
+}
+
+type kickVote struct {
+	PlayerId uuid.UUID
+	UserName string
+	Voted    bool
 }
 
 func SearchLobbies(search string) ([]lobbyDetails, error) {
@@ -250,7 +257,7 @@ func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 }
 
 func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
-	player, err := GetPlayer(lobbyId, userId)
+	player, err := GetLobbyUserPlayer(lobbyId, userId)
 	if err != nil {
 		log.Println(err)
 		return player.Id, errors.New("failed to get player")
@@ -660,6 +667,39 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		data.UpcomingJudges = append(data.UpcomingJudges, judgeName)
 	}
 
+	sqlString = `
+		SELECT
+			P.ID AS PLAYER_ID,
+			U.NAME AS USER_NAME,
+			IF(EXISTS(SELECT ID
+						FROM KICK
+						WHERE VOTER_PLAYER_ID = ?
+							AND SUBJECT_PLAYER_ID = P.ID), 1, 0) AS VOTED
+		FROM PLAYER AS P
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
+		WHERE P.IS_ACTIVE = 1
+			AND P.ID <> ?
+			AND P.LOBBY_ID = ?
+		ORDER BY U.NAME
+	`
+	rows, err = query(sqlString, data.PlayerId, data.PlayerId, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var row kickVote
+		if err := rows.Scan(
+			&row.PlayerId,
+			&row.UserName,
+			&row.Voted); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.KickVotes = append(data.KickVotes, row)
+	}
+
 	return data, nil
 }
 
@@ -711,6 +751,29 @@ func LockCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
 			AND CARD_ID = ?
 	`
 	return execute(sqlString, isLocked, playerId, cardId)
+}
+
+func VoteToKick(voterPlayerId uuid.UUID, subjectPlayerId uuid.UUID) (bool, error) {
+	var isKicked bool
+	sqlString := "CALL SP_VOTE_TO_KICK (?, ?)"
+	rows, err := query(sqlString, voterPlayerId, subjectPlayerId)
+	if err != nil {
+		return isKicked, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&isKicked); err != nil {
+			log.Println(err)
+			return isKicked, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return isKicked, nil
+}
+
+func VoteToKickUndo(voterPlayerId uuid.UUID, subjectPlayerId uuid.UUID) error {
+	sqlString := "CALL SP_VOTE_TO_KICK_UNDO (?, ?)"
+	return execute(sqlString, voterPlayerId, subjectPlayerId)
 }
 
 func RevealResponse(responseId uuid.UUID) error {

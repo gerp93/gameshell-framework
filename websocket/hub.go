@@ -80,7 +80,22 @@ func (h *Hub) broadcastMessage(message []byte) {
 }
 
 func LobbyBroadcast(lobbyId uuid.UUID, message string) {
-	if _, ok := lobbyHubs[lobbyId]; ok {
-		lobbyHubs[lobbyId].broadcastMessage([]byte(message))
+	if hub, ok := lobbyHubs[lobbyId]; ok {
+		hub.broadcastMessage([]byte(message))
+	}
+}
+
+func PlayerBroadcast(playerId uuid.UUID, message string) {
+	player, err := database.GetPlayer(playerId)
+	if err != nil {
+		return
+	}
+
+	if hub, ok := lobbyHubs[player.LobbyId]; ok {
+		for client := range hub.clients {
+			if client.user.Id == player.UserId {
+				client.send <- []byte(message)
+			}
+		}
 	}
 }
