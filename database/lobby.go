@@ -17,6 +17,7 @@ type Lobby struct {
 	ChangedOnDate time.Time
 
 	Name         string
+	Message      sql.NullString
 	PasswordHash sql.NullString
 
 	HandSize    int
@@ -144,6 +145,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			CREATED_ON_DATE,
 			CHANGED_ON_DATE,
 			NAME,
+			MESSAGE,
 			PASSWORD_HASH,
 			HAND_SIZE,
 			CREDIT_LIMIT
@@ -161,6 +163,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.CreatedOnDate,
 			&lobby.ChangedOnDate,
 			&lobby.Name,
+			&lobby.Message,
 			&lobby.PasswordHash,
 			&lobby.HandSize,
 			&lobby.CreditLimit); err != nil {
@@ -196,7 +199,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, password string, handSize int, creditLimit int) (uuid.UUID, error) {
+func CreateLobby(name string, message string, password string, handSize int, creditLimit int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -210,13 +213,21 @@ func CreateLobby(name string, password string, handSize int, creditLimit int) (u
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
-	if password == "" {
-		return id, execute(sqlString, id, name, nil, handSize, creditLimit)
+	if message == "" {
+		if password == "" {
+			return id, execute(sqlString, id, name, nil, nil, handSize, creditLimit)
+		} else {
+			return id, execute(sqlString, id, name, nil, passwordHash, handSize, creditLimit)
+		}
 	} else {
-		return id, execute(sqlString, id, name, passwordHash, handSize, creditLimit)
+		if password == "" {
+			return id, execute(sqlString, id, name, message, nil, handSize, creditLimit)
+		} else {
+			return id, execute(sqlString, id, name, message, passwordHash, handSize, creditLimit)
+		}
 	}
 }
 
@@ -295,6 +306,20 @@ func SetLobbyName(id uuid.UUID, name string) error {
 		WHERE ID = ?
 	`
 	return execute(sqlString, name, id)
+}
+
+func SetLobbyMessage(id uuid.UUID, message string) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET
+			MESSAGE = ?
+		WHERE ID = ?
+	`
+	if message == "" {
+		return execute(sqlString, nil, id)
+	} else {
+		return execute(sqlString, message, id)
+	}
 }
 
 func SetLobbyHandSize(id uuid.UUID, handSize int) error {
