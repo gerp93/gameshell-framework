@@ -37,7 +37,8 @@ type GameData struct {
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
 
-	TotalPlayerCount int
+	TotalPlayerCount  int
+	TotalRoundsPlayed int
 
 	JudgeName          sql.NullString
 	JudgeCardText      sql.NullString
@@ -344,6 +345,10 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 				WHERE DP.LOBBY_ID = L.ID
 				AND DPC.CATEGORY = 'RESPONSE')                  AS DRAW_PILE_RESPONSE_COUNT,
 			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS TOTAL_PLAYER_COUNT,
+			(SELECT COUNT(*)
+				FROM WIN AS W
+						INNER JOIN PLAYER AS WP ON WP.ID = W.PLAYER_ID
+				WHERE WP.LOBBY_ID = L.ID)                       AS TOTAL_ROUNDS_PLAYED,
 			(SELECT JU.NAME
 				FROM USER AS JU
 						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
@@ -375,6 +380,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
 			&data.TotalPlayerCount,
+			&data.TotalRoundsPlayed,
 			&data.JudgeName,
 			&data.JudgeCardText,
 			&data.JudgeBlankCount,
