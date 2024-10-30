@@ -73,7 +73,7 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		message = []byte(c.user.Name + ": " + string(message))
+		message = []byte("<blue>" + c.user.Name + "</>: " + string(message))
 		c.hub.broadcast <- message
 	}
 }

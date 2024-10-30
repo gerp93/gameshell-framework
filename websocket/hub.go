@@ -54,7 +54,7 @@ func (h *Hub) run() {
 
 func (h *Hub) registerClient(client *Client) {
 	h.clients[client] = true
-	h.broadcastMessage([]byte("Player Joined: " + client.user.Name))
+	h.broadcastMessage([]byte("<green>Player Joined</>: <blue>" + client.user.Name + "</>"))
 	h.broadcastMessage([]byte("refresh"))
 }
 
@@ -64,7 +64,7 @@ func (h *Hub) unregisterClient(client *Client) {
 		close(client.send)
 		_ = database.RemoveUserFromLobby(h.lobbyId, client.user.Id)
 	}
-	h.broadcastMessage([]byte("Player Left: " + client.user.Name))
+	h.broadcastMessage([]byte("<red>Player Left</>: <blue>" + client.user.Name + "</>"))
 	h.broadcastMessage([]byte("refresh"))
 }
 
