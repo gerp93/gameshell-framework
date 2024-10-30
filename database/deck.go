@@ -40,7 +40,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
 			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
-		WHERE D.ID <> ?
+		WHERE D.IS_LOBBY_WILD_DECK = FALSE
 			AND D.NAME LIKE ?
 		GROUP BY D.ID
 		ORDER BY
@@ -48,7 +48,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			D.NAME ASC,
 			COUNT(C.ID) DESC
 	`
-	rows, err := query(sqlString, uuid.Nil, search)
+	rows, err := query(sqlString, search)
 	if err != nil {
 		return nil, err
 	}
