@@ -77,6 +77,18 @@ body.light-theme tbody > tr:hover {
   background-color: var(--light-bg-hover);
 }
 
+body.light-theme .lobby-chat-message-green {
+  color: var(--light-accent-green);
+}
+
+body.light-theme .lobby-chat-message-red {
+  color: var(--light-accent-red);
+}
+
+body.light-theme .lobby-chat-message-blue {
+  color: var(--light-accent-blue);
+}
+
 body.light-theme .htmx-result-good {
   color: var(--light-accent-green);
 }
@@ -142,6 +154,18 @@ body.dark-theme select {
 
 body.dark-theme tbody > tr:hover {
   background-color: var(--dark-bg-hover);
+}
+
+body.dark-theme .lobby-chat-message-green {
+  color: var(--dark-accent-green);
+}
+
+body.dark-theme .lobby-chat-message-red {
+  color: var(--dark-accent-red);
+}
+
+body.dark-theme .lobby-chat-message-blue {
+  color: var(--dark-accent-blue);
 }
 
 body.dark-theme .htmx-result-good {
