@@ -43,6 +43,7 @@ type GameData struct {
 
 	JudgeName          sql.NullString
 	JudgeCardText      sql.NullString
+	JudgeCardDeck      sql.NullString
 	JudgeBlankCount    int
 	JudgeResponseCount int
 
@@ -386,6 +387,10 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
 				WHERE JP.ID = J.PLAYER_ID)                      AS JUDGE_NAME,
 			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS JUDGE_CARD_TEXT,
+			(SELECT D.NAME
+				FROM CARD AS C
+						INNER JOIN DECK AS D ON D.ID = C.DECK_ID
+				WHERE C.ID = J.CARD_ID)                         AS JUDGE_CARD_DECK,
 			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
 			P.ID                                                AS PLAYER_ID,
@@ -415,6 +420,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.TotalRoundsPlayed,
 			&data.JudgeName,
 			&data.JudgeCardText,
+			&data.JudgeCardDeck,
 			&data.JudgeBlankCount,
 			&data.JudgeResponseCount,
 			&data.PlayerId,
