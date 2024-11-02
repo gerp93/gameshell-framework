@@ -1,181 +1,181 @@
 :root {
-  --top-bar-text: rgb(255, 255, 255);
-  --top-bar-bg: rgb(50, 50, 50);
-  --top-bar-hover: rgb(70, 70, 70);
+    --top-bar-text: rgb(255, 255, 255);
+    --top-bar-bg: rgb(50, 50, 50);
+    --top-bar-hover: rgb(70, 70, 70);
 
-  --light-text: rgb(0, 0, 0);
-  --light-bg: rgb(245, 245, 245);
-  --light-bg-hover: rgb(234, 234, 234);
-  --light-primary-action: rgb(165, 225, 226);
-  --light-primary-action-hover: rgb(145, 200, 201);
-  --light-accent-green: rgb(20, 150, 0);
-  --light-accent-red: rgb(157, 0, 0);
-  --light-accent-blue: rgb(0, 50, 200);
+    --light-text: rgb(0, 0, 0);
+    --light-bg: rgb(245, 245, 245);
+    --light-bg-hover: rgb(234, 234, 234);
+    --light-primary-action: rgb(165, 225, 226);
+    --light-primary-action-hover: rgb(145, 200, 201);
+    --light-accent-green: rgb(20, 150, 0);
+    --light-accent-red: rgb(157, 0, 0);
+    --light-accent-blue: rgb(0, 50, 200);
 
-  --dark-text: rgb(255, 255, 255);
-  --dark-bg: rgb(34, 34, 34);
-  --dark-bg-hover: rgb(54, 54, 54);
-  --dark-primary-action: rgb(7, 72, 75);
-  --dark-primary-action-hover: rgb(8, 94, 99);
-  --dark-accent-green: rgb(120, 255, 99);
-  --dark-accent-red: rgb(255, 100, 100);
-  --dark-accent-blue: rgb(130, 160, 255);
+    --dark-text: rgb(255, 255, 255);
+    --dark-bg: rgb(34, 34, 34);
+    --dark-bg-hover: rgb(54, 54, 54);
+    --dark-primary-action: rgb(7, 72, 75);
+    --dark-primary-action-hover: rgb(8, 94, 99);
+    --dark-accent-green: rgb(120, 255, 99);
+    --dark-accent-red: rgb(255, 100, 100);
+    --dark-accent-blue: rgb(130, 160, 255);
 }
 
 /* light-theme */
 
 body.light-theme {
-  color: var(--light-text);
-  background-color: var(--light-bg);
+    color: var(--light-text);
+    background-color: var(--light-bg);
 }
 
 body.light-theme a {
-  color: var(--light-accent-blue);
+    color: var(--light-accent-blue);
 }
 
 body.light-theme dialog {
-  color: var(--light-text);
-  background-color: var(--light-bg);
+    color: var(--light-text);
+    background-color: var(--light-bg);
 }
 
 body.light-theme button {
-  color: var(--light-text);
-  background-color: var(--light-primary-action);
+    color: var(--light-text);
+    background-color: var(--light-primary-action);
 }
 
 body.light-theme button:hover {
-  color: var(--light-text);
-  background-color: var(--light-primary-action-hover);
+    color: var(--light-text);
+    background-color: var(--light-primary-action-hover);
 }
 
 body.light-theme input {
-  color: var(--light-text);
-  background-color: var(--light-bg);
+    color: var(--light-text);
+    background-color: var(--light-bg);
 }
 
 body.light-theme input[type="submit"] {
-  color: var(--light-text);
-  background-color: var(--light-primary-action);
+    color: var(--light-text);
+    background-color: var(--light-primary-action);
 }
 
 body.light-theme input[type="submit"]:hover {
-  color: var(--light-text);
-  background-color: var(--light-primary-action-hover);
+    color: var(--light-text);
+    background-color: var(--light-primary-action-hover);
 }
 
 body.light-theme textarea {
-  color: var(--light-text);
-  background-color: var(--light-bg);
+    color: var(--light-text);
+    background-color: var(--light-bg);
 }
 
 body.light-theme select {
-  color: var(--light-text);
-  background-color: var(--light-bg);
+    color: var(--light-text);
+    background-color: var(--light-bg);
 }
 
 body.light-theme tbody > tr:hover {
-  background-color: var(--light-bg-hover);
+    background-color: var(--light-bg-hover);
 }
 
 body.light-theme .lobby-chat-message-green {
-  color: var(--light-accent-green);
+    color: var(--light-accent-green);
 }
 
 body.light-theme .lobby-chat-message-red {
-  color: var(--light-accent-red);
+    color: var(--light-accent-red);
 }
 
 body.light-theme .lobby-chat-message-blue {
-  color: var(--light-accent-blue);
+    color: var(--light-accent-blue);
 }
 
 body.light-theme .htmx-result-good {
-  color: var(--light-accent-green);
+    color: var(--light-accent-green);
 }
 
 body.light-theme .htmx-result-bad {
-  color: var(--light-accent-red);
+    color: var(--light-accent-red);
 }
 
 body.light-theme #lobby-grid-container > div {
-  background-color: var(--light-bg);
+    background-color: var(--light-bg);
 }
 
 /* dark-theme */
 
 body.dark-theme {
-  color: var(--dark-text);
-  background: var(--dark-bg);
+    color: var(--dark-text);
+    background: var(--dark-bg);
 }
 
 body.dark-theme a {
-  color: var(--dark-accent-blue);
+    color: var(--dark-accent-blue);
 }
 
 body.dark-theme dialog {
-  color: var(--dark-text);
-  background: var(--dark-bg);
+    color: var(--dark-text);
+    background: var(--dark-bg);
 }
 
 body.dark-theme button {
-  color: var(--dark-text);
-  background-color: var(--dark-primary-action);
+    color: var(--dark-text);
+    background-color: var(--dark-primary-action);
 }
 
 body.dark-theme button:hover {
-  color: var(--dark-text);
-  background-color: var(--dark-primary-action-hover);
+    color: var(--dark-text);
+    background-color: var(--dark-primary-action-hover);
 }
 
 body.dark-theme input {
-  color: var(--dark-text);
-  background: var(--dark-bg);
+    color: var(--dark-text);
+    background: var(--dark-bg);
 }
 
 body.dark-theme input[type="submit"] {
-  color: var(--dark-text);
-  background-color: var(--dark-primary-action);
+    color: var(--dark-text);
+    background-color: var(--dark-primary-action);
 }
 
 body.dark-theme input[type="submit"]:hover {
-  color: var(--dark-text);
-  background-color: var(--dark-primary-action-hover);
+    color: var(--dark-text);
+    background-color: var(--dark-primary-action-hover);
 }
 
 body.dark-theme textarea {
-  color: var(--dark-text);
-  background: var(--dark-bg);
+    color: var(--dark-text);
+    background: var(--dark-bg);
 }
 
 body.dark-theme select {
-  color: var(--dark-text);
-  background: var(--dark-bg);
+    color: var(--dark-text);
+    background: var(--dark-bg);
 }
 
 body.dark-theme tbody > tr:hover {
-  background-color: var(--dark-bg-hover);
+    background-color: var(--dark-bg-hover);
 }
 
 body.dark-theme .lobby-chat-message-green {
-  color: var(--dark-accent-green);
+    color: var(--dark-accent-green);
 }
 
 body.dark-theme .lobby-chat-message-red {
-  color: var(--dark-accent-red);
+    color: var(--dark-accent-red);
 }
 
 body.dark-theme .lobby-chat-message-blue {
-  color: var(--dark-accent-blue);
+    color: var(--dark-accent-blue);
 }
 
 body.dark-theme .htmx-result-good {
-  color: var(--dark-accent-green);
+    color: var(--dark-accent-green);
 }
 
 body.dark-theme .htmx-result-bad {
-  color: var(--dark-accent-red);
+    color: var(--dark-accent-red);
 }
 
 body.dark-theme #lobby-grid-container > div {
-  background-color: var(--dark-bg);
+    background-color: var(--dark-bg);
 }
