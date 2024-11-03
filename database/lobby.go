@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"log"
 	"sort"
@@ -44,6 +45,7 @@ type GameData struct {
 	JudgeName          sql.NullString
 	JudgeCardText      sql.NullString
 	JudgeCardDeck      sql.NullString
+	JudgeCardImage     sql.NullString
 	JudgeBlankCount    int
 	JudgeResponseCount int
 
@@ -390,6 +392,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 				FROM CARD AS C
 						INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 				WHERE C.ID = J.CARD_ID)                         AS JUDGE_CARD_DECK,
+			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID)       AS JUDGE_CARD_IMAGE,
 			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
 			P.ID                                                AS PLAYER_ID,
@@ -408,6 +411,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	for rows.Next() {
+		var imageBytes []byte
 		if err := rows.Scan(
 			&data.LobbyId,
 			&data.LobbyName,
@@ -420,6 +424,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.JudgeName,
 			&data.JudgeCardText,
 			&data.JudgeCardDeck,
+			&imageBytes,
 			&data.JudgeBlankCount,
 			&data.JudgeResponseCount,
 			&data.PlayerId,
@@ -429,6 +434,11 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.PlayerExtraResponses); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
+		}
+
+		data.JudgeCardImage.Valid = imageBytes != nil
+		if data.JudgeCardImage.Valid {
+			data.JudgeCardImage.String = base64.StdEncoding.EncodeToString(imageBytes)
 		}
 	}
 
@@ -475,10 +485,11 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	for i, br := range data.BoardResponses {
 		sqlString = `
 			SELECT
-				RC.ID  AS RESPONSE_CARD_ID,
-				C.ID   AS CARD_ID,
-				C.TEXT AS CARD_TEXT,
-				D.NAME AS DECK_NAME,
+				RC.ID   AS RESPONSE_CARD_ID,
+				C.ID    AS CARD_ID,
+				C.TEXT  AS CARD_TEXT,
+				C.IMAGE AS CARD_IMAGE,
+				D.NAME  AS DECK_NAME,
 				RC.SPECIAL_CATEGORY
 			FROM RESPONSE AS R
 					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
@@ -494,15 +505,23 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 		for rows.Next() {
 			var responseCard boardResponseCard
+			var imageBytes []byte
 			if err := rows.Scan(
 				&responseCard.ResponseCardId,
 				&responseCard.Id,
 				&responseCard.Text,
+				&imageBytes,
 				&responseCard.DeckName,
 				&responseCard.SpecialCategory); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
+
+			responseCard.Image.Valid = imageBytes != nil
+			if responseCard.Image.Valid {
+				responseCard.Image.String = base64.StdEncoding.EncodeToString(imageBytes)
+			}
+
 			data.BoardResponses[i].ResponseCards = append(data.BoardResponses[i].ResponseCards, responseCard)
 
 			totalCardsPlayedCount += 1
@@ -567,6 +586,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		SELECT
 			C.ID,
 			C.TEXT,
+			C.IMAGE,
 			D.NAME,
 			H.IS_LOCKED
 		FROM HAND AS H
@@ -582,14 +602,22 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 	for rows.Next() {
 		var card handCard
+		var imageBytes []byte
 		if err := rows.Scan(
 			&card.Id,
 			&card.Text,
+			&imageBytes,
 			&card.DeckName,
 			&card.IsLocked); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
+
+		card.Image.Valid = imageBytes != nil
+		if card.Image.Valid {
+			card.Image.String = base64.StdEncoding.EncodeToString(imageBytes)
+		}
+
 		data.PlayerHand = append(data.PlayerHand, card)
 	}
 
