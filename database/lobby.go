@@ -49,9 +49,11 @@ type GameData struct {
 	JudgeBlankCount    int
 	JudgeResponseCount int
 
-	BoardIsReady   bool
-	BoardIsEmpty   bool
-	BoardResponses []boardResponse
+	BoardIsReady       bool
+	BoardIsEmpty       bool
+	BoardIsAllRevealed bool
+	BoardIsAllRuledOut bool
+	BoardResponses     []boardResponse
 
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
@@ -71,6 +73,7 @@ type GameData struct {
 type boardResponse struct {
 	ResponseId     uuid.UUID
 	IsRevealed     bool
+	IsRuledOut     bool
 	PlayerId       uuid.UUID
 	PlayerUserName string
 	ResponseCards  []boardResponseCard
@@ -451,6 +454,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		SELECT
 			R.ID          AS RESPONSE_ID,
 			R.IS_REVEALED AS IS_REVEALED,
+			R.IS_RULEDOUT AS IS_RULEDOUT,
 			P.ID          AS PLAYER_ID,
 			U.NAME        AS PLAYER_USER_NAME
 		FROM LOBBY AS L
@@ -473,6 +477,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		if err := rows.Scan(
 			&br.ResponseId,
 			&br.IsRevealed,
+			&br.IsRuledOut,
 			&br.PlayerId,
 			&br.PlayerUserName); err != nil {
 			log.Println(err)
@@ -481,8 +486,18 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		data.BoardResponses = append(data.BoardResponses, br)
 	}
 
+	data.BoardIsAllRevealed = true
+	data.BoardIsAllRuledOut = true
 	totalCardsPlayedCount := 0
 	for i, br := range data.BoardResponses {
+		if !br.IsRevealed {
+			data.BoardIsAllRevealed = false
+		}
+
+		if !br.IsRuledOut {
+			data.BoardIsAllRuledOut = false
+		}
+
 		sqlString = `
 			SELECT
 				RC.ID   AS RESPONSE_CARD_ID,
@@ -788,6 +803,15 @@ func RevealResponse(responseId uuid.UUID) error {
 	sqlString := `
 		UPDATE RESPONSE
 		SET IS_REVEALED = 1
+		WHERE ID = ?
+	`
+	return execute(sqlString, responseId)
+}
+
+func ToggleRuleOutResponse(responseId uuid.UUID) error {
+	sqlString := `
+		UPDATE RESPONSE
+		SET IS_RULEDOUT = !IS_RULEDOUT
 		WHERE ID = ?
 	`
 	return execute(sqlString, responseId)
