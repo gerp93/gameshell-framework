@@ -224,7 +224,8 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	if existingDeckId != uuid.Nil {
+
+	if existingDeckId != uuid.Nil && existingDeckId != deckId {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Deck name already exists."))
 		return
