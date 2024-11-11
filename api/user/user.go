@@ -396,7 +396,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("&#9989;"))
+	_, _ = w.Write([]byte("<i class='bi bi-check-square'></i>"))
 }
 
 func Approve(w http.ResponseWriter, r *http.Request) {
@@ -422,7 +422,7 @@ func Approve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("&#9989;"))
+	_, _ = w.Write([]byte("<i class='bi bi-check-square'></i>"))
 }
 
 func SetColorTheme(w http.ResponseWriter, r *http.Request) {
