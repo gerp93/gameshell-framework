@@ -40,7 +40,7 @@ func SearchUsers(search string) ([]User, error) {
 		FROM USER
 		WHERE NAME LIKE ?
 		ORDER BY
-			TO_DAYS(CHANGED_ON_DATE) DESC,
+			CHANGED_ON_DATE DESC,
 			NAME ASC
 	`
 	rows, err := query(sqlString, search)

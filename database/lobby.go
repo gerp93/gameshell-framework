@@ -119,7 +119,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY
-			TO_DAYS(L.CHANGED_ON_DATE) DESC,
+			L.CHANGED_ON_DATE DESC,
 			L.NAME ASC,
 			COUNT(P.ID) DESC
 	`
