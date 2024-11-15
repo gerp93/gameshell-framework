@@ -44,7 +44,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			AND D.NAME LIKE ?
 		GROUP BY D.ID
 		ORDER BY
-			TO_DAYS(D.CHANGED_ON_DATE) DESC,
+			D.CHANGED_ON_DATE DESC,
 			D.NAME ASC,
 			COUNT(C.ID) DESC
 	`
