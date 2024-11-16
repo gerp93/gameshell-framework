@@ -736,6 +736,11 @@ func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	return execute(sqlString, playerId, cardId)
 }
 
+func GambleCredit(playerId uuid.UUID) error {
+	sqlString := "CALL SP_GAMBLE_CREDIT (?)"
+	return execute(sqlString, playerId)
+}
+
 func AddExtraResponse(playerId uuid.UUID) error {
 	sqlString := "CALL SP_ADD_EXTRA_RESPONSE (?)"
 	return execute(sqlString, playerId)
