@@ -13,11 +13,15 @@ type Player struct {
 	CreatedOnDate time.Time
 	ChangedOnDate time.Time
 
-	Name         string
-	LobbyId      uuid.UUID
-	UserId       uuid.UUID
-	IsActive     bool
-	CreditsSpent int
+	Name           string
+	LobbyId        uuid.UUID
+	UserId         uuid.UUID
+	JoinOrder      int
+	IsActive       bool
+	LosingStreak   int
+	CreditsSpent   int
+	BetOnWin       int
+	ExtraResponses int
 }
 
 func GetPlayer(playerId uuid.UUID) (Player, error) {
@@ -31,8 +35,12 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			U.NAME,
 			P.LOBBY_ID,
 			P.USER_ID,
+			P.JOIN_ORDER,
 			P.IS_ACTIVE,
-			P.CREDITS_SPENT
+			P.LOSING_STREAK,
+			P.CREDITS_SPENT,
+			P.BET_ON_WIN,
+			P.EXTRA_RESPONSES
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.ID = ?
@@ -50,8 +58,12 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.Name,
 			&player.LobbyId,
 			&player.UserId,
+			&player.JoinOrder,
 			&player.IsActive,
-			&player.CreditsSpent); err != nil {
+			&player.LosingStreak,
+			&player.CreditsSpent,
+			&player.BetOnWin,
+			&player.ExtraResponses); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}
@@ -71,8 +83,12 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			U.NAME,
 			P.LOBBY_ID,
 			P.USER_ID,
+			P.JOIN_ORDER,
 			P.IS_ACTIVE,
-			P.CREDITS_SPENT
+			P.LOSING_STREAK,
+			P.CREDITS_SPENT,
+			P.BET_ON_WIN,
+			P.EXTRA_RESPONSES
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
@@ -91,8 +107,12 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.Name,
 			&player.LobbyId,
 			&player.UserId,
+			&player.JoinOrder,
 			&player.IsActive,
-			&player.CreditsSpent); err != nil {
+			&player.LosingStreak,
+			&player.CreditsSpent,
+			&player.BetOnWin,
+			&player.ExtraResponses); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}

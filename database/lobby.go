@@ -63,7 +63,7 @@ type GameData struct {
 	PlayerResponses        []boardResponse
 	PlayerLosingStreak     int
 	PlayerCreditsSpent     int
-	PlayerBetOnWin         bool
+	PlayerBetOnWin         int
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
 
@@ -750,9 +750,9 @@ func GambleCredit(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
-func BetOnWin(playerId uuid.UUID) error {
-	sqlString := "CALL SP_BET_ON_WIN (?)"
-	return execute(sqlString, playerId)
+func BetOnWin(playerId uuid.UUID, bet int) error {
+	sqlString := "CALL SP_BET_ON_WIN (?, ?)"
+	return execute(sqlString, playerId, bet)
 }
 
 func AddExtraResponse(playerId uuid.UUID) error {
