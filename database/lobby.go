@@ -737,14 +737,14 @@ func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	return execute(sqlString, playerId, cardId)
 }
 
-func GambleCredit(playerId uuid.UUID) error {
-	sqlString := "CALL SP_GAMBLE_CREDIT (?)"
-	return execute(sqlString, playerId)
+func GambleCredits(playerId uuid.UUID, credits int) error {
+	sqlString := "CALL SP_GAMBLE_CREDITS (?, ?)"
+	return execute(sqlString, playerId, credits)
 }
 
-func BetOnWin(playerId uuid.UUID, bet int) error {
+func BetOnWin(playerId uuid.UUID, credits int) error {
 	sqlString := "CALL SP_BET_ON_WIN (?, ?)"
-	return execute(sqlString, playerId, bet)
+	return execute(sqlString, playerId, credits)
 }
 
 func AddExtraResponse(playerId uuid.UUID) error {
