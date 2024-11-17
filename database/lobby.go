@@ -49,11 +49,12 @@ type GameData struct {
 	JudgeBlankCount    int
 	JudgeResponseCount int
 
-	BoardIsReady       bool
-	BoardIsEmpty       bool
-	BoardIsAllRevealed bool
-	BoardIsAllRuledOut bool
-	BoardResponses     []boardResponse
+	BoardIsReady        bool
+	BoardIsEmpty        bool
+	BoardHasAnyRevealed bool
+	BoardIsAllRevealed  bool
+	BoardIsAllRuledOut  bool
+	BoardResponses      []boardResponse
 
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
@@ -62,6 +63,7 @@ type GameData struct {
 	PlayerResponses        []boardResponse
 	PlayerLosingStreak     int
 	PlayerCreditsSpent     int
+	PlayerBetOnWin         bool
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
 
@@ -402,6 +404,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
 			P.LOSING_STREAK                                     AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
+			P.BET_ON_WIN                                        AS PLAYER_BET_ON_WIN,
 			P.EXTRA_RESPONSES                                   AS PLAYER_EXTRA_RESPONSES
 		FROM PLAYER AS P
 				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
@@ -434,6 +437,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.PlayerIsJudge,
 			&data.PlayerLosingStreak,
 			&data.PlayerCreditsSpent,
+			&data.PlayerBetOnWin,
 			&data.PlayerExtraResponses); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -486,10 +490,15 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		data.BoardResponses = append(data.BoardResponses, br)
 	}
 
+	data.BoardHasAnyRevealed = false
 	data.BoardIsAllRevealed = true
 	data.BoardIsAllRuledOut = true
 	totalCardsPlayedCount := 0
 	for i, br := range data.BoardResponses {
+		if br.IsRevealed {
+			data.BoardHasAnyRevealed = true
+		}
+
 		if !br.IsRevealed {
 			data.BoardIsAllRevealed = false
 		}
@@ -738,6 +747,11 @@ func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 
 func GambleCredit(playerId uuid.UUID) error {
 	sqlString := "CALL SP_GAMBLE_CREDIT (?)"
+	return execute(sqlString, playerId)
+}
+
+func BetOnWin(playerId uuid.UUID) error {
+	sqlString := "CALL SP_BET_ON_WIN (?)"
 	return execute(sqlString, playerId)
 }
 
