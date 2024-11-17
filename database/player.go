@@ -11,7 +11,6 @@ import (
 type Player struct {
 	Id            uuid.UUID
 	CreatedOnDate time.Time
-	ChangedOnDate time.Time
 
 	Name           string
 	LobbyId        uuid.UUID
@@ -31,7 +30,6 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 		SELECT
 			P.ID,
 			P.CREATED_ON_DATE,
-			P.CHANGED_ON_DATE,
 			U.NAME,
 			P.LOBBY_ID,
 			P.USER_ID,
@@ -54,7 +52,6 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 		if err := rows.Scan(
 			&player.Id,
 			&player.CreatedOnDate,
-			&player.ChangedOnDate,
 			&player.Name,
 			&player.LobbyId,
 			&player.UserId,
@@ -79,7 +76,6 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 		SELECT
 			P.ID,
 			P.CREATED_ON_DATE,
-			P.CHANGED_ON_DATE,
 			U.NAME,
 			P.LOBBY_ID,
 			P.USER_ID,
@@ -103,7 +99,6 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 		if err := rows.Scan(
 			&player.Id,
 			&player.CreatedOnDate,
-			&player.ChangedOnDate,
 			&player.Name,
 			&player.LobbyId,
 			&player.UserId,

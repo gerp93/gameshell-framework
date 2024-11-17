@@ -15,7 +15,6 @@ import (
 type Lobby struct {
 	Id            uuid.UUID
 	CreatedOnDate time.Time
-	ChangedOnDate time.Time
 
 	Name         string
 	Message      sql.NullString
@@ -110,7 +109,6 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 		SELECT
 			L.ID,
 			L.CREATED_ON_DATE,
-			L.CHANGED_ON_DATE,
 			L.NAME,
 			L.PASSWORD_HASH,
 			L.HAND_SIZE,
@@ -120,10 +118,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
-		ORDER BY
-			L.CHANGED_ON_DATE DESC,
-			L.NAME ASC,
-			COUNT(P.ID) DESC
+		ORDER BY L.NAME
 	`
 	rows, err := query(sqlString, search)
 	if err != nil {
@@ -136,7 +131,6 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 		if err := rows.Scan(
 			&ld.Id,
 			&ld.CreatedOnDate,
-			&ld.ChangedOnDate,
 			&ld.Name,
 			&ld.PasswordHash,
 			&ld.HandSize,
@@ -157,7 +151,6 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		SELECT
 			ID,
 			CREATED_ON_DATE,
-			CHANGED_ON_DATE,
 			NAME,
 			MESSAGE,
 			PASSWORD_HASH,
@@ -175,7 +168,6 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 		if err := rows.Scan(
 			&lobby.Id,
 			&lobby.CreatedOnDate,
-			&lobby.ChangedOnDate,
 			&lobby.Name,
 			&lobby.Message,
 			&lobby.PasswordHash,
