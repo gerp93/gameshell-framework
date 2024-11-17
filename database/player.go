@@ -17,6 +17,7 @@ type Player struct {
 	UserId         uuid.UUID
 	JoinOrder      int
 	IsActive       bool
+	WinningStreak  int
 	LosingStreak   int
 	CreditsSpent   int
 	BetOnWin       int
@@ -35,6 +36,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.USER_ID,
 			P.JOIN_ORDER,
 			P.IS_ACTIVE,
+			P.WINNING_STREAK,
 			P.LOSING_STREAK,
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
@@ -57,6 +59,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.UserId,
 			&player.JoinOrder,
 			&player.IsActive,
+			&player.WinningStreak,
 			&player.LosingStreak,
 			&player.CreditsSpent,
 			&player.BetOnWin,
@@ -81,6 +84,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.USER_ID,
 			P.JOIN_ORDER,
 			P.IS_ACTIVE,
+			P.WINNING_STREAK,
 			P.LOSING_STREAK,
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
@@ -104,6 +108,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.UserId,
 			&player.JoinOrder,
 			&player.IsActive,
+			&player.WinningStreak,
 			&player.LosingStreak,
 			&player.CreditsSpent,
 			&player.BetOnWin,
