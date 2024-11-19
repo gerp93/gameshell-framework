@@ -32,10 +32,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 	sqlString := `
 		SELECT
 			D.ID,
-			D.CREATED_ON_DATE,
-			D.CHANGED_ON_DATE,
 			D.NAME,
-			D.PASSWORD_HASH,
 			COUNT(C.ID) AS CARD_COUNT,
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
@@ -43,10 +40,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 		WHERE D.IS_LOBBY_WILD_DECK = FALSE
 			AND D.NAME LIKE ?
 		GROUP BY D.ID
-		ORDER BY
-			D.CHANGED_ON_DATE DESC,
-			D.NAME ASC,
-			COUNT(C.ID) DESC
+		ORDER BY D.NAME
 	`
 	rows, err := query(sqlString, search)
 	if err != nil {
@@ -58,10 +52,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 		var deckDetails DeckDetails
 		if err := rows.Scan(
 			&deckDetails.Id,
-			&deckDetails.CreatedOnDate,
-			&deckDetails.ChangedOnDate,
 			&deckDetails.Name,
-			&deckDetails.PasswordHash,
 			&deckDetails.CardCount,
 			&deckDetails.IsPublicReadOnly); err != nil {
 			log.Println(err)
