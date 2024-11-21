@@ -765,6 +765,11 @@ func PlaySurpriseCard(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func PlayFindCard(playerId uuid.UUID, cardId uuid.UUID) error {
+	sqlString := "CALL SP_RESPOND_WITH_FIND_CARD (?, ?)"
+	return execute(sqlString, playerId, cardId)
+}
+
 func PlayWildCard(playerId uuid.UUID, text string) error {
 	sqlString := "CALL SP_RESPOND_WITH_WILD_CARD (?, ?)"
 	return execute(sqlString, playerId, text)
