@@ -20,8 +20,10 @@ type Lobby struct {
 	Message      sql.NullString
 	PasswordHash sql.NullString
 
-	HandSize    int
-	CreditLimit int
+	HandSize            int
+	CreditLimit         int
+	WinStreakThreshold  int
+	LoseStreakThreshold int
 }
 
 type lobbyDetails struct {
@@ -30,10 +32,12 @@ type lobbyDetails struct {
 }
 
 type GameData struct {
-	LobbyId          uuid.UUID
-	LobbyName        string
-	LobbyHandSize    int
-	LobbyCreditLimit int
+	LobbyId                  uuid.UUID
+	LobbyName                string
+	LobbyHandSize            int
+	LobbyCreditLimit         int
+	LobbyWinStreakThreshold  int
+	LobbyLoseStreakThreshold int
 
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
@@ -114,6 +118,8 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.PASSWORD_HASH,
 			L.HAND_SIZE,
 			L.CREDIT_LIMIT,
+			L.WIN_STREAK_THRESHOLD,
+			L.LOSE_STREAK_THRESHOLD,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
@@ -136,6 +142,8 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.PasswordHash,
 			&ld.HandSize,
 			&ld.CreditLimit,
+			&ld.WinStreakThreshold,
+			&ld.LoseStreakThreshold,
 			&ld.UserCount); err != nil {
 			log.Println(err)
 			return result, errors.New("failed to scan row in query results")
@@ -156,7 +164,9 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			MESSAGE,
 			PASSWORD_HASH,
 			HAND_SIZE,
-			CREDIT_LIMIT
+			CREDIT_LIMIT,
+			WIN_STREAK_THRESHOLD,
+			LOSE_STREAK_THRESHOLD
 		FROM LOBBY
 		WHERE ID = ?
 	`
@@ -173,7 +183,9 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.Message,
 			&lobby.PasswordHash,
 			&lobby.HandSize,
-			&lobby.CreditLimit); err != nil {
+			&lobby.CreditLimit,
+			&lobby.WinStreakThreshold,
+			&lobby.LoseStreakThreshold); err != nil {
 			log.Println(err)
 			return lobby, errors.New("failed to scan row in query results")
 		}
@@ -206,7 +218,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, message string, password string, handSize int, creditLimit int) (uuid.UUID, error) {
+func CreateLobby(name string, message string, password string, handSize int, creditLimit int, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -220,20 +232,20 @@ func CreateLobby(name string, message string, password string, handSize int, cre
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	if message == "" {
 		if password == "" {
-			return id, execute(sqlString, id, name, nil, nil, handSize, creditLimit)
+			return id, execute(sqlString, id, name, nil, nil, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, nil, passwordHash, handSize, creditLimit)
+			return id, execute(sqlString, id, name, nil, passwordHash, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		}
 	} else {
 		if password == "" {
-			return id, execute(sqlString, id, name, message, nil, handSize, creditLimit)
+			return id, execute(sqlString, id, name, message, nil, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, message, passwordHash, handSize, creditLimit)
+			return id, execute(sqlString, id, name, message, passwordHash, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		}
 	}
 }
@@ -349,6 +361,26 @@ func SetLobbyCreditLimit(id uuid.UUID, creditLimit int) error {
 	return execute(sqlString, creditLimit, id)
 }
 
+func SetLobbyWinStreakThreshold(id uuid.UUID, winStreakThreshold int) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET
+			WIN_STREAK_THRESHOLD = ?
+		WHERE ID = ?
+	`
+	return execute(sqlString, winStreakThreshold, id)
+}
+
+func SetLobbyLoseStreakThreshold(id uuid.UUID, loseStreakThreshold int) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET
+			LOSE_STREAK_THRESHOLD = ?
+		WHERE ID = ?
+	`
+	return execute(sqlString, loseStreakThreshold, id)
+}
+
 func DeleteLobby(lobbyId uuid.UUID) error {
 	sqlString := `
 		DELETE FROM LOBBY
@@ -366,6 +398,8 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			L.NAME                                              AS LOBBY_NAME,
 			L.HAND_SIZE                                         AS LOBBY_HAND_SIZE,
 			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
+			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
+			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
 			(SELECT COUNT(*)
 				FROM DRAW_PILE AS DP
 						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
@@ -417,6 +451,8 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.LobbyName,
 			&data.LobbyHandSize,
 			&data.LobbyCreditLimit,
+			&data.LobbyWinStreakThreshold,
+			&data.LobbyLoseStreakThreshold,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
 			&data.TotalPlayerCount,
