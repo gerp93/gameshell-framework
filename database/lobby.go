@@ -61,6 +61,7 @@ type GameData struct {
 
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
+	PlayerIsWinning        bool
 	PlayerIsReady          bool
 	PlayerHand             []handCard
 	PlayerResponses        []boardResponse
@@ -429,6 +430,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
 			P.ID                                                AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			FN_GET_PLAYER_IS_WINNING(P.ID)                      AS PLAYER_IS_WINNING,
 			P.WINNING_STREAK                                    AS PLAYER_WINNING_STREAK,
 			P.LOSING_STREAK                                     AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
@@ -465,6 +467,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.JudgeResponseCount,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
+			&data.PlayerIsWinning,
 			&data.PlayerWinningStreak,
 			&data.PlayerLosingStreak,
 			&data.PlayerCreditsSpent,
