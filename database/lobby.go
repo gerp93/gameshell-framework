@@ -484,9 +484,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
-	if data.PlayerCreditsRemaining < 0 {
-		data.PlayerCreditsRemaining = 0
-	}
 
 	sqlString = `
 		SELECT
