@@ -54,6 +54,8 @@ type GameData struct {
 
 	BoardIsReady        bool
 	BoardIsEmpty        bool
+	BoardHasAnyPlayed   bool
+	BoardHasAnySpecial  bool
 	BoardHasAnyRevealed bool
 	BoardIsAllRevealed  bool
 	BoardIsAllRuledOut  bool
@@ -521,6 +523,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		data.BoardResponses = append(data.BoardResponses, br)
 	}
 
+	data.BoardHasAnyPlayed = len(data.BoardResponses) > 0
 	data.BoardHasAnyRevealed = false
 	data.BoardIsAllRevealed = true
 	data.BoardIsAllRuledOut = true
@@ -584,6 +587,41 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 		if br.PlayerId == playerId {
 			data.PlayerResponses = append(data.PlayerResponses, data.BoardResponses[i])
+		}
+	}
+
+	sqlString = `
+		SELECT
+			P.BET_ON_WIN,
+			P.EXTRA_RESPONSES,
+			RC.SPECIAL_CATEGORY
+		FROM PLAYER AS P
+				LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+		WHERE P.LOBBY_ID = ?
+			AND P.IS_ACTIVE = 1
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	data.BoardHasAnySpecial = false
+	for rows.Next() {
+		var betOnWin int
+		var extraResponse int
+		var specialCategory sql.NullString
+		if err := rows.Scan(
+			&betOnWin,
+			&extraResponse,
+			&specialCategory,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		if betOnWin > 0 || extraResponse > 0 || specialCategory.Valid {
+			data.BoardHasAnySpecial = true
+			break
 		}
 	}
 
@@ -778,6 +816,11 @@ func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 
 func PurchaseCredits(playerId uuid.UUID) error {
 	sqlString := "CALL SP_PURCHASE_CREDITS (?)"
+	return execute(sqlString, playerId)
+}
+
+func SkipJudge(playerId uuid.UUID) error {
+	sqlString := "CALL SP_SKIP_JUDGE (?)"
 	return execute(sqlString, playerId)
 }
 
