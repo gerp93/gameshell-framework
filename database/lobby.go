@@ -844,6 +844,11 @@ func AddExtraResponse(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func AddExtraResponseUndo(playerId uuid.UUID) error {
+	sqlString := "CALL SP_ADD_EXTRA_RESPONSE_UNDO (?)"
+	return execute(sqlString, playerId)
+}
+
 func PlayStealCard(playerId uuid.UUID) error {
 	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
 	return execute(sqlString, playerId)
