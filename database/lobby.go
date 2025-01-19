@@ -834,6 +834,11 @@ func BetOnWin(playerId uuid.UUID, credits int) error {
 	return execute(sqlString, playerId, credits)
 }
 
+func BetOnWinUndo(playerId uuid.UUID) error {
+	sqlString := "CALL SP_BET_ON_WIN_UNDO (?)"
+	return execute(sqlString, playerId)
+}
+
 func AddExtraResponse(playerId uuid.UUID) error {
 	sqlString := "CALL SP_ADD_EXTRA_RESPONSE (?)"
 	return execute(sqlString, playerId)
