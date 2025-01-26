@@ -29,6 +29,8 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 
 	// set global variable for database connection
 	database = db
+	database.SetMaxOpenConns(100)
+	database.SetMaxIdleConns(100)
 
 	// ping to test connection
 	err = db.Ping()
