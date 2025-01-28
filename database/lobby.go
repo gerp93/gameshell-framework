@@ -291,7 +291,7 @@ func AddUserToLobby(lobbyId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
 	return player.Id, err
 }
 
-func RemoveUserFromLobby(lobbyId uuid.UUID, userId uuid.UUID) error {
+func SetPlayerInactive(lobbyId uuid.UUID, userId uuid.UUID) error {
 	sqlString := "CALL SP_SET_PLAYER_INACTIVE (?, ?)"
 	return execute(sqlString, lobbyId, userId)
 }

@@ -62,7 +62,7 @@ func (h *Hub) unregisterClient(client *Client) {
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
 		close(client.send)
-		_ = database.RemoveUserFromLobby(h.lobbyId, client.user.Id)
+		_ = database.SetPlayerInactive(h.lobbyId, client.user.Id)
 	}
 	h.broadcastMessage([]byte("<red>Player Left</>: <green>" + client.user.Name + "</>"))
 	h.broadcastMessage([]byte("refresh"))
