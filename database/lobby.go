@@ -41,6 +41,7 @@ type GameData struct {
 
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
+	DrawPileDeckNames     string
 
 	TotalPlayerCount  int
 	TotalRoundsPlayed int
@@ -483,6 +484,29 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		if data.JudgeCardImage.Valid {
 			data.JudgeCardImage.String = base64.StdEncoding.EncodeToString(imageBytes)
 		}
+	}
+
+	sqlString = `
+		SELECT DISTINCT
+			DPD.NAME
+		FROM DRAW_PILE AS DP
+				INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+				INNER JOIN DECK AS DPD ON DPD.ID = DPC.DECK_ID
+		WHERE DP.LOBBY_ID = ?
+		ORDER BY DPD.NAME
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var deckName string
+		if err := rows.Scan(&deckName); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.DrawPileDeckNames += deckName + "&#010;"
 	}
 
 	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
