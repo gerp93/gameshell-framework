@@ -968,6 +968,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	var data LobbyGameStatsData
 
+	data.PlayerId = playerId
 	lobbyId, err := GetPlayerLobbyId(playerId)
 	if err != nil {
 		return data, err
