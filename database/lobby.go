@@ -31,19 +31,6 @@ type lobbyDetails struct {
 	UserCount int
 }
 
-type GameData struct {
-	LobbyId uuid.UUID
-
-	TotalPlayerCount  int
-	TotalRoundsPlayed int
-
-	PlayerId uuid.UUID
-
-	Wins           []nameCountRow
-	UpcomingJudges []string
-	KickVotes      []kickVote
-}
-
 type LobbyGameInfo struct {
 	LobbyName string
 
@@ -104,6 +91,16 @@ type LobbyGameBoardData struct {
 	PlayerId        uuid.UUID
 	PlayerIsJudge   bool
 	PlayerResponses []boardResponse
+}
+
+type LobbyGameStatsData struct {
+	LobbyId uuid.UUID
+
+	PlayerId uuid.UUID
+
+	Wins           []nameCountRow
+	UpcomingJudges []string
+	KickVotes      []kickVote
 }
 
 type boardResponse struct {
@@ -346,6 +343,30 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
+func GetPlayerLobbyId(playerid uuid.UUID) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	sqlString := `
+		SELECT
+			LOBBY_ID
+		FROM PLAYER
+		WHERE ID = ?
+	`
+	rows, err := query(sqlString, playerid)
+	if err != nil {
+		return id, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			log.Println(err)
+			return id, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return id, nil
+}
+
 func SetLobbyName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE LOBBY
@@ -416,129 +437,6 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 		WHERE ID = ?
 	`
 	return execute(sqlString, lobbyId)
-}
-
-func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
-	var data GameData
-
-	sqlString := `
-		SELECT
-			L.ID                                                AS LOBBY_ID,
-			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS TOTAL_PLAYER_COUNT,
-			(SELECT COUNT(*)
-				FROM WIN AS W
-						INNER JOIN PLAYER AS WP ON WP.ID = W.PLAYER_ID
-				WHERE WP.LOBBY_ID = L.ID)                       AS TOTAL_ROUNDS_PLAYED,
-			P.ID                                                AS PLAYER_ID
-		FROM PLAYER AS P
-				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-		WHERE P.ID = ?
-	`
-	rows, err := query(sqlString, playerId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&data.LobbyId,
-			&data.TotalPlayerCount,
-			&data.TotalRoundsPlayed,
-			&data.PlayerId,
-		); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-	}
-
-	sqlString = `
-		SELECT
-			U.NAME      AS USER_NAME,
-			COUNT(W.ID) AS WINS
-		FROM PLAYER AS P
-				INNER JOIN USER AS U ON U.ID = P.USER_ID
-				LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
-		WHERE P.LOBBY_ID = ?
-			AND P.IS_ACTIVE = 1
-		GROUP BY P.USER_ID
-		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
-	`
-	rows, err = query(sqlString, data.LobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var row nameCountRow
-		if err := rows.Scan(&row.Name, &row.Count); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		data.Wins = append(data.Wins, row)
-	}
-
-	sqlString = `
-		SELECT U.NAME
-		FROM LOBBY AS L
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
-				INNER JOIN (SELECT
-								LOBBY_ID,
-								USER_ID,
-								RANK() OVER (PARTITION BY LOBBY_ID ORDER BY CREATED_ON_DATE) AS JOIN_ORDER
-							FROM PLAYER
-							WHERE IS_ACTIVE = 1) AS T ON T.LOBBY_ID = L.ID
-				INNER JOIN USER AS U ON U.ID = T.USER_ID
-		WHERE L.ID = ?
-		ORDER BY T.JOIN_ORDER <= J.POSITION, T.JOIN_ORDER
-	`
-	rows, err = query(sqlString, data.LobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var judgeName string
-		if err := rows.Scan(&judgeName); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		data.UpcomingJudges = append(data.UpcomingJudges, judgeName)
-	}
-
-	sqlString = `
-		SELECT
-			P.ID AS PLAYER_ID,
-			U.NAME AS USER_NAME,
-			IF(EXISTS(SELECT ID
-						FROM KICK
-						WHERE VOTER_PLAYER_ID = ?
-							AND SUBJECT_PLAYER_ID = P.ID), 1, 0) AS VOTED
-		FROM PLAYER AS P
-				INNER JOIN USER AS U ON U.ID = P.USER_ID
-				LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
-		WHERE P.IS_ACTIVE = 1
-			AND P.ID <> ?
-			AND P.LOBBY_ID = ?
-		ORDER BY U.NAME
-	`
-	rows, err = query(sqlString, data.PlayerId, data.PlayerId, data.LobbyId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var row kickVote
-		if err := rows.Scan(
-			&row.PlayerId,
-			&row.UserName,
-			&row.Voted); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		data.KickVotes = append(data.KickVotes, row)
-	}
-
-	return data, nil
 }
 
 func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
@@ -1062,6 +960,105 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			}
 			return data.BoardResponses[i].ResponseCards[0].Text < data.BoardResponses[j].ResponseCards[0].Text
 		})
+	}
+
+	return data, nil
+}
+
+func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
+	var data LobbyGameStatsData
+
+	lobbyId, err := GetPlayerLobbyId(playerId)
+	if err != nil {
+		return data, err
+	}
+	data.LobbyId = lobbyId
+
+	sqlString := `
+		SELECT
+			U.NAME      AS USER_NAME,
+			COUNT(W.ID) AS WINS
+		FROM PLAYER AS P
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
+		WHERE P.LOBBY_ID = ?
+			AND P.IS_ACTIVE = 1
+		GROUP BY P.USER_ID
+		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
+	`
+	rows, err := query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var row nameCountRow
+		if err := rows.Scan(&row.Name, &row.Count); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.Wins = append(data.Wins, row)
+	}
+
+	sqlString = `
+		SELECT U.NAME
+		FROM LOBBY AS L
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+				INNER JOIN (SELECT
+								LOBBY_ID,
+								USER_ID,
+								RANK() OVER (PARTITION BY LOBBY_ID ORDER BY CREATED_ON_DATE) AS JOIN_ORDER
+							FROM PLAYER
+							WHERE IS_ACTIVE = 1) AS T ON T.LOBBY_ID = L.ID
+				INNER JOIN USER AS U ON U.ID = T.USER_ID
+		WHERE L.ID = ?
+		ORDER BY T.JOIN_ORDER <= J.POSITION, T.JOIN_ORDER
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var judgeName string
+		if err := rows.Scan(&judgeName); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.UpcomingJudges = append(data.UpcomingJudges, judgeName)
+	}
+
+	sqlString = `
+		SELECT
+			P.ID AS PLAYER_ID,
+			U.NAME AS USER_NAME,
+			IF(EXISTS(SELECT ID
+						FROM KICK
+						WHERE VOTER_PLAYER_ID = ?
+							AND SUBJECT_PLAYER_ID = P.ID), 1, 0) AS VOTED
+		FROM PLAYER AS P
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
+		WHERE P.IS_ACTIVE = 1
+			AND P.ID <> ?
+			AND P.LOBBY_ID = ?
+		ORDER BY U.NAME
+	`
+	rows, err = query(sqlString, data.PlayerId, data.PlayerId, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var row kickVote
+		if err := rows.Scan(
+			&row.PlayerId,
+			&row.UserName,
+			&row.Voted); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.KickVotes = append(data.KickVotes, row)
 	}
 
 	return data, nil
