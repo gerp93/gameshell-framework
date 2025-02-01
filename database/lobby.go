@@ -59,7 +59,6 @@ type GameData struct {
 	PlayerIsJudge          bool
 	PlayerIsWinning        bool
 	PlayerIsReady          bool
-	PlayerHand             []handCard
 	PlayerResponses        []boardResponse
 	PlayerWinningStreak    int
 	PlayerLosingStreak     int
@@ -81,6 +80,15 @@ type LobbyGameInfo struct {
 	DrawPileDeckNames     string
 
 	JudgeName sql.NullString
+}
+
+type PlayerHandData struct {
+	LobbyId uuid.UUID
+
+	PlayerId      uuid.UUID
+	PlayerIsJudge bool
+	PlayerIsReady bool
+	PlayerHand    []handCard
 }
 
 type boardResponse struct {
@@ -568,7 +576,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			totalCardsPlayedCount += 1
 		}
 
-		if br.PlayerId == playerId {
+		if br.PlayerId == data.PlayerId {
 			data.PlayerResponses = append(data.PlayerResponses, data.BoardResponses[i])
 		}
 	}
@@ -630,9 +638,9 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	}
 
 	for rows.Next() {
-		var playerId uuid.UUID
+		var pId uuid.UUID
 		var isReady bool
-		if err := rows.Scan(&playerId, &isReady); err != nil {
+		if err := rows.Scan(&pId, &isReady); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
@@ -641,7 +649,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			data.BoardIsReady = false
 		}
 
-		if playerId == data.PlayerId {
+		if pId == data.PlayerId {
 			data.PlayerIsReady = isReady
 		}
 	}
@@ -656,44 +664,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			}
 			return data.BoardResponses[i].ResponseCards[0].Text < data.BoardResponses[j].ResponseCards[0].Text
 		})
-	}
-
-	sqlString = `
-		SELECT
-			C.ID,
-			C.TEXT,
-			C.IMAGE,
-			D.NAME
-		FROM HAND AS H
-			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
-			INNER JOIN DECK AS D ON D.ID = C.DECK_ID
-		WHERE H.PLAYER_ID = ?
-		ORDER BY C.TEXT
-	`
-	rows, err = query(sqlString, playerId)
-	if err != nil {
-		return data, err
-	}
-
-	for rows.Next() {
-		var card handCard
-		var imageBytes []byte
-		if err := rows.Scan(
-			&card.Id,
-			&card.Text,
-			&imageBytes,
-			&card.DeckName,
-		); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-
-		card.Image.Valid = imageBytes != nil
-		if card.Image.Valid {
-			card.Image.String = base64.StdEncoding.EncodeToString(imageBytes)
-		}
-
-		data.PlayerHand = append(data.PlayerHand, card)
 	}
 
 	sqlString = `
@@ -848,6 +818,103 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 		data.DrawPileDeckNames += deckName + "&#010;"
+	}
+
+	return data, nil
+}
+
+func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
+	var data PlayerHandData
+
+	sqlString := `
+		SELECT
+			L.ID                                                AS LOBBY_ID,
+			P.ID                                                AS PLAYER_ID,
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
+		FROM PLAYER AS P
+				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+		WHERE P.ID = ?
+	`
+	rows, err := query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.LobbyId,
+			&data.PlayerId,
+			&data.PlayerIsJudge,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+	}
+
+	sqlString = `
+		SELECT
+			IF(COUNT(RC.ID) = -- CARDS PLAYED
+				(J.BLANK_COUNT * -- CARDS PER RESPONSE
+				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
+				, 1, 0) AS PLAYER_IS_READY
+		FROM RESPONSE AS R
+				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+		WHERE P.ID = ?
+		GROUP BY P.ID
+	`
+	rows, err = query(sqlString, data.PlayerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var isReady bool
+		if err := rows.Scan(&isReady); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+
+		data.PlayerIsReady = isReady
+	}
+
+	sqlString = `
+		SELECT
+			C.ID,
+			C.TEXT,
+			C.IMAGE,
+			D.NAME
+		FROM HAND AS H
+			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
+			INNER JOIN DECK AS D ON D.ID = C.DECK_ID
+		WHERE H.PLAYER_ID = ?
+		ORDER BY C.TEXT
+	`
+	rows, err = query(sqlString, data.PlayerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var card handCard
+		var imageBytes []byte
+		if err := rows.Scan(
+			&card.Id,
+			&card.Text,
+			&imageBytes,
+			&card.DeckName,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+
+		card.Image.Valid = imageBytes != nil
+		if card.Image.Valid {
+			card.Image.String = base64.StdEncoding.EncodeToString(imageBytes)
+		}
+
+		data.PlayerHand = append(data.PlayerHand, card)
 	}
 
 	return data, nil
