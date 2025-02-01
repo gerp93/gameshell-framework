@@ -102,7 +102,6 @@ type boardResponseCard struct {
 type handCard struct {
 	Card
 	DeckName string
-	IsLocked bool
 }
 
 type nameCountRow struct {
@@ -664,13 +663,12 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			C.ID,
 			C.TEXT,
 			C.IMAGE,
-			D.NAME,
-			H.IS_LOCKED
+			D.NAME
 		FROM HAND AS H
 			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
 			INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 		WHERE H.PLAYER_ID = ?
-		ORDER BY H.IS_LOCKED DESC, C.TEXT
+		ORDER BY C.TEXT
 	`
 	rows, err = query(sqlString, playerId)
 	if err != nil {
@@ -685,7 +683,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&card.Text,
 			&imageBytes,
 			&card.DeckName,
-			&card.IsLocked); err != nil {
+		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
@@ -928,16 +926,6 @@ func WithdrawCard(responseCardId uuid.UUID) error {
 func DiscardCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	sqlString := "CALL SP_DISCARD_CARD (?, ?)"
 	return execute(sqlString, playerId, cardId)
-}
-
-func LockCard(playerId uuid.UUID, cardId uuid.UUID, isLocked bool) error {
-	sqlString := `
-		UPDATE HAND
-		SET IS_LOCKED = ?
-		WHERE PLAYER_ID = ?
-			AND CARD_ID = ?
-	`
-	return execute(sqlString, isLocked, playerId, cardId)
 }
 
 func VoteToKick(voterPlayerId uuid.UUID, subjectPlayerId uuid.UUID) (bool, error) {
