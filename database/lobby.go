@@ -32,10 +32,7 @@ type lobbyDetails struct {
 }
 
 type GameData struct {
-	LobbyId                  uuid.UUID
-	LobbyCreditLimit         int
-	LobbyWinStreakThreshold  int
-	LobbyLoseStreakThreshold int
+	LobbyId uuid.UUID
 
 	TotalPlayerCount  int
 	TotalRoundsPlayed int
@@ -55,17 +52,9 @@ type GameData struct {
 	BoardIsAllRuledOut  bool
 	BoardResponses      []boardResponse
 
-	PlayerId               uuid.UUID
-	PlayerIsJudge          bool
-	PlayerIsWinning        bool
-	PlayerIsReady          bool
-	PlayerResponses        []boardResponse
-	PlayerWinningStreak    int
-	PlayerLosingStreak     int
-	PlayerCreditsSpent     int
-	PlayerBetOnWin         int
-	PlayerExtraResponses   int
-	PlayerCreditsRemaining int
+	PlayerId        uuid.UUID
+	PlayerIsJudge   bool
+	PlayerResponses []boardResponse
 
 	Wins           []nameCountRow
 	UpcomingJudges []string
@@ -89,6 +78,28 @@ type PlayerHandData struct {
 	PlayerIsJudge bool
 	PlayerIsReady bool
 	PlayerHand    []handCard
+}
+
+type PlayerSpecialsData struct {
+	LobbyId                  uuid.UUID
+	LobbyCreditLimit         int
+	LobbyWinStreakThreshold  int
+	LobbyLoseStreakThreshold int
+
+	BoardHasAnySpecial  bool
+	BoardHasAnyRevealed bool
+	BoardResponses      []boardResponse
+
+	PlayerId               uuid.UUID
+	PlayerIsJudge          bool
+	PlayerIsWinning        bool
+	PlayerIsReady          bool
+	PlayerWinningStreak    int
+	PlayerLosingStreak     int
+	PlayerCreditsSpent     int
+	PlayerBetOnWin         int
+	PlayerExtraResponses   int
+	PlayerCreditsRemaining int
 }
 
 type boardResponse struct {
@@ -409,9 +420,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	sqlString := `
 		SELECT
 			L.ID                                                AS LOBBY_ID,
-			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
-			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
-			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
 			(SELECT COUNT(*) FROM PLAYER WHERE LOBBY_ID = L.ID) AS TOTAL_PLAYER_COUNT,
 			(SELECT COUNT(*)
 				FROM WIN AS W
@@ -426,13 +434,7 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
 			P.ID                                                AS PLAYER_ID,
-			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
-			FN_GET_PLAYER_IS_WINNING(P.ID)                      AS PLAYER_IS_WINNING,
-			P.WINNING_STREAK                                    AS PLAYER_WINNING_STREAK,
-			P.LOSING_STREAK                                     AS PLAYER_LOSING_STREAK,
-			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
-			P.BET_ON_WIN                                        AS PLAYER_BET_ON_WIN,
-			P.EXTRA_RESPONSES                                   AS PLAYER_EXTRA_RESPONSES
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
 		FROM PLAYER AS P
 				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
@@ -447,9 +449,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		var imageBytes []byte
 		if err := rows.Scan(
 			&data.LobbyId,
-			&data.LobbyCreditLimit,
-			&data.LobbyWinStreakThreshold,
-			&data.LobbyLoseStreakThreshold,
 			&data.TotalPlayerCount,
 			&data.TotalRoundsPlayed,
 			&data.JudgeCardText,
@@ -459,12 +458,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			&data.JudgeResponseCount,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
-			&data.PlayerIsWinning,
-			&data.PlayerWinningStreak,
-			&data.PlayerLosingStreak,
-			&data.PlayerCreditsSpent,
-			&data.PlayerBetOnWin,
-			&data.PlayerExtraResponses,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -475,8 +468,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 			data.JudgeCardImage.String = base64.StdEncoding.EncodeToString(imageBytes)
 		}
 	}
-
-	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
 
 	sqlString = `
 		SELECT
@@ -647,10 +638,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 
 		if !isReady {
 			data.BoardIsReady = false
-		}
-
-		if pId == data.PlayerId {
-			data.PlayerIsReady = isReady
 		}
 	}
 
@@ -915,6 +902,135 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 		}
 
 		data.PlayerHand = append(data.PlayerHand, card)
+	}
+
+	return data, nil
+}
+
+func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
+	var data PlayerSpecialsData
+
+	sqlString := `
+		SELECT
+			L.ID                                                AS LOBBY_ID,
+			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
+			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
+			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
+			P.ID                                                AS PLAYER_ID,
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			FN_GET_PLAYER_IS_WINNING(P.ID)                      AS PLAYER_IS_WINNING,
+			P.WINNING_STREAK                                    AS PLAYER_WINNING_STREAK,
+			P.LOSING_STREAK                                     AS PLAYER_LOSING_STREAK,
+			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
+			P.BET_ON_WIN                                        AS PLAYER_BET_ON_WIN,
+			P.EXTRA_RESPONSES                                   AS PLAYER_EXTRA_RESPONSES
+		FROM PLAYER AS P
+				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+		WHERE P.ID = ?
+	`
+	rows, err := query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.LobbyId,
+			&data.LobbyCreditLimit,
+			&data.LobbyWinStreakThreshold,
+			&data.LobbyLoseStreakThreshold,
+			&data.PlayerId,
+			&data.PlayerIsJudge,
+			&data.PlayerIsWinning,
+			&data.PlayerWinningStreak,
+			&data.PlayerLosingStreak,
+			&data.PlayerCreditsSpent,
+			&data.PlayerBetOnWin,
+			&data.PlayerExtraResponses,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+	}
+
+	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
+
+	sqlString = `
+		SELECT R.ID
+		FROM PLAYER AS P
+				INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+		WHERE P.LOBBY_ID = ?
+			AND R.IS_REVEALED = 1
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	data.BoardHasAnyRevealed = rows.Next()
+
+	sqlString = `
+		SELECT
+			P.BET_ON_WIN,
+			P.EXTRA_RESPONSES,
+			RC.SPECIAL_CATEGORY
+		FROM PLAYER AS P
+				LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+		WHERE P.LOBBY_ID = ?
+			AND P.IS_ACTIVE = 1
+	`
+	rows, err = query(sqlString, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+
+	data.BoardHasAnySpecial = false
+	for rows.Next() {
+		var betOnWin int
+		var extraResponse int
+		var specialCategory sql.NullString
+		if err := rows.Scan(
+			&betOnWin,
+			&extraResponse,
+			&specialCategory,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		if betOnWin > 0 || extraResponse > 0 || specialCategory.Valid {
+			data.BoardHasAnySpecial = true
+			break
+		}
+	}
+
+	sqlString = `
+		SELECT
+			IF(COUNT(RC.ID) = -- CARDS PLAYED
+				(J.BLANK_COUNT * -- CARDS PER RESPONSE
+				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
+				, 1, 0) AS PLAYER_IS_READY
+		FROM RESPONSE AS R
+				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+		WHERE P.ID = ?
+		GROUP BY P.ID
+	`
+	rows, err = query(sqlString, data.PlayerId)
+	if err != nil {
+		return data, err
+	}
+
+	for rows.Next() {
+		var isReady bool
+		if err := rows.Scan(&isReady); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+
+		data.PlayerIsReady = isReady
 	}
 
 	return data, nil
