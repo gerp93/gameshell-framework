@@ -848,6 +848,11 @@ func SkipJudge(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func AlertLobby(playerId uuid.UUID, credits int) error {
+	sqlString := "CALL SP_ALERT_LOBBY (?, ?)"
+	return execute(sqlString, playerId, credits)
+}
+
 func GambleCredits(playerId uuid.UUID, credits int) error {
 	sqlString := "CALL SP_GAMBLE_CREDITS (?, ?)"
 	return execute(sqlString, playerId, credits)
