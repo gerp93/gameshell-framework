@@ -1017,11 +1017,6 @@ func PickRandomWinner(lobbyId uuid.UUID) (string, error) {
 	return playerName, nil
 }
 
-func DiscardHand(playerId uuid.UUID) error {
-	sqlString := "CALL SP_DISCARD_HAND (?)"
-	return execute(sqlString, playerId)
-}
-
 func SkipPrompt(lobbyId uuid.UUID) error {
 	sqlString := "CALL SP_SKIP_PROMPT (?)"
 	return execute(sqlString, lobbyId)
