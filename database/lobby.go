@@ -33,7 +33,6 @@ type lobbyDetails struct {
 
 type GameData struct {
 	LobbyId                  uuid.UUID
-	LobbyHandSize            int
 	LobbyCreditLimit         int
 	LobbyWinStreakThreshold  int
 	LobbyLoseStreakThreshold int
@@ -403,7 +402,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 	sqlString := `
 		SELECT
 			L.ID                                                AS LOBBY_ID,
-			L.HAND_SIZE                                         AS LOBBY_HAND_SIZE,
 			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
 			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
 			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
@@ -442,7 +440,6 @@ func GetPlayerGameData(playerId uuid.UUID) (GameData, error) {
 		var imageBytes []byte
 		if err := rows.Scan(
 			&data.LobbyId,
-			&data.LobbyHandSize,
 			&data.LobbyCreditLimit,
 			&data.LobbyWinStreakThreshold,
 			&data.LobbyLoseStreakThreshold,
@@ -856,11 +853,6 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	}
 
 	return data, nil
-}
-
-func DrawHand(playerId uuid.UUID) error {
-	sqlString := "CALL SP_DRAW_HAND (?)"
-	return execute(sqlString, playerId)
 }
 
 func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
