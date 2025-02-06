@@ -343,7 +343,7 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func GetPlayerLobbyId(playerid uuid.UUID) (uuid.UUID, error) {
+func GetPlayerLobbyId(playerId uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
 
 	sqlString := `
@@ -352,7 +352,7 @@ func GetPlayerLobbyId(playerid uuid.UUID) (uuid.UUID, error) {
 		FROM PLAYER
 		WHERE ID = ?
 	`
-	rows, err := query(sqlString, playerid)
+	rows, err := query(sqlString, playerId)
 	if err != nil {
 		return id, err
 	}
