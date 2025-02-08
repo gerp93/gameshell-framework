@@ -32,7 +32,7 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 	database = db
 	// database.SetMaxOpenConns(100)
 	// database.SetMaxIdleConns(25)
-	database.SetConnMaxLifetime(5 * time.Minute)
+	database.SetConnMaxLifetime(5 * time.Second)
 
 	// ping to test connection
 	err = db.Ping()
