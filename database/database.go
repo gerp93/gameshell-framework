@@ -30,8 +30,8 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 
 	// set global variable for database connection
 	database = db
-	database.SetMaxOpenConns(100)
-	database.SetMaxIdleConns(25)
+	// database.SetMaxOpenConns(100)
+	// database.SetMaxIdleConns(25)
 	database.SetConnMaxLifetime(5 * time.Minute)
 
 	// ping to test connection
