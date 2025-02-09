@@ -13,6 +13,7 @@ func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 
 	hasAccess := false
 	for rows.Next() {
@@ -39,6 +40,7 @@ func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 
 	hasAccess := false
 	for rows.Next() {

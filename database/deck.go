@@ -46,6 +46,7 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	result := make([]DeckDetails, 0)
 	for rows.Next() {
@@ -69,6 +70,7 @@ func GetReadableDecks(userId uuid.UUID) ([]Deck, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	result := make([]Deck, 0)
 	for rows.Next() {
@@ -102,6 +104,7 @@ func GetDeck(id uuid.UUID) (Deck, error) {
 	if err != nil {
 		return deck, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -132,6 +135,7 @@ func GetDeckPasswordHash(id uuid.UUID) (string, error) {
 	if err != nil {
 		return passwordHash, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&passwordHash); err != nil {
@@ -176,6 +180,7 @@ func GetDeckId(name string) (uuid.UUID, error) {
 	if err != nil {
 		return id, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&id); err != nil {
