@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -30,9 +29,11 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 
 	// set global variable for database connection
 	database = db
-	database.SetMaxOpenConns(100)
-	database.SetMaxIdleConns(25)
-	database.SetConnMaxLifetime(5 * time.Minute)
+
+	// set database max open connections
+	// limit under default `max_connections` MySQL/MariaDB value of 151
+	// if increased, must also increase database global setting to match
+	database.SetMaxOpenConns(150)
 
 	// ping to test connection
 	err = db.Ping()
