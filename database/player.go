@@ -49,6 +49,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 	if err != nil {
 		return player, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -98,6 +99,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 	if err != nil {
 		return player, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(

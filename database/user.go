@@ -47,6 +47,7 @@ func SearchUsers(search string) ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	result := make([]User, 0)
 	for rows.Next() {
@@ -88,6 +89,7 @@ func GetUser(userId uuid.UUID) (User, error) {
 	if err != nil {
 		return user, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -120,6 +122,7 @@ func GetUserPasswordHash(userId uuid.UUID) (string, error) {
 	if err != nil {
 		return passwordHash, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&passwordHash); err != nil {
@@ -144,6 +147,7 @@ func GetUserIsApproved(userId uuid.UUID) (bool, error) {
 	if err != nil {
 		return isApproved, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&isApproved); err != nil {
@@ -168,6 +172,7 @@ func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
 	if err != nil {
 		return isAdmin, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&isAdmin); err != nil {
@@ -193,6 +198,7 @@ func AllowUserLoginAttempt(ipAddress string, userName string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 
 	allowLogin := false
 	for rows.Next() {
@@ -218,6 +224,7 @@ func GetUserIdByName(name string) (uuid.UUID, error) {
 	if err != nil {
 		return userId, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&userId); err != nil {
@@ -244,6 +251,7 @@ func UserNameExists(name string) bool {
 	if err != nil {
 		return false
 	}
+	defer rows.Close()
 
 	return rows.Next()
 }

@@ -157,6 +157,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	result := make([]lobbyDetails, 0)
 	for rows.Next() {
@@ -200,6 +201,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 	if err != nil {
 		return lobby, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -233,6 +235,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	if err != nil {
 		return passwordHash, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&passwordHash); err != nil {
@@ -332,6 +335,7 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 	if err != nil {
 		return id, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&id); err != nil {
@@ -356,6 +360,7 @@ func GetPlayerLobbyId(playerId uuid.UUID) (uuid.UUID, error) {
 	if err != nil {
 		return id, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&id); err != nil {
@@ -467,6 +472,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -493,6 +499,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var deckName string
@@ -522,6 +529,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -551,6 +559,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var isReady bool
@@ -578,6 +587,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var card handCard
@@ -629,6 +639,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(
@@ -663,6 +674,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	data.BoardHasAnyRevealed = rows.Next()
 
@@ -681,6 +693,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	data.BoardHasAnySpecial = false
 	for rows.Next() {
@@ -718,6 +731,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var isReady bool
@@ -757,6 +771,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var imageBytes []byte
@@ -801,6 +816,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var br boardResponse
@@ -852,6 +868,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 		if err != nil {
 			return data, err
 		}
+		defer rows.Close()
 
 		for rows.Next() {
 			var responseCard boardResponseCard
@@ -897,6 +914,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	data.BoardHasAnySpecial = false
 	for rows.Next() {
@@ -936,6 +954,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var pId uuid.UUID
@@ -991,6 +1010,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var row nameCountRow
@@ -1019,6 +1039,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var judgeName string
@@ -1049,6 +1070,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	if err != nil {
 		return data, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var row kickVote
@@ -1147,6 +1169,7 @@ func VoteToKick(voterPlayerId uuid.UUID, subjectPlayerId uuid.UUID) (bool, error
 	if err != nil {
 		return isKicked, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&isKicked); err != nil {
@@ -1188,6 +1211,7 @@ func PickWinner(responseId uuid.UUID) (string, error) {
 	if err != nil {
 		return playerName, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&playerName); err != nil {
@@ -1206,6 +1230,7 @@ func PickRandomWinner(lobbyId uuid.UUID) (string, error) {
 	if err != nil {
 		return playerName, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&playerName); err != nil {
