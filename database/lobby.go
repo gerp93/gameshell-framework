@@ -20,6 +20,7 @@ type Lobby struct {
 	Message      sql.NullString
 	PasswordHash sql.NullString
 
+	DrawPriority        string
 	HandSize            int
 	CreditLimit         int
 	WinStreakThreshold  int
@@ -142,6 +143,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.CREATED_ON_DATE,
 			L.NAME,
 			L.PASSWORD_HASH,
+			L.DRAW_PRIORITY,
 			L.HAND_SIZE,
 			L.CREDIT_LIMIT,
 			L.WIN_STREAK_THRESHOLD,
@@ -167,6 +169,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.CreatedOnDate,
 			&ld.Name,
 			&ld.PasswordHash,
+			&ld.DrawPriority,
 			&ld.HandSize,
 			&ld.CreditLimit,
 			&ld.WinStreakThreshold,
@@ -190,6 +193,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			NAME,
 			MESSAGE,
 			PASSWORD_HASH,
+			DRAW_PRIORITY,
 			HAND_SIZE,
 			CREDIT_LIMIT,
 			WIN_STREAK_THRESHOLD,
@@ -210,6 +214,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.Name,
 			&lobby.Message,
 			&lobby.PasswordHash,
+			&lobby.DrawPriority,
 			&lobby.HandSize,
 			&lobby.CreditLimit,
 			&lobby.WinStreakThreshold,
@@ -247,7 +252,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, message string, password string, handSize int, creditLimit int, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
+func CreateLobby(name string, message string, password string, drawPriority string, handSize int, creditLimit int, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -261,20 +266,20 @@ func CreateLobby(name string, message string, password string, handSize int, cre
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, HAND_SIZE, CREDIT_LIMIT, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, DRAW_PRIORITY, HAND_SIZE, CREDIT_LIMIT, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	if message == "" {
 		if password == "" {
-			return id, execute(sqlString, id, name, nil, nil, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, nil, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, nil, passwordHash, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, passwordHash, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		}
 	} else {
 		if password == "" {
-			return id, execute(sqlString, id, name, message, nil, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, nil, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, message, passwordHash, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, passwordHash, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
 		}
 	}
 }
@@ -394,6 +399,16 @@ func SetLobbyMessage(id uuid.UUID, message string) error {
 	} else {
 		return execute(sqlString, message, id)
 	}
+}
+
+func SetLobbyDrawPriority(id uuid.UUID, drawPriority string) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET
+			DRAW_PRIORITY = ?
+		WHERE ID = ?
+	`
+	return execute(sqlString, drawPriority, id)
 }
 
 func SetLobbyHandSize(id uuid.UUID, handSize int) error {
