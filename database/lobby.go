@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -284,21 +286,77 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 	}
 }
 
-func AddCardsToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
-	for _, deckId := range deckIds {
-		sqlString := `
-			INSERT INTO DRAW_PILE (LOBBY_ID, CARD_ID)
-			SELECT
-				? AS LOBBY_ID,
-				ID AS CARD_ID
-			FROM CARD
-			WHERE DECK_ID = ?
-		`
-		err := execute(sqlString, lobbyId, deckId)
-		if err != nil {
-			return err
-		}
+func SyncDecksInLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+	if len(deckIds) == 0 {
+		return errors.New("cannot sync decks in lobby, no deck ids provided")
 	}
+
+	var err error
+
+	err = addDecksToLobby(lobbyId, deckIds)
+	if err != nil {
+		return err
+	}
+
+	err = removeDecksFromLobby(lobbyId, deckIds)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+	sqlString := fmt.Sprintf(`
+		INSERT INTO DRAW_PILE (LOBBY_ID, CARD_ID)
+		SELECT
+			? AS LOBBY_ID,
+			ID AS CARD_ID
+		FROM CARD AS C
+			LEFT JOIN (
+				SELECT CARD_ID
+				FROM DRAW_PILE
+				WHERE LOBBY_ID = ?
+			) AS E ON E.CARD_ID = C.ID
+		WHERE DECK_ID IN (%s)
+			AND E.CARD_ID IS NULL
+	`, strings.Repeat("?,", len(deckIds)-1)+"?")
+
+	args := make([]any, len(deckIds)+2)
+	args[0] = lobbyId
+	args[1] = lobbyId
+	for i, deckId := range deckIds {
+		args[i+2] = deckId
+	}
+
+	err := execute(sqlString, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func removeDecksFromLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+	sqlString := fmt.Sprintf(`
+		DELETE DP
+		FROM DRAW_PILE AS DP
+			INNER JOIN CARD AS C ON C.ID = DP.CARD_ID
+		WHERE DP.LOBBY_ID = ?
+			AND C.DECK_ID NOT IN (%s)
+	`, strings.Repeat("?,", len(deckIds)-1)+"?")
+
+	args := make([]any, len(deckIds)+1)
+	args[0] = lobbyId
+	for i, deckId := range deckIds {
+		args[i+1] = deckId
+	}
+
+	err := execute(sqlString, args...)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
