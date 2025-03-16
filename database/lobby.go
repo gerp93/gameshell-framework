@@ -24,7 +24,7 @@ type Lobby struct {
 
 	DrawPriority        string
 	HandSize            int
-	CreditLimit         int
+	FreeCredits         int
 	WinStreakThreshold  int
 	LoseStreakThreshold int
 }
@@ -55,7 +55,7 @@ type PlayerHandData struct {
 
 type PlayerSpecialsData struct {
 	LobbyId                  uuid.UUID
-	LobbyCreditLimit         int
+	LobbyFreeCredits         int
 	LobbyWinStreakThreshold  int
 	LobbyLoseStreakThreshold int
 
@@ -147,7 +147,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.PASSWORD_HASH,
 			L.DRAW_PRIORITY,
 			L.HAND_SIZE,
-			L.CREDIT_LIMIT,
+			L.FREE_CREDITS,
 			L.WIN_STREAK_THRESHOLD,
 			L.LOSE_STREAK_THRESHOLD,
 			COUNT(P.ID) AS USER_COUNT
@@ -173,7 +173,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.PasswordHash,
 			&ld.DrawPriority,
 			&ld.HandSize,
-			&ld.CreditLimit,
+			&ld.FreeCredits,
 			&ld.WinStreakThreshold,
 			&ld.LoseStreakThreshold,
 			&ld.UserCount); err != nil {
@@ -197,7 +197,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			PASSWORD_HASH,
 			DRAW_PRIORITY,
 			HAND_SIZE,
-			CREDIT_LIMIT,
+			FREE_CREDITS,
 			WIN_STREAK_THRESHOLD,
 			LOSE_STREAK_THRESHOLD
 		FROM LOBBY
@@ -218,7 +218,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.PasswordHash,
 			&lobby.DrawPriority,
 			&lobby.HandSize,
-			&lobby.CreditLimit,
+			&lobby.FreeCredits,
 			&lobby.WinStreakThreshold,
 			&lobby.LoseStreakThreshold); err != nil {
 			log.Println(err)
@@ -254,7 +254,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, message string, password string, drawPriority string, handSize int, creditLimit int, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
+func CreateLobby(name string, message string, password string, drawPriority string, handSize int, freeCredits int, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -268,20 +268,20 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, DRAW_PRIORITY, HAND_SIZE, CREDIT_LIMIT, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
+		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, DRAW_PRIORITY, HAND_SIZE, FREE_CREDITS, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	if message == "" {
 		if password == "" {
-			return id, execute(sqlString, id, name, nil, nil, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, nil, drawPriority, handSize, freeCredits, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, nil, passwordHash, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, passwordHash, drawPriority, handSize, freeCredits, winStreakThreshold, loseStreakThreshold)
 		}
 	} else {
 		if password == "" {
-			return id, execute(sqlString, id, name, message, nil, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, nil, drawPriority, handSize, freeCredits, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, message, passwordHash, drawPriority, handSize, creditLimit, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, passwordHash, drawPriority, handSize, freeCredits, winStreakThreshold, loseStreakThreshold)
 		}
 	}
 }
@@ -479,14 +479,14 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	return execute(sqlString, handSize, id)
 }
 
-func SetLobbyCreditLimit(id uuid.UUID, creditLimit int) error {
+func SetLobbyFreeCredits(id uuid.UUID, freeCredits int) error {
 	sqlString := `
 		UPDATE LOBBY
 		SET
-			CREDIT_LIMIT = ?
+			FREE_CREDITS = ?
 		WHERE ID = ?
 	`
-	return execute(sqlString, creditLimit, id)
+	return execute(sqlString, freeCredits, id)
 }
 
 func SetLobbyWinStreakThreshold(id uuid.UUID, winStreakThreshold int) error {
@@ -692,7 +692,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	sqlString := `
 		SELECT
 			L.ID                                                AS LOBBY_ID,
-			L.CREDIT_LIMIT                                      AS LOBBY_CREDIT_LIMIT,
+			L.FREE_CREDITS                                      AS LOBBY_FREE_CREDITS,
 			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
 			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
 			P.ID                                                AS PLAYER_ID,
@@ -717,7 +717,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	for rows.Next() {
 		if err := rows.Scan(
 			&data.LobbyId,
-			&data.LobbyCreditLimit,
+			&data.LobbyFreeCredits,
 			&data.LobbyWinStreakThreshold,
 			&data.LobbyLoseStreakThreshold,
 			&data.PlayerId,
@@ -734,7 +734,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		}
 	}
 
-	data.PlayerCreditsRemaining = data.LobbyCreditLimit - data.PlayerCreditsSpent
+	data.PlayerCreditsRemaining = data.LobbyFreeCredits - data.PlayerCreditsSpent
 
 	sqlString = `
 		SELECT R.ID
