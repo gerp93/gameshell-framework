@@ -80,6 +80,7 @@ type LobbyGameBoardData struct {
 
 	JudgeCardText      sql.NullString
 	JudgeCardDeck      sql.NullString
+	JudgeCardYouTube   sql.NullString
 	JudgeCardImage     sql.NullString
 	JudgeBlankCount    int
 	JudgeResponseCount int
@@ -648,6 +649,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 		SELECT
 			C.ID,
 			C.TEXT,
+			C.YOUTUBE,
 			C.IMAGE,
 			D.NAME
 		FROM HAND AS H
@@ -668,6 +670,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 		if err := rows.Scan(
 			&card.Id,
 			&card.Text,
+			&card.YouTube,
 			&imageBytes,
 			&card.DeckName,
 		); err != nil {
@@ -830,6 +833,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 				FROM CARD AS C
 						INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 				WHERE C.ID = J.CARD_ID)                         AS JUDGE_CARD_DECK,
+			(SELECT YOUTUBE FROM CARD WHERE ID = J.CARD_ID)     AS JUDGE_CARD_YOUTUBE,
 			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID)       AS JUDGE_CARD_IMAGE,
 			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
@@ -852,6 +856,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			&data.LobbyId,
 			&data.JudgeCardText,
 			&data.JudgeCardDeck,
+			&data.JudgeCardYouTube,
 			&imageBytes,
 			&data.JudgeBlankCount,
 			&data.JudgeResponseCount,
@@ -924,11 +929,12 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 
 		sqlString = `
 			SELECT
-				RC.ID   AS RESPONSE_CARD_ID,
-				C.ID    AS CARD_ID,
-				C.TEXT  AS CARD_TEXT,
-				C.IMAGE AS CARD_IMAGE,
-				D.NAME  AS DECK_NAME,
+				RC.ID     AS RESPONSE_CARD_ID,
+				C.ID      AS CARD_ID,
+				C.TEXT    AS CARD_TEXT,
+				C.YOUTUBE AS CARD_YOUTUBE,
+				C.IMAGE   AS CARD_IMAGE,
+				D.NAME    AS DECK_NAME,
 				RC.SPECIAL_CATEGORY
 			FROM RESPONSE AS R
 					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
@@ -950,6 +956,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 				&responseCard.ResponseCardId,
 				&responseCard.Id,
 				&responseCard.Text,
+				&responseCard.YouTube,
 				&imageBytes,
 				&responseCard.DeckName,
 				&responseCard.SpecialCategory); err != nil {
