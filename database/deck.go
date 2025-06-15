@@ -195,8 +195,7 @@ func GetDeckId(name string) (uuid.UUID, error) {
 func SetDeckName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE DECK
-		SET
-			NAME = ?
+		SET NAME = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, name, id)
@@ -205,8 +204,7 @@ func SetDeckName(id uuid.UUID, name string) error {
 func SetIsPublicReadOnly(id uuid.UUID, isPublicReadOnly bool) error {
 	sqlString := `
 		UPDATE DECK
-		SET
-			IS_PUBLIC_READONLY = ?
+		SET IS_PUBLIC_READONLY = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, isPublicReadOnly, id)
@@ -221,8 +219,7 @@ func SetDeckPassword(id uuid.UUID, password string) error {
 
 	sqlString := `
 		UPDATE DECK
-		SET
-			PASSWORD_HASH = ?
+		SET PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, passwordHash, id)
@@ -230,7 +227,8 @@ func SetDeckPassword(id uuid.UUID, password string) error {
 
 func DeleteDeck(id uuid.UUID) error {
 	sqlString := `
-		DELETE FROM DECK
+		DELETE
+		FROM DECK
 		WHERE ID = ?
 	`
 	return execute(sqlString, id)
