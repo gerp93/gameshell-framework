@@ -153,7 +153,8 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			L.LOSE_STREAK_THRESHOLD,
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
-			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID AND P.IS_ACTIVE = 1
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+				AND P.IS_ACTIVE = 1
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY L.NAME
@@ -269,7 +270,17 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (ID, NAME, MESSAGE, PASSWORD_HASH, DRAW_PRIORITY, HAND_SIZE, FREE_CREDITS, WIN_STREAK_THRESHOLD, LOSE_STREAK_THRESHOLD)
+		INSERT INTO LOBBY (
+			ID,
+			NAME,
+			MESSAGE,
+			PASSWORD_HASH,
+			DRAW_PRIORITY,
+			HAND_SIZE,
+			FREE_CREDITS,
+			WIN_STREAK_THRESHOLD,
+			LOSE_STREAK_THRESHOLD
+		)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	if message == "" {
@@ -315,10 +326,11 @@ func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 			ID AS CARD_ID
 		FROM CARD AS C
 			LEFT JOIN (
-				SELECT CARD_ID
-				FROM DRAW_PILE
-				WHERE LOBBY_ID = ?
-			) AS E ON E.CARD_ID = C.ID
+					SELECT
+						CARD_ID
+					FROM DRAW_PILE
+					WHERE LOBBY_ID = ?
+				) AS E ON E.CARD_ID = C.ID
 		WHERE DECK_ID IN (%s)
 			AND E.CARD_ID IS NULL
 	`, strings.Repeat("?,", len(deckIds)-1)+"?")
@@ -439,8 +451,7 @@ func GetPlayerLobbyId(playerId uuid.UUID) (uuid.UUID, error) {
 func SetLobbyName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			NAME = ?
+		SET NAME = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, name, id)
@@ -449,8 +460,7 @@ func SetLobbyName(id uuid.UUID, name string) error {
 func SetLobbyMessage(id uuid.UUID, message string) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			MESSAGE = ?
+		SET MESSAGE = ?
 		WHERE ID = ?
 	`
 	if message == "" {
@@ -463,8 +473,7 @@ func SetLobbyMessage(id uuid.UUID, message string) error {
 func SetLobbyDrawPriority(id uuid.UUID, drawPriority string) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			DRAW_PRIORITY = ?
+		SET DRAW_PRIORITY = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, drawPriority, id)
@@ -473,8 +482,7 @@ func SetLobbyDrawPriority(id uuid.UUID, drawPriority string) error {
 func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			HAND_SIZE = ?
+		SET HAND_SIZE = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, handSize, id)
@@ -483,8 +491,7 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 func SetLobbyFreeCredits(id uuid.UUID, freeCredits int) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			FREE_CREDITS = ?
+		SET FREE_CREDITS = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, freeCredits, id)
@@ -493,8 +500,7 @@ func SetLobbyFreeCredits(id uuid.UUID, freeCredits int) error {
 func SetLobbyWinStreakThreshold(id uuid.UUID, winStreakThreshold int) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			WIN_STREAK_THRESHOLD = ?
+		SET WIN_STREAK_THRESHOLD = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, winStreakThreshold, id)
@@ -503,8 +509,7 @@ func SetLobbyWinStreakThreshold(id uuid.UUID, winStreakThreshold int) error {
 func SetLobbyLoseStreakThreshold(id uuid.UUID, loseStreakThreshold int) error {
 	sqlString := `
 		UPDATE LOBBY
-		SET
-			LOSE_STREAK_THRESHOLD = ?
+		SET LOSE_STREAK_THRESHOLD = ?
 		WHERE ID = ?
 	`
 	return execute(sqlString, loseStreakThreshold, id)
@@ -512,7 +517,8 @@ func SetLobbyLoseStreakThreshold(id uuid.UUID, loseStreakThreshold int) error {
 
 func DeleteLobby(lobbyId uuid.UUID) error {
 	sqlString := `
-		DELETE FROM LOBBY
+		DELETE
+		FROM LOBBY
 		WHERE ID = ?
 	`
 	return execute(sqlString, lobbyId)
@@ -523,23 +529,32 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 
 	sqlString := `
 		SELECT
-			L.NAME                                 AS LOBBY_NAME,
-			(SELECT COUNT(*)
+			L.NAME AS LOBBY_NAME,
+			(
+				SELECT
+					COUNT(*)
 				FROM DRAW_PILE AS DP
-						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'PROMPT')   AS DRAW_PILE_PROMPT_COUNT,
-			(SELECT COUNT(*)
+					AND DPC.CATEGORY = 'PROMPT'
+			) AS DRAW_PILE_PROMPT_COUNT,
+			(
+				SELECT
+					COUNT(*)
 				FROM DRAW_PILE AS DP
-						INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
-					AND DPC.CATEGORY = 'RESPONSE') AS DRAW_PILE_RESPONSE_COUNT,
-			(SELECT JU.NAME
+					AND DPC.CATEGORY = 'RESPONSE'
+			) AS DRAW_PILE_RESPONSE_COUNT,
+			(
+				SELECT
+					JU.NAME
 				FROM USER AS JU
-						INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
-				WHERE JP.ID = J.PLAYER_ID)         AS JUDGE_NAME
+					INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
+				WHERE JP.ID = J.PLAYER_ID
+			) AS JUDGE_NAME
 		FROM LOBBY AS L
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 		WHERE L.ID = ?
 	`
 	rows, err := query(sqlString, lobbyId)
@@ -561,11 +576,12 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	}
 
 	sqlString = `
-		SELECT DISTINCT
+		SELECT
+			DISTINCT
 			DPD.NAME
 		FROM DRAW_PILE AS DP
-				INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
-				INNER JOIN DECK AS DPD ON DPD.ID = DPC.DECK_ID
+			INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
+			INNER JOIN DECK AS DPD ON DPD.ID = DPC.DECK_ID
 		WHERE DP.LOBBY_ID = ?
 		ORDER BY DPD.NAME
 	`
@@ -592,11 +608,11 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 
 	sqlString := `
 		SELECT
-			L.ID                                                AS LOBBY_ID,
-			P.ID                                                AS PLAYER_ID,
+			L.ID AS LOBBY_ID,
+			P.ID AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
 		FROM PLAYER AS P
-				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)
@@ -623,9 +639,9 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
 				, 1, 0) AS PLAYER_IS_READY
 		FROM RESPONSE AS R
-				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
 		WHERE P.ID = ?
 		GROUP BY P.ID
 	`
@@ -694,21 +710,21 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 
 	sqlString := `
 		SELECT
-			L.ID                                                AS LOBBY_ID,
-			L.FREE_CREDITS                                      AS LOBBY_FREE_CREDITS,
-			L.WIN_STREAK_THRESHOLD                              AS LOBBY_WIN_STREAK_THRESHOLD,
-			L.LOSE_STREAK_THRESHOLD                             AS LOBBY_LOSE_STREAK_THRESHOLD,
-			P.ID                                                AS PLAYER_ID,
-			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
-			FN_GET_PLAYER_IS_WINNING(P.ID)                      AS PLAYER_IS_WINNING,
-			P.WINNING_STREAK                                    AS PLAYER_WINNING_STREAK,
-			P.LOSING_STREAK                                     AS PLAYER_LOSING_STREAK,
-			P.CREDITS_SPENT                                     AS PLAYER_CREDITS_SPENT,
-			P.BET_ON_WIN                                        AS PLAYER_BET_ON_WIN,
-			P.EXTRA_RESPONSES                                   AS PLAYER_EXTRA_RESPONSES
+			L.ID AS LOBBY_ID,
+			L.FREE_CREDITS AS LOBBY_FREE_CREDITS,
+			L.WIN_STREAK_THRESHOLD AS LOBBY_WIN_STREAK_THRESHOLD,
+			L.LOSE_STREAK_THRESHOLD AS LOBBY_LOSE_STREAK_THRESHOLD,
+			P.ID AS PLAYER_ID,
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID (L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			FN_GET_PLAYER_IS_WINNING (P.ID) AS PLAYER_IS_WINNING,
+			P.WINNING_STREAK AS PLAYER_WINNING_STREAK,
+			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
+			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
+			P.BET_ON_WIN AS PLAYER_BET_ON_WIN,
+			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES
 		FROM PLAYER AS P
-				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)
@@ -740,9 +756,10 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	data.PlayerCreditsRemaining = data.LobbyFreeCredits - data.PlayerCreditsSpent
 
 	sqlString = `
-		SELECT R.ID
+		SELECT
+			R.ID
 		FROM PLAYER AS P
-				INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
 		WHERE P.LOBBY_ID = ?
 			AND R.IS_REVEALED = 1
 	`
@@ -760,8 +777,8 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.EXTRA_RESPONSES,
 			RC.SPECIAL_CATEGORY
 		FROM PLAYER AS P
-				LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
-				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
 	`
@@ -797,9 +814,9 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
 				, 1, 0) AS PLAYER_IS_READY
 		FROM RESPONSE AS R
-				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
 		WHERE P.ID = ?
 		GROUP BY P.ID
 	`
@@ -827,21 +844,24 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 
 	sqlString := `
 		SELECT
-			L.ID                                                AS LOBBY_ID,
-			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID)        AS JUDGE_CARD_TEXT,
-			(SELECT D.NAME
+			L.ID AS LOBBY_ID,
+			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_TEXT,
+			(
+				SELECT
+					D.NAME
 				FROM CARD AS C
-						INNER JOIN DECK AS D ON D.ID = C.DECK_ID
-				WHERE C.ID = J.CARD_ID)                         AS JUDGE_CARD_DECK,
-			(SELECT YOUTUBE FROM CARD WHERE ID = J.CARD_ID)     AS JUDGE_CARD_YOUTUBE,
-			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID)       AS JUDGE_CARD_IMAGE,
-			J.BLANK_COUNT                                       AS JUDGE_BLANK_COUNT,
-			J.RESPONSE_COUNT                                    AS JUDGE_RESPONSE_COUNT,
-			P.ID                                                AS PLAYER_ID,
-			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
+					INNER JOIN DECK AS D ON D.ID = C.DECK_ID
+				WHERE C.ID = J.CARD_ID
+			) AS JUDGE_CARD_DECK,
+			(SELECT YOUTUBE FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_YOUTUBE,
+			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_IMAGE,
+			J.BLANK_COUNT AS JUDGE_BLANK_COUNT,
+			J.RESPONSE_COUNT AS JUDGE_RESPONSE_COUNT,
+			P.ID AS PLAYER_ID,
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID (L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
 		FROM PLAYER AS P
-				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 		WHERE P.ID = ?
 	`
 	rows, err := query(sqlString, playerId)
@@ -875,20 +895,21 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 
 	sqlString = `
 		SELECT
-			R.ID          AS RESPONSE_ID,
+			R.ID AS RESPONSE_ID,
 			R.IS_REVEALED AS IS_REVEALED,
 			R.IS_RULEDOUT AS IS_RULEDOUT,
-			P.ID          AS PLAYER_ID,
-			U.NAME        AS PLAYER_USER_NAME
+			P.ID AS PLAYER_ID,
+			U.NAME AS PLAYER_USER_NAME
 		FROM LOBBY AS L
-				INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
-				INNER JOIN USER AS U ON U.ID = P.USER_ID
-				INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
-				LEFT JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
+			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+			INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			LEFT JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
 		WHERE L.ID = ?
 			AND P.IS_ACTIVE = 1
 			AND J.ID IS NULL
-		ORDER BY U.NAME, R.CREATED_ON_DATE
+		ORDER BY U.NAME,
+			R.CREATED_ON_DATE
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -929,17 +950,17 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 
 		sqlString = `
 			SELECT
-				RC.ID     AS RESPONSE_CARD_ID,
-				C.ID      AS CARD_ID,
-				C.TEXT    AS CARD_TEXT,
+				RC.ID AS RESPONSE_CARD_ID,
+				C.ID AS CARD_ID,
+				C.TEXT AS CARD_TEXT,
 				C.YOUTUBE AS CARD_YOUTUBE,
-				C.IMAGE   AS CARD_IMAGE,
-				D.NAME    AS DECK_NAME,
+				C.IMAGE AS CARD_IMAGE,
+				D.NAME AS DECK_NAME,
 				RC.SPECIAL_CATEGORY
 			FROM RESPONSE AS R
-					INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-					INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
-					INNER JOIN DECK AS D ON D.ID = C.DECK_ID
+				INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+				INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
+				INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 			WHERE R.ID = ?
 			ORDER BY RC.CREATED_ON_DATE
 		`
@@ -985,8 +1006,8 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			P.EXTRA_RESPONSES,
 			RC.SPECIAL_CATEGORY
 		FROM PLAYER AS P
-				LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
-				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
 	`
@@ -1018,15 +1039,16 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 	data.BoardIsReady = totalCardsPlayedCount > 0
 
 	sqlString = `
-		SELECT P.ID AS PLAYER_ID,
+		SELECT
+			P.ID AS PLAYER_ID,
 			IF(COUNT(RC.ID) = -- CARDS PLAYED
 				(J.BLANK_COUNT * -- CARDS PER RESPONSE
 				(J.RESPONSE_COUNT + P.EXTRA_RESPONSES)) -- PLAYER RESPONSES
 				, 1, 0) AS PLAYER_IS_READY
 		FROM RESPONSE AS R
-				LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-				INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
 		WHERE J.LOBBY_ID = ?
 		GROUP BY P.ID
 	`
@@ -1076,15 +1098,16 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 
 	sqlString := `
 		SELECT
-			U.NAME      AS USER_NAME,
+			U.NAME AS USER_NAME,
 			COUNT(W.ID) AS WINS
 		FROM PLAYER AS P
-				INNER JOIN USER AS U ON U.ID = P.USER_ID
-				LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+			LEFT JOIN WIN AS W ON W.PLAYER_ID = P.ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
 		GROUP BY P.USER_ID
-		ORDER BY COUNT(W.ID) DESC, U.NAME ASC
+		ORDER BY COUNT(W.ID) DESC,
+			U.NAME ASC
 	`
 	rows, err := query(sqlString, data.LobbyId)
 	if err != nil {
@@ -1102,18 +1125,25 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	}
 
 	sqlString = `
-		SELECT U.NAME
+		SELECT
+			U.NAME
 		FROM LOBBY AS L
-				INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
-				INNER JOIN (SELECT
-								LOBBY_ID,
-								USER_ID,
-								RANK() OVER (PARTITION BY LOBBY_ID ORDER BY CREATED_ON_DATE) AS JOIN_ORDER
-							FROM PLAYER
-							WHERE IS_ACTIVE = 1) AS T ON T.LOBBY_ID = L.ID
-				INNER JOIN USER AS U ON U.ID = T.USER_ID
+			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
+			INNER JOIN (
+					SELECT
+						LOBBY_ID,
+						USER_ID,
+						RANK() OVER (
+							PARTITION BY LOBBY_ID
+							ORDER BY CREATED_ON_DATE
+						) AS JOIN_ORDER
+					FROM PLAYER
+					WHERE IS_ACTIVE = 1
+				) AS T ON T.LOBBY_ID = L.ID
+			INNER JOIN USER AS U ON U.ID = T.USER_ID
 		WHERE L.ID = ?
-		ORDER BY T.JOIN_ORDER <= J.POSITION, T.JOIN_ORDER
+		ORDER BY T.JOIN_ORDER <= J.POSITION,
+			T.JOIN_ORDER
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
@@ -1134,13 +1164,20 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 		SELECT
 			P.ID AS PLAYER_ID,
 			U.NAME AS USER_NAME,
-			IF(EXISTS(SELECT ID
-						FROM KICK
-						WHERE VOTER_PLAYER_ID = ?
-							AND SUBJECT_PLAYER_ID = P.ID), 1, 0) AS VOTED
+			IF(
+				EXISTS (
+					SELECT
+						ID
+					FROM KICK
+					WHERE VOTER_PLAYER_ID = ?
+						AND SUBJECT_PLAYER_ID = P.ID
+				),
+				1,
+				0
+			) AS VOTED
 		FROM PLAYER AS P
-				INNER JOIN USER AS U ON U.ID = P.USER_ID
-				LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+			LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
 		WHERE P.IS_ACTIVE = 1
 			AND P.ID <> ?
 			AND P.LOBBY_ID = ?

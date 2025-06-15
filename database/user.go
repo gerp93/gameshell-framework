@@ -39,8 +39,7 @@ func SearchUsers(search string) ([]User, error) {
 			IS_ADMIN
 		FROM USER
 		WHERE NAME LIKE ?
-		ORDER BY
-			CHANGED_ON_DATE DESC,
+		ORDER BY CHANGED_ON_DATE DESC,
 			NAME ASC
 	`
 	rows, err := query(sqlString, search)
@@ -282,8 +281,7 @@ func ApproveUser(id uuid.UUID) error {
 func SetUserName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE USER
-		SET
-			NAME = ?
+		SET NAME = ?
 		WHERE ID = ?
 	`
 	err := execute(sqlString, name, id)
@@ -303,8 +301,7 @@ func SetUserPassword(id uuid.UUID, password string) error {
 
 	sqlString := `
 		UPDATE USER
-		SET
-			PASSWORD_HASH = ?
+		SET PASSWORD_HASH = ?
 		WHERE ID = ?
 	`
 	err = execute(sqlString, passwordHash, id)
@@ -318,8 +315,7 @@ func SetUserPassword(id uuid.UUID, password string) error {
 func SetUserColorTheme(id uuid.UUID, colorTheme string) error {
 	sqlString := `
 		UPDATE USER
-		SET
-			COLOR_THEME = ?
+		SET COLOR_THEME = ?
 		WHERE ID = ?
 	`
 	var err error
@@ -338,8 +334,7 @@ func SetUserColorTheme(id uuid.UUID, colorTheme string) error {
 func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 	sqlString := `
 		UPDATE USER
-		SET
-			IS_ADMIN = ?
+		SET IS_ADMIN = ?
 		WHERE ID = ?
 	`
 	err := execute(sqlString, isAdmin, id)
@@ -352,7 +347,8 @@ func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 
 func DeleteUser(id uuid.UUID) error {
 	sqlString := `
-		DELETE FROM USER
+		DELETE
+		FROM USER
 		WHERE ID = ?
 	`
 	err := execute(sqlString, id)
