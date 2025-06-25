@@ -154,7 +154,7 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			COUNT(P.ID) AS USER_COUNT
 		FROM LOBBY AS L
 			INNER JOIN PLAYER AS P ON P.LOBBY_ID = L.ID
-				AND P.IS_ACTIVE = 1
+			AND P.IS_ACTIVE = 1
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY L.NAME
@@ -1158,16 +1158,16 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 		FROM LOBBY AS L
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 			INNER JOIN (
-					SELECT
-						LOBBY_ID,
-						USER_ID,
-						RANK() OVER (
-							PARTITION BY LOBBY_ID
-							ORDER BY CREATED_ON_DATE
-						) AS JOIN_ORDER
-					FROM PLAYER
-					WHERE IS_ACTIVE = 1
-				) AS T ON T.LOBBY_ID = L.ID
+				SELECT
+					LOBBY_ID,
+					USER_ID,
+					RANK() OVER (
+						PARTITION BY LOBBY_ID
+						ORDER BY CREATED_ON_DATE
+					) AS JOIN_ORDER
+				FROM PLAYER
+				WHERE IS_ACTIVE = 1
+			) AS T ON T.LOBBY_ID = L.ID
 			INNER JOIN USER AS U ON U.ID = T.USER_ID
 		WHERE L.ID = ?
 		ORDER BY T.JOIN_ORDER <= J.POSITION,
