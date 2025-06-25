@@ -161,7 +161,7 @@ func CreateDeck(name string, password string, isPublicReadOnly bool) (uuid.UUID,
 	}
 
 	sqlString := `
-		INSERT INTO DECK (ID, NAME, PASSWORD_HASH, IS_PUBLIC_READONLY)
+		INSERT INTO DECK(ID, NAME, PASSWORD_HASH, IS_PUBLIC_READONLY)
 		VALUES (?, ?, ?, ?)
 	`
 	return id, execute(sqlString, id, name, passwordHash, isPublicReadOnly)

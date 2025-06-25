@@ -28,7 +28,7 @@ func UserHasLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) (bool, error) {
 
 func AddUserLobbyAccess(userId uuid.UUID, lobbyId uuid.UUID) error {
 	sqlString := `
-		INSERT INTO USER_ACCESS_LOBBY (USER_ID, LOBBY_ID)
+		INSERT INTO USER_ACCESS_LOBBY(USER_ID, LOBBY_ID)
 		VALUES (?, ?)
 	`
 	return execute(sqlString, userId, lobbyId)
@@ -55,7 +55,7 @@ func UserHasDeckAccess(userId uuid.UUID, deckId uuid.UUID) (bool, error) {
 
 func AddUserDeckAccess(userId uuid.UUID, deckId uuid.UUID) error {
 	sqlString := `
-		INSERT INTO USER_ACCESS_DECK (USER_ID, DECK_ID)
+		INSERT INTO USER_ACCESS_DECK(USER_ID, DECK_ID)
 		VALUES (?, ?)
 	`
 	return execute(sqlString, userId, deckId)
