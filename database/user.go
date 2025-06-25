@@ -185,7 +185,7 @@ func GetUserIsAdmin(userId uuid.UUID) (bool, error) {
 
 func AddUserLoginAttempt(ipAddress string, userName string) error {
 	sqlString := `
-		INSERT INTO LOGIN_ATTEMPT (IP_ADDRESS, USER_NAME)
+		INSERT INTO LOGIN_ATTEMPT(IP_ADDRESS, USER_NAME)
 		VALUES (?, ?)
 	`
 	return execute(sqlString, ipAddress, userName)

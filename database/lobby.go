@@ -270,7 +270,7 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 	}
 
 	sqlString := `
-		INSERT INTO LOBBY (
+		INSERT INTO LOBBY(
 			ID,
 			NAME,
 			MESSAGE,
@@ -1193,7 +1193,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 			P.ID AS PLAYER_ID,
 			U.NAME AS USER_NAME,
 			IF(
-				EXISTS (
+				EXISTS(
 					SELECT
 						ID
 					FROM KICK
