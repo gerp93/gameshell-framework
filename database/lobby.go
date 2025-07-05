@@ -323,16 +323,18 @@ func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 		INSERT INTO DRAW_PILE (LOBBY_ID, CARD_ID)
 		SELECT
 			? AS LOBBY_ID,
-			ID AS CARD_ID
+			C.ID AS CARD_ID
 		FROM CARD AS C
 			LEFT JOIN (
 					SELECT
-						CARD_ID
-					FROM DRAW_PILE
-					WHERE LOBBY_ID = ?
-				) AS E ON E.CARD_ID = C.ID
-		WHERE DECK_ID IN (%s)
-			AND E.CARD_ID IS NULL
+						DISTINCT
+						E_C.DECK_ID
+					FROM DRAW_PILE AS E_DP
+						INNER JOIN CARD AS E_C ON E_C.ID = E_DP.CARD_ID
+					WHERE E_DP.LOBBY_ID = ?
+				) AS E ON E.DECK_ID = C.DECK_ID
+		WHERE C.DECK_ID IN (%s)
+			AND E.DECK_ID IS NULL
 	`, strings.Repeat("?,", len(deckIds)-1)+"?")
 
 	args := make([]any, len(deckIds)+2)
