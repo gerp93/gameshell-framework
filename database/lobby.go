@@ -578,8 +578,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	}
 
 	sqlString = `
-		SELECT
-			DISTINCT
+		SELECT DISTINCT
 			DPD.NAME
 		FROM DRAW_PILE AS DP
 			INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
