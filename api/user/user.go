@@ -249,19 +249,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = auth.SetCookieUserId(w, userId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
+	auth.SetUserId(w, userId)
 
 	w.Header().Add("HX-Refresh", "true")
 	w.WriteHeader(http.StatusOK)
 }
 
 func Logout(w http.ResponseWriter, _ *http.Request) {
-	auth.RemoveCookieUserId(w)
+	auth.RemoveUserId(w)
 	w.Header().Add("HX-Refresh", "true")
 	w.WriteHeader(http.StatusOK)
 }
@@ -535,7 +530,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isCurrentUser {
-		auth.RemoveCookieUserId(w)
+		auth.RemoveUserId(w)
 	}
 
 	w.Header().Add("HX-Refresh", "true")
