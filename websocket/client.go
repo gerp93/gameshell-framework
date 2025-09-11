@@ -127,7 +127,7 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := auth.GetCookieUserId(r)
+	userId, err := auth.GetUserId(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Failed to get user id."))

@@ -29,11 +29,11 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 			LoggedIn:  false,
 		}
 
-		userId, err := auth.GetCookieUserId(r)
+		userId, err := auth.GetUserId(r)
 		if err == nil {
 			user, err := database.GetUser(userId)
 			if user.Id == uuid.Nil {
-				auth.RemoveCookieUserId(w)
+				auth.RemoveUserId(w)
 			} else if err == nil {
 				basePageData.User = user
 				basePageData.LoggedIn = true
@@ -49,7 +49,7 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
 			strings.HasPrefix(r.URL.Path, "/deck/") {
 			if !basePageData.LoggedIn {
-				auth.SetCookieRedirectURL(w, r.URL.Path)
+				auth.SetRedirectUrl(w, r.URL.Path)
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
@@ -58,7 +58,7 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 		// required to not be logged in
 		if r.URL.Path == "/login" {
 			if basePageData.LoggedIn {
-				http.Redirect(w, r, auth.GetCookieRedirectURL(r), http.StatusSeeOther)
+				http.Redirect(w, r, auth.GetRedirectUrl(r), http.StatusSeeOther)
 				return
 			}
 		}
@@ -83,7 +83,7 @@ func GetBasePageData(r *http.Request) BasePageData {
 
 func MiddlewareForAPIs(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userId, _ := auth.GetCookieUserId(r)
+		userId, _ := auth.GetUserId(r)
 		r = r.WithContext(context.WithValue(r.Context(), userIdRequestContextKey, userId))
 		next.ServeHTTP(w, r)
 	})
