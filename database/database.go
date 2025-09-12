@@ -2,17 +2,14 @@ package database
 
 import (
 	"database/sql"
-	"embed"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/grantfbarnes/card-judge/static"
 )
-
-//go:embed scripts
-var scriptFiles embed.FS
 
 var database *sql.DB
 
@@ -51,7 +48,7 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 }
 
 func RunFile(filePath string) error {
-	bytes, err := scriptFiles.ReadFile(filePath)
+	bytes, err := static.StaticFiles.ReadFile(filePath)
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to read file")
