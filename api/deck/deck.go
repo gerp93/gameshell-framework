@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
 	"github.com/grantfbarnes/card-judge/database"
+	"github.com/grantfbarnes/card-judge/static"
 )
 
 func GetCardExport(w http.ResponseWriter, r *http.Request) {
@@ -78,8 +79,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
-		"templates/components/table-rows/deck-table-rows.html",
+	tmpl, err := template.ParseFS(
+		static.StaticFiles,
+		"html/components/table-rows/deck-table-rows.html",
 	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
