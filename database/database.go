@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +10,9 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 )
+
+//go:embed scripts
+var scriptFiles embed.FS
 
 var database *sql.DB
 
@@ -47,7 +51,7 @@ func CreateDatabaseConnection() (*sql.DB, error) {
 }
 
 func RunFile(filePath string) error {
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := scriptFiles.ReadFile(filePath)
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to read file")
