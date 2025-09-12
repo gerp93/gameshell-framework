@@ -151,7 +151,7 @@ body.dark-theme select {
     background: var(--dark-bg);
 }
 
-body.dark-theme tbody > tr:hover {
+body.dark-theme tbody>tr:hover {
     background-color: var(--dark-bg-hover);
 }
 
@@ -175,7 +175,7 @@ body.dark-theme .htmx-result-bad {
     color: var(--dark-accent-red);
 }
 
-body.dark-theme #lobby-grid-container > div {
+body.dark-theme #lobby-grid-container>div {
     background-color: var(--dark-bg);
 }
 
@@ -242,7 +242,7 @@ body.light-theme select {
     background-color: var(--light-bg);
 }
 
-body.light-theme tbody > tr:hover {
+body.light-theme tbody>tr:hover {
     background-color: var(--light-bg-hover);
 }
 
@@ -266,7 +266,7 @@ body.light-theme .htmx-result-bad {
     color: var(--light-accent-red);
 }
 
-body.light-theme #lobby-grid-container > div {
+body.light-theme #lobby-grid-container>div {
     background-color: var(--light-bg);
 }
 
@@ -333,7 +333,7 @@ body.nord-polar-night-theme select {
     background: var(--nord-polar-night-bg);
 }
 
-body.nord-polar-night-theme tbody > tr:hover {
+body.nord-polar-night-theme tbody>tr:hover {
     background-color: var(--nord-polar-night-bg-hover);
 }
 
@@ -357,7 +357,7 @@ body.nord-polar-night-theme .htmx-result-bad {
     color: var(--nord-polar-night-accent-red);
 }
 
-body.nord-polar-night-theme #lobby-grid-container > div {
+body.nord-polar-night-theme #lobby-grid-container>div {
     background-color: var(--nord-polar-night-bg);
 }
 
@@ -424,7 +424,7 @@ body.dracula-theme select {
     background: var(--dracula-bg);
 }
 
-body.dracula-theme tbody > tr:hover {
+body.dracula-theme tbody>tr:hover {
     background-color: var(--dracula-bg-hover);
 }
 
@@ -448,7 +448,7 @@ body.dracula-theme .htmx-result-bad {
     color: var(--dracula-accent-red);
 }
 
-body.dracula-theme #lobby-grid-container > div {
+body.dracula-theme #lobby-grid-container>div {
     background-color: var(--dracula-bg);
 }
 
@@ -515,7 +515,7 @@ body.purple-theme select {
     background: var(--purple-bg);
 }
 
-body.purple-theme tbody > tr:hover {
+body.purple-theme tbody>tr:hover {
     background-color: var(--purple-bg-hover);
 }
 
@@ -539,7 +539,7 @@ body.purple-theme .htmx-result-bad {
     color: var(--purple-accent-red);
 }
 
-body.purple-theme #lobby-grid-container > div {
+body.purple-theme #lobby-grid-container>div {
     background-color: var(--purple-bg);
 }
 
@@ -606,7 +606,7 @@ body.tokyo-night-dark-theme select {
     background: var(--tokyo-night-dark-bg);
 }
 
-body.tokyo-night-dark-theme tbody > tr:hover {
+body.tokyo-night-dark-theme tbody>tr:hover {
     background-color: var(--tokyo-night-dark-bg-hover);
 }
 
@@ -630,7 +630,7 @@ body.tokyo-night-dark-theme .htmx-result-bad {
     color: var(--tokyo-night-dark-accent-red);
 }
 
-body.tokyo-night-dark-theme #lobby-grid-container > div {
+body.tokyo-night-dark-theme #lobby-grid-container>div {
     background-color: var(--tokyo-night-dark-bg);
 }
 
@@ -697,7 +697,7 @@ body.gruvbox-dark-theme select {
     background: var(--gruvbox-dark-bg);
 }
 
-body.gruvbox-dark-theme tbody > tr:hover {
+body.gruvbox-dark-theme tbody>tr:hover {
     background-color: var(--gruvbox-dark-bg-hover);
 }
 
@@ -721,7 +721,7 @@ body.gruvbox-dark-theme .htmx-result-bad {
     color: var(--gruvbox-dark-accent-red);
 }
 
-body.gruvbox-dark-theme #lobby-grid-container > div {
+body.gruvbox-dark-theme #lobby-grid-container>div {
     background-color: var(--gruvbox-dark-bg);
 }
 
@@ -788,7 +788,7 @@ body.gruvbox-light-theme select {
     background: var(--gruvbox-light-bg);
 }
 
-body.gruvbox-light-theme tbody > tr:hover {
+body.gruvbox-light-theme tbody>tr:hover {
     background-color: var(--gruvbox-light-bg-hover);
 }
 
@@ -812,6 +812,6 @@ body.gruvbox-light-theme .htmx-result-bad {
     color: var(--gruvbox-light-accent-red);
 }
 
-body.gruvbox-light-theme #lobby-grid-container > div {
+body.gruvbox-light-theme #lobby-grid-container>div {
     background-color: var(--gruvbox-light-bg);
 }
