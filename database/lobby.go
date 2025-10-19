@@ -63,6 +63,8 @@ type PlayerSpecialsData struct {
 	BoardHasAnyRevealed bool
 	BoardResponses      []boardResponse
 
+	Opponents []opponentData
+
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
 	PlayerIsWinning        bool
@@ -105,6 +107,11 @@ type LobbyGameStatsData struct {
 	Wins           []nameCountRow
 	UpcomingJudges []string
 	KickVotes      []kickVote
+}
+
+type opponentData struct {
+	PlayerId uuid.UUID
+	UserName string
 }
 
 type boardResponse struct {
@@ -636,7 +643,8 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 	sqlString = `
 		SELECT
 			IF(
-				COUNT(RC.ID) = -- CARDS PLAYED
+				R.ID IS NULL -- CANNOT PLAY
+				OR COUNT(RC.ID) = -- CARDS PLAYED
 				(
 					J.BLANK_COUNT * -- CARDS PER RESPONSE
 					(J.RESPONSE_COUNT + P.EXTRA_RESPONSES) -- PLAYER RESPONSES
@@ -644,10 +652,10 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 				1,
 				0
 			) AS PLAYER_IS_READY
-		FROM RESPONSE AS R
-			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-			INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+		FROM PLAYER AS P
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 		WHERE P.ID = ?
 		GROUP BY P.ID
 	`
@@ -816,7 +824,8 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	sqlString = `
 		SELECT
 			IF(
-				COUNT(RC.ID) = -- CARDS PLAYED
+				R.ID IS NULL -- CANNOT PLAY
+				OR COUNT(RC.ID) = -- CARDS PLAYED
 				(
 					J.BLANK_COUNT * -- CARDS PER RESPONSE
 					(J.RESPONSE_COUNT + P.EXTRA_RESPONSES) -- PLAYER RESPONSES
@@ -824,10 +833,10 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 				1,
 				0
 			) AS PLAYER_IS_READY
-		FROM RESPONSE AS R
-			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
-			INNER JOIN PLAYER AS P ON P.ID = R.PLAYER_ID
+		FROM PLAYER AS P
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = P.LOBBY_ID
+			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 		WHERE P.ID = ?
 		GROUP BY P.ID
 	`
@@ -845,6 +854,35 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		}
 
 		data.PlayerIsReady = isReady
+	}
+
+	sqlString = `
+		SELECT
+			P.ID AS PLAYER_ID,
+			U.NAME AS USER_NAME
+		FROM PLAYER AS P
+			INNER JOIN USER AS U ON U.ID = P.USER_ID
+			INNER JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
+		WHERE P.ID <> ?
+			AND P.LOBBY_ID = ?
+		ORDER BY U.NAME
+	`
+	rows, err = query(sqlString, playerId, data.LobbyId)
+	if err != nil {
+		return data, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var row opponentData
+		if err := rows.Scan(
+			&row.PlayerId,
+			&row.UserName,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.Opponents = append(data.Opponents, row)
 	}
 
 	return data, nil
