@@ -1280,9 +1280,23 @@ func AlertLobby(playerId uuid.UUID, credits int) error {
 	return execute(sqlString, playerId, credits)
 }
 
-func GambleCredits(playerId uuid.UUID, credits int) error {
+func GambleCredits(playerId uuid.UUID, credits int) (bool, error) {
+	var gambleWon bool
 	sqlString := "CALL SP_GAMBLE_CREDITS (?, ?)"
-	return execute(sqlString, playerId, credits)
+	rows, err := query(sqlString, playerId, credits)
+	if err != nil {
+		return gambleWon, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&gambleWon); err != nil {
+			log.Println(err)
+			return gambleWon, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return gambleWon, nil
 }
 
 func BetOnWin(playerId uuid.UUID, credits int) error {
