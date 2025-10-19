@@ -1262,6 +1262,11 @@ func AddExtraResponseUndo(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func BlockResponse(playerId uuid.UUID, targetPlayerId uuid.UUID) error {
+	sqlString := "CALL SP_BLOCK_RESPONSE (?, ?)"
+	return execute(sqlString, playerId, targetPlayerId)
+}
+
 func PlayStealCard(playerId uuid.UUID) error {
 	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
 	return execute(sqlString, playerId)
