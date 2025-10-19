@@ -1270,6 +1270,11 @@ func SkipJudge(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func ResetResponses(playerId uuid.UUID) error {
+	sqlString := "CALL SP_RESET_RESPONSES (?)"
+	return execute(sqlString, playerId)
+}
+
 func AlertLobby(playerId uuid.UUID, credits int) error {
 	sqlString := "CALL SP_ALERT_LOBBY (?, ?)"
 	return execute(sqlString, playerId, credits)
