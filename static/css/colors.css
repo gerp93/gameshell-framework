@@ -14,6 +14,9 @@
     --dark-danger-text: rgb(255, 180, 180);
     --dark-danger-button-bg: rgb(220, 53, 69);
     --dark-danger-button-text: rgb(255, 255, 255);
+    --dark-border-subtle: rgba(128, 128, 128, 0.3);
+    --dark-border-lighter: rgba(128, 128, 128, 0.2);
+    --dark-bg-subtle: rgba(128, 128, 128, 0.05);
 
     --light-top-bar-bg: rgb(200, 200, 200);
     --light-top-bar-hover: rgb(180, 180, 180);
@@ -30,6 +33,9 @@
     --light-danger-text: rgb(114, 28, 36);
     --light-danger-button-bg: rgb(220, 53, 69);
     --light-danger-button-text: rgb(255, 255, 255);
+    --light-border-subtle: rgba(128, 128, 128, 0.3);
+    --light-border-lighter: rgba(128, 128, 128, 0.2);
+    --light-bg-subtle: rgba(128, 128, 128, 0.05);
 
     --nord-polar-night-top-bar-bg: rgb(46, 52, 64);
     --nord-polar-night-top-bar-hover: rgb(59, 66, 82);
@@ -46,6 +52,9 @@
     --nord-polar-night-danger-text: rgb(191, 97, 106);
     --nord-polar-night-danger-button-bg: rgb(191, 97, 106);
     --nord-polar-night-danger-button-text: rgb(216, 222, 233);
+    --nord-polar-night-border-subtle: rgba(216, 222, 233, 0.2);
+    --nord-polar-night-border-lighter: rgba(216, 222, 233, 0.1);
+    --nord-polar-night-bg-subtle: rgba(216, 222, 233, 0.05);
 
     --dracula-top-bar-bg: rgb(68, 71, 90);
     --dracula-top-bar-hover: rgb(40, 42, 54);
@@ -62,6 +71,9 @@
     --dracula-danger-text: rgb(255, 85, 85);
     --dracula-danger-button-bg: rgb(255, 85, 85);
     --dracula-danger-button-text: rgb(248, 248, 242);
+    --dracula-border-subtle: rgba(248, 248, 242, 0.2);
+    --dracula-border-lighter: rgba(248, 248, 242, 0.1);
+    --dracula-bg-subtle: rgba(248, 248, 242, 0.05);
 
     --purple-top-bar-bg: rgb(30, 30, 63);
     --purple-top-bar-hover: rgb(45, 43, 85);
@@ -77,7 +89,10 @@
     --purple-danger-bg: rgb(77, 33, 252);
     --purple-danger-text: rgb(255, 180, 200);
     --purple-danger-button-bg: rgb(255, 98, 140);
-    --purple-danger-button-text: rgb(165, 153, 233);
+    --purple-danger-button-text: rgb(255, 255, 255);
+    --purple-border-subtle: rgba(165, 153, 233, 0.3);
+    --purple-border-lighter: rgba(165, 153, 233, 0.2);
+    --purple-bg-subtle: rgba(165, 153, 233, 0.05);
 
     --tokyo-night-dark-top-bar-bg: rgb(17, 18, 26);
     --tokyo-night-dark-top-bar-hover: rgb(37, 38, 46);
@@ -93,7 +108,10 @@
     --tokyo-night-dark-danger-bg: rgb(36, 40, 59);
     --tokyo-night-dark-danger-text: rgb(247, 118, 142);
     --tokyo-night-dark-danger-button-bg: rgb(247, 118, 142);
-    --tokyo-night-dark-danger-button-text: rgb(169, 177, 214);
+    --tokyo-night-dark-danger-button-text: rgb(26, 27, 38);
+    --tokyo-night-dark-border-subtle: rgba(169, 177, 214, 0.2);
+    --tokyo-night-dark-border-lighter: rgba(169, 177, 214, 0.1);
+    --tokyo-night-dark-bg-subtle: rgba(169, 177, 214, 0.05);
 
     --gruvbox-dark-top-bar-bg: rgb(50, 50, 50);
     --gruvbox-dark-top-bar-hover: rgb(70, 70, 70);
@@ -110,6 +128,9 @@
     --gruvbox-dark-danger-text: rgb(251, 73, 52);
     --gruvbox-dark-danger-button-bg: rgb(204, 36, 29);
     --gruvbox-dark-danger-button-text: rgb(235, 219, 178);
+    --gruvbox-dark-border-subtle: rgba(235, 219, 178, 0.2);
+    --gruvbox-dark-border-lighter: rgba(235, 219, 178, 0.1);
+    --gruvbox-dark-bg-subtle: rgba(235, 219, 178, 0.05);
 
     --gruvbox-light-top-bar-bg: rgb(204, 195, 162);
     --gruvbox-light-top-bar-hover: rgb(184, 175, 142);
@@ -126,6 +147,9 @@
     --gruvbox-light-danger-text: rgb(157, 0, 0);
     --gruvbox-light-danger-button-bg: rgb(204, 36, 29);
     --gruvbox-light-danger-button-text: rgb(251, 241, 199);
+    --gruvbox-light-border-subtle: rgba(60, 56, 54, 0.3);
+    --gruvbox-light-border-lighter: rgba(60, 56, 54, 0.2);
+    --gruvbox-light-bg-subtle: rgba(60, 56, 54, 0.05);
 }
 
 /* dark-theme */
@@ -133,6 +157,9 @@
 body.dark-theme {
     color: var(--dark-text);
     background: var(--dark-bg);
+    --border-subtle: var(--dark-border-subtle);
+    --border-lighter: var(--dark-border-lighter);
+    --bg-subtle: var(--dark-bg-subtle);
 }
 
 body.dark-theme #top-bar {
@@ -242,6 +269,9 @@ body.dark-theme #lobby-grid-container>div {
 body.light-theme {
     color: var(--light-text);
     background-color: var(--light-bg);
+    --border-subtle: var(--light-border-subtle);
+    --border-lighter: var(--light-border-lighter);
+    --bg-subtle: var(--light-bg-subtle);
 }
 
 body.light-theme #top-bar {
@@ -351,6 +381,9 @@ body.light-theme #lobby-grid-container>div {
 body.nord-polar-night-theme {
     color: var(--nord-polar-night-text);
     background: var(--nord-polar-night-bg);
+    --border-subtle: var(--nord-polar-night-border-subtle);
+    --border-lighter: var(--nord-polar-night-border-lighter);
+    --bg-subtle: var(--nord-polar-night-bg-subtle);
 }
 
 body.nord-polar-night-theme #top-bar {
@@ -460,6 +493,9 @@ body.nord-polar-night-theme #lobby-grid-container>div {
 body.dracula-theme {
     color: var(--dracula-text);
     background: var(--dracula-bg);
+    --border-subtle: var(--dracula-border-subtle);
+    --border-lighter: var(--dracula-border-lighter);
+    --bg-subtle: var(--dracula-bg-subtle);
 }
 
 body.dracula-theme #top-bar {
@@ -569,6 +605,9 @@ body.dracula-theme #lobby-grid-container>div {
 body.purple-theme {
     color: var(--purple-text);
     background: var(--purple-bg);
+    --border-subtle: var(--purple-border-subtle);
+    --border-lighter: var(--purple-border-lighter);
+    --bg-subtle: var(--purple-bg-subtle);
 }
 
 body.purple-theme #top-bar {
@@ -678,6 +717,9 @@ body.purple-theme #lobby-grid-container>div {
 body.tokyo-night-dark-theme {
     color: var(--tokyo-night-dark-text);
     background: var(--tokyo-night-dark-bg);
+    --border-subtle: var(--tokyo-night-dark-border-subtle);
+    --border-lighter: var(--tokyo-night-dark-border-lighter);
+    --bg-subtle: var(--tokyo-night-dark-bg-subtle);
 }
 
 body.tokyo-night-dark-theme #top-bar {
@@ -787,6 +829,9 @@ body.tokyo-night-dark-theme #lobby-grid-container>div {
 body.gruvbox-dark-theme {
     color: var(--gruvbox-dark-text);
     background: var(--gruvbox-dark-bg);
+    --border-subtle: var(--gruvbox-dark-border-subtle);
+    --border-lighter: var(--gruvbox-dark-border-lighter);
+    --bg-subtle: var(--gruvbox-dark-bg-subtle);
 }
 
 body.gruvbox-dark-theme #top-bar {
@@ -896,6 +941,9 @@ body.gruvbox-dark-theme #lobby-grid-container>div {
 body.gruvbox-light-theme {
     color: var(--gruvbox-light-text);
     background: var(--gruvbox-light-bg);
+    --border-subtle: var(--gruvbox-light-border-subtle);
+    --border-lighter: var(--gruvbox-light-border-lighter);
+    --bg-subtle: var(--gruvbox-light-bg-subtle);
 }
 
 body.gruvbox-light-theme #top-bar {
