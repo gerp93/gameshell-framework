@@ -9,6 +9,11 @@
     --dark-accent-green: rgb(120, 255, 99);
     --dark-accent-red: rgb(255, 100, 100);
     --dark-accent-blue: rgb(130, 160, 255);
+    --dark-danger-border: rgb(220, 53, 69);
+    --dark-danger-bg: rgb(60, 20, 20);
+    --dark-danger-text: rgb(255, 180, 180);
+    --dark-danger-button-bg: rgb(220, 53, 69);
+    --dark-danger-button-text: rgb(255, 255, 255);
 
     --light-top-bar-bg: rgb(200, 200, 200);
     --light-top-bar-hover: rgb(180, 180, 180);
@@ -20,6 +25,11 @@
     --light-accent-green: rgb(20, 150, 0);
     --light-accent-red: rgb(157, 0, 0);
     --light-accent-blue: rgb(0, 50, 200);
+    --light-danger-border: rgb(157, 0, 0);
+    --light-danger-bg: rgb(255, 245, 245);
+    --light-danger-text: rgb(114, 28, 36);
+    --light-danger-button-bg: rgb(220, 53, 69);
+    --light-danger-button-text: rgb(255, 255, 255);
 
     --nord-polar-night-top-bar-bg: rgb(46, 52, 64);
     --nord-polar-night-top-bar-hover: rgb(59, 66, 82);
@@ -31,6 +41,11 @@
     --nord-polar-night-accent-green: rgb(163, 190, 140);
     --nord-polar-night-accent-red: rgb(191, 97, 106);
     --nord-polar-night-accent-blue: rgb(94, 129, 172);
+    --nord-polar-night-danger-border: rgb(191, 97, 106);
+    --nord-polar-night-danger-bg: rgb(67, 76, 94);
+    --nord-polar-night-danger-text: rgb(191, 97, 106);
+    --nord-polar-night-danger-button-bg: rgb(191, 97, 106);
+    --nord-polar-night-danger-button-text: rgb(216, 222, 233);
 
     --dracula-top-bar-bg: rgb(68, 71, 90);
     --dracula-top-bar-hover: rgb(40, 42, 54);
@@ -42,6 +57,11 @@
     --dracula-accent-green: rgb(80, 250, 123);
     --dracula-accent-red: rgb(255, 85, 85);
     --dracula-accent-blue: rgb(139, 233, 253);
+    --dracula-danger-border: rgb(255, 85, 85);
+    --dracula-danger-bg: rgb(68, 71, 90);
+    --dracula-danger-text: rgb(255, 85, 85);
+    --dracula-danger-button-bg: rgb(255, 85, 85);
+    --dracula-danger-button-text: rgb(248, 248, 242);
 
     --purple-top-bar-bg: rgb(30, 30, 63);
     --purple-top-bar-hover: rgb(45, 43, 85);
@@ -53,6 +73,11 @@
     --purple-accent-green: rgb(58, 217, 0);
     --purple-accent-red: rgb(255, 98, 140);
     --purple-accent-blue: rgb(179, 98, 255);
+    --purple-danger-border: rgb(255, 98, 140);
+    --purple-danger-bg: rgb(77, 33, 252);
+    --purple-danger-text: rgb(255, 180, 200);
+    --purple-danger-button-bg: rgb(255, 98, 140);
+    --purple-danger-button-text: rgb(165, 153, 233);
 
     --tokyo-night-dark-top-bar-bg: rgb(17, 18, 26);
     --tokyo-night-dark-top-bar-hover: rgb(37, 38, 46);
@@ -64,6 +89,11 @@
     --tokyo-night-dark-accent-green: rgb(158, 206, 106);
     --tokyo-night-dark-accent-red: rgb(247, 118, 142);
     --tokyo-night-dark-accent-blue: rgb(42, 195, 222);
+    --tokyo-night-dark-danger-border: rgb(247, 118, 142);
+    --tokyo-night-dark-danger-bg: rgb(36, 40, 59);
+    --tokyo-night-dark-danger-text: rgb(247, 118, 142);
+    --tokyo-night-dark-danger-button-bg: rgb(247, 118, 142);
+    --tokyo-night-dark-danger-button-text: rgb(169, 177, 214);
 
     --gruvbox-dark-top-bar-bg: rgb(50, 50, 50);
     --gruvbox-dark-top-bar-hover: rgb(70, 70, 70);
@@ -75,6 +105,11 @@
     --gruvbox-dark-accent-green: rgb(152, 151, 26);
     --gruvbox-dark-accent-red: rgb(204, 36, 29);
     --gruvbox-dark-accent-blue: rgb(69, 133, 136);
+    --gruvbox-dark-danger-border: rgb(204, 36, 29);
+    --gruvbox-dark-danger-bg: rgb(60, 56, 54);
+    --gruvbox-dark-danger-text: rgb(251, 73, 52);
+    --gruvbox-dark-danger-button-bg: rgb(204, 36, 29);
+    --gruvbox-dark-danger-button-text: rgb(235, 219, 178);
 
     --gruvbox-light-top-bar-bg: rgb(204, 195, 162);
     --gruvbox-light-top-bar-hover: rgb(184, 175, 142);
@@ -86,6 +121,11 @@
     --gruvbox-light-accent-green: rgb(152, 151, 26);
     --gruvbox-light-accent-red: rgb(204, 36, 29);
     --gruvbox-light-accent-blue: rgb(69, 133, 136);
+    --gruvbox-light-danger-border: rgb(204, 36, 29);
+    --gruvbox-light-danger-bg: rgb(235, 219, 178);
+    --gruvbox-light-danger-text: rgb(157, 0, 0);
+    --gruvbox-light-danger-button-bg: rgb(204, 36, 29);
+    --gruvbox-light-danger-button-text: rgb(251, 241, 199);
 }
 
 /* dark-theme */
@@ -124,6 +164,24 @@ body.dark-theme button {
 body.dark-theme button:hover {
     color: var(--dark-text);
     background-color: var(--dark-primary-action-hover);
+}
+
+body.dark-theme .danger-zone {
+    border-color: var(--dark-danger-border);
+    background-color: var(--dark-danger-bg);
+}
+
+body.dark-theme .danger-zone-summary {
+    color: var(--dark-danger-border);
+}
+
+body.dark-theme .danger-zone-text {
+    color: var(--dark-danger-text);
+}
+
+body.dark-theme .danger-zone-button {
+    background-color: var(--dark-danger-button-bg);
+    color: var(--dark-danger-button-text);
 }
 
 body.dark-theme input {
@@ -217,6 +275,24 @@ body.light-theme button:hover {
     background-color: var(--light-primary-action-hover);
 }
 
+body.light-theme .danger-zone {
+    border-color: var(--light-danger-border);
+    background-color: var(--light-danger-bg);
+}
+
+body.light-theme .danger-zone-summary {
+    color: var(--light-danger-border);
+}
+
+body.light-theme .danger-zone-text {
+    color: var(--light-danger-text);
+}
+
+body.light-theme .danger-zone-button {
+    background-color: var(--light-danger-button-bg);
+    color: var(--light-danger-button-text);
+}
+
 body.light-theme input {
     color: var(--light-text);
     background-color: var(--light-bg);
@@ -306,6 +382,24 @@ body.nord-polar-night-theme button {
 body.nord-polar-night-theme button:hover {
     color: var(--nord-polar-night-text);
     background-color: var(--nord-polar-night-primary-action-hover);
+}
+
+body.nord-polar-night-theme .danger-zone {
+    border-color: var(--nord-polar-night-danger-border);
+    background-color: var(--nord-polar-night-danger-bg);
+}
+
+body.nord-polar-night-theme .danger-zone-summary {
+    color: var(--nord-polar-night-danger-border);
+}
+
+body.nord-polar-night-theme .danger-zone-text {
+    color: var(--nord-polar-night-danger-text);
+}
+
+body.nord-polar-night-theme .danger-zone-button {
+    background-color: var(--nord-polar-night-danger-button-bg);
+    color: var(--nord-polar-night-danger-button-text);
 }
 
 body.nord-polar-night-theme input {
@@ -399,6 +493,24 @@ body.dracula-theme button:hover {
     background-color: var(--dracula-primary-action-hover);
 }
 
+body.dracula-theme .danger-zone {
+    border-color: var(--dracula-danger-border);
+    background-color: var(--dracula-danger-bg);
+}
+
+body.dracula-theme .danger-zone-summary {
+    color: var(--dracula-danger-border);
+}
+
+body.dracula-theme .danger-zone-text {
+    color: var(--dracula-danger-text);
+}
+
+body.dracula-theme .danger-zone-button {
+    background-color: var(--dracula-danger-button-bg);
+    color: var(--dracula-danger-button-text);
+}
+
 body.dracula-theme input {
     color: var(--dracula-text);
     background: var(--dracula-bg);
@@ -488,6 +600,24 @@ body.purple-theme button {
 body.purple-theme button:hover {
     color: var(--purple-text);
     background-color: var(--purple-primary-action-hover);
+}
+
+body.purple-theme .danger-zone {
+    border-color: var(--purple-danger-border);
+    background-color: var(--purple-danger-bg);
+}
+
+body.purple-theme .danger-zone-summary {
+    color: var(--purple-danger-border);
+}
+
+body.purple-theme .danger-zone-text {
+    color: var(--purple-danger-text);
+}
+
+body.purple-theme .danger-zone-button {
+    background-color: var(--purple-danger-button-bg);
+    color: var(--purple-danger-button-text);
 }
 
 body.purple-theme input {
@@ -581,6 +711,24 @@ body.tokyo-night-dark-theme button:hover {
     background-color: var(--tokyo-night-dark-primary-action-hover);
 }
 
+body.tokyo-night-dark-theme .danger-zone {
+    border-color: var(--tokyo-night-dark-danger-border);
+    background-color: var(--tokyo-night-dark-danger-bg);
+}
+
+body.tokyo-night-dark-theme .danger-zone-summary {
+    color: var(--tokyo-night-dark-danger-border);
+}
+
+body.tokyo-night-dark-theme .danger-zone-text {
+    color: var(--tokyo-night-dark-danger-text);
+}
+
+body.tokyo-night-dark-theme .danger-zone-button {
+    background-color: var(--tokyo-night-dark-danger-button-bg);
+    color: var(--tokyo-night-dark-danger-button-text);
+}
+
 body.tokyo-night-dark-theme input {
     color: var(--tokyo-night-dark-text);
     background: var(--tokyo-night-dark-bg);
@@ -672,6 +820,24 @@ body.gruvbox-dark-theme button:hover {
     background-color: var(--gruvbox-dark-primary-action-hover);
 }
 
+body.gruvbox-dark-theme .danger-zone {
+    border-color: var(--gruvbox-dark-danger-border);
+    background-color: var(--gruvbox-dark-danger-bg);
+}
+
+body.gruvbox-dark-theme .danger-zone-summary {
+    color: var(--gruvbox-dark-danger-border);
+}
+
+body.gruvbox-dark-theme .danger-zone-text {
+    color: var(--gruvbox-dark-danger-text);
+}
+
+body.gruvbox-dark-theme .danger-zone-button {
+    background-color: var(--gruvbox-dark-danger-button-bg);
+    color: var(--gruvbox-dark-danger-button-text);
+}
+
 body.gruvbox-dark-theme input {
     color: var(--gruvbox-dark-text);
     background: var(--gruvbox-dark-bg);
@@ -761,6 +927,24 @@ body.gruvbox-light-theme button {
 body.gruvbox-light-theme button:hover {
     color: var(--gruvbox-light-text);
     background-color: var(--gruvbox-light-primary-action-hover);
+}
+
+body.gruvbox-light-theme .danger-zone {
+    border-color: var(--gruvbox-light-danger-border);
+    background-color: var(--gruvbox-light-danger-bg);
+}
+
+body.gruvbox-light-theme .danger-zone-summary {
+    color: var(--gruvbox-light-danger-border);
+}
+
+body.gruvbox-light-theme .danger-zone-text {
+    color: var(--gruvbox-light-danger-text);
+}
+
+body.gruvbox-light-theme .danger-zone-button {
+    background-color: var(--gruvbox-light-danger-button-bg);
+    color: var(--gruvbox-light-danger-button-text);
 }
 
 body.gruvbox-light-theme input {
