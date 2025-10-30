@@ -188,14 +188,6 @@ tbody>tr:hover {
     color: var(--color-accent-red);
 }
 
-.pagination-ribbon {
-    border: 1px solid var(--color-top-bar-bg);
-}
-
-.search-form-container {
-    border: 1px solid var(--color-top-bar-bg);
-}
-
 .htmx-result-good {
     color: var(--color-accent-green);
 }
