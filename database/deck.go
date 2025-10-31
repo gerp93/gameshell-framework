@@ -24,9 +24,11 @@ type DeckDetails struct {
 	CardCount int
 }
 
-func SearchDecks(search string) ([]DeckDetails, error) {
-	if search == "" {
-		search = "%"
+func SearchDecks(name string, page int) ([]DeckDetails, error) {
+	name = "%" + name + "%"
+
+	if page < 1 {
+		page = 1
 	}
 
 	sqlString := `
@@ -41,8 +43,9 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			AND D.NAME LIKE ?
 		GROUP BY D.ID
 		ORDER BY D.NAME
+		LIMIT 10 OFFSET ?
 	`
-	rows, err := query(sqlString, search)
+	rows, err := query(sqlString, name, (page-1)*10)
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +58,41 @@ func SearchDecks(search string) ([]DeckDetails, error) {
 			&deckDetails.Id,
 			&deckDetails.Name,
 			&deckDetails.CardCount,
-			&deckDetails.IsPublicReadOnly); err != nil {
+			&deckDetails.IsPublicReadOnly,
+		); err != nil {
 			log.Println(err)
-			return result, errors.New("failed to scan row in query results")
+			return nil, errors.New("failed to scan row in query results")
 		}
 		result = append(result, deckDetails)
 	}
 	return result, nil
+}
+
+func CountDecks(name string) (int, error) {
+	name = "%" + name + "%"
+
+	sqlString := `
+		SELECT
+			COUNT(*)
+		FROM DECK AS D
+		WHERE D.IS_LOBBY_WILD_DECK = FALSE
+			AND D.NAME LIKE ?
+	`
+	rows, err := query(sqlString, name)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			log.Println(err)
+			return 0, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return count, nil
 }
 
 func GetReadableDecks(userId uuid.UUID) ([]Deck, error) {

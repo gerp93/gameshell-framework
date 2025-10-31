@@ -3,12 +3,10 @@ package apiDeck
 import (
 	"encoding/csv"
 	"net/http"
-	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
 	"github.com/grantfbarnes/card-judge/database"
-	"github.com/grantfbarnes/card-judge/static"
 )
 
 func GetCardExport(w http.ResponseWriter, r *http.Request) {
@@ -53,43 +51,6 @@ func GetCardExport(w http.ResponseWriter, r *http.Request) {
 	for _, card := range cards {
 		_ = writer.Write([]string{card.Category, card.Text})
 	}
-}
-
-func Search(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to parse form."))
-		return
-	}
-
-	var search string
-	for key, val := range r.Form {
-		if key == "search" {
-			search = val[0]
-		}
-	}
-
-	search = "%" + search + "%"
-
-	decks, err := database.SearchDecks(search)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-
-	tmpl, err := template.ParseFS(
-		static.StaticFiles,
-		"html/components/table-rows/deck-table-rows.html",
-	)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to parse HTML."))
-		return
-	}
-
-	_ = tmpl.ExecuteTemplate(w, "deck-table-rows", decks)
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
