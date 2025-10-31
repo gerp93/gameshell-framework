@@ -22,9 +22,11 @@ type User struct {
 	IsAdmin      bool
 }
 
-func SearchUsers(search string) ([]User, error) {
-	if search == "" {
-		search = "%"
+func SearchUsers(name string, page int) ([]User, error) {
+	name = "%" + name + "%"
+
+	if page < 1 {
+		page = 1
 	}
 
 	sqlString := `
@@ -41,8 +43,9 @@ func SearchUsers(search string) ([]User, error) {
 		WHERE NAME LIKE ?
 		ORDER BY CHANGED_ON_DATE DESC,
 			NAME ASC
+		LIMIT 10 OFFSET ?
 	`
-	rows, err := query(sqlString, search)
+	rows, err := query(sqlString, name, (page-1)*10)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +62,40 @@ func SearchUsers(search string) ([]User, error) {
 			&user.PasswordHash,
 			&user.ColorTheme,
 			&user.IsApproved,
-			&user.IsAdmin); err != nil {
+			&user.IsAdmin,
+		); err != nil {
 			log.Println(err)
-			return result, errors.New("failed to scan row in query results")
+			return nil, errors.New("failed to scan row in query results")
 		}
 		result = append(result, user)
 	}
 	return result, nil
+}
+
+func CountUsers(name string) (int, error) {
+	name = "%" + name + "%"
+
+	sqlString := `
+		SELECT
+			COUNT(*)
+		FROM USER
+		WHERE NAME LIKE ?
+	`
+	rows, err := query(sqlString, name)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			log.Println(err)
+			return 0, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return count, nil
 }
 
 func GetUser(userId uuid.UUID) (User, error) {
