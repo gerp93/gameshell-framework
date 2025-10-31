@@ -41,15 +41,16 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 		}
 
 		// required to be logged in
-		if r.URL.Path == "/manage" ||
-			r.URL.Path == "/admin" ||
+		if r.URL.Path == "/account" ||
 			r.URL.Path == "/stats" ||
+			r.URL.Path == "/users" ||
+			r.URL.Path == "/review" ||
 			r.URL.Path == "/lobbies" ||
 			r.URL.Path == "/decks" ||
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
 			strings.HasPrefix(r.URL.Path, "/deck/") {
 			if !basePageData.LoggedIn {
-				auth.SetRedirectUrl(w, r.URL.Path)
+				auth.SetRedirectUrl(w, r.URL.Path+"?"+r.URL.RawQuery)
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
@@ -64,7 +65,8 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 		}
 
 		// required to be admin
-		if r.URL.Path == "/admin" {
+		if r.URL.Path == "/users" ||
+			r.URL.Path == "/review" {
 			if !basePageData.User.IsAdmin {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return

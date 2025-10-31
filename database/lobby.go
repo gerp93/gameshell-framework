@@ -29,7 +29,7 @@ type Lobby struct {
 	LoseStreakThreshold int
 }
 
-type lobbyDetails struct {
+type LobbyDetails struct {
 	Lobby
 	UserCount int
 }
@@ -146,7 +146,13 @@ type kickVote struct {
 	Voted    bool
 }
 
-func SearchLobbies(search string) ([]lobbyDetails, error) {
+func SearchLobbies(name string, page int) ([]LobbyDetails, error) {
+	name = "%" + name + "%"
+
+	if page < 1 {
+		page = 1
+	}
+
 	sqlString := `
 		SELECT
 			L.ID,
@@ -165,16 +171,17 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 		WHERE L.NAME LIKE ?
 		GROUP BY L.ID
 		ORDER BY L.NAME
+		LIMIT 10 OFFSET ?
 	`
-	rows, err := query(sqlString, search)
+	rows, err := query(sqlString, name, (page-1)*10)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	result := make([]lobbyDetails, 0)
+	result := make([]LobbyDetails, 0)
 	for rows.Next() {
-		var ld lobbyDetails
+		var ld LobbyDetails
 		if err := rows.Scan(
 			&ld.Id,
 			&ld.CreatedOnDate,
@@ -185,13 +192,40 @@ func SearchLobbies(search string) ([]lobbyDetails, error) {
 			&ld.FreeCredits,
 			&ld.WinStreakThreshold,
 			&ld.LoseStreakThreshold,
-			&ld.UserCount); err != nil {
+			&ld.UserCount,
+		); err != nil {
 			log.Println(err)
-			return result, errors.New("failed to scan row in query results")
+			return nil, errors.New("failed to scan row in query results")
 		}
 		result = append(result, ld)
 	}
 	return result, nil
+}
+
+func CountLobbies(name string) (int, error) {
+	name = "%" + name + "%"
+
+	sqlString := `
+		SELECT
+			COUNT(*)
+		FROM LOBBY
+		WHERE NAME LIKE ?
+	`
+	rows, err := query(sqlString, name)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			log.Println(err)
+			return 0, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return count, nil
 }
 
 func GetLobby(id uuid.UUID) (Lobby, error) {
