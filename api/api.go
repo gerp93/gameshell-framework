@@ -44,6 +44,7 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 		if r.URL.Path == "/account" ||
 			r.URL.Path == "/stats" ||
 			r.URL.Path == "/users" ||
+			r.URL.Path == "/review" ||
 			r.URL.Path == "/lobbies" ||
 			r.URL.Path == "/decks" ||
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
@@ -64,7 +65,8 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 		}
 
 		// required to be admin
-		if r.URL.Path == "/users" {
+		if r.URL.Path == "/users" ||
+			r.URL.Path == "/review" {
 			if !basePageData.User.IsAdmin {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
