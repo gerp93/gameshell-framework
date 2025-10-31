@@ -2,51 +2,12 @@ package apiUser
 
 import (
 	"net/http"
-	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/grantfbarnes/card-judge/api"
 	"github.com/grantfbarnes/card-judge/auth"
 	"github.com/grantfbarnes/card-judge/database"
-	"github.com/grantfbarnes/card-judge/static"
 )
-
-func Search(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to parse form."))
-		return
-	}
-
-	var search string
-	for key, val := range r.Form {
-		if key == "search" {
-			search = val[0]
-		}
-	}
-
-	search = "%" + search + "%"
-
-	users, err := database.SearchUsers(search)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-
-	tmpl, err := template.ParseFS(
-		static.StaticFiles,
-		"html/components/table-rows/user-table-rows.html",
-	)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to parse HTML."))
-		return
-	}
-
-	_ = tmpl.ExecuteTemplate(w, "user-table-rows", users)
-}
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
