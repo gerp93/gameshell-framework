@@ -42,11 +42,11 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 
 		// required to be logged in
 		if r.URL.Path == "/account" ||
-			r.URL.Path == "/stats" ||
 			r.URL.Path == "/users" ||
 			r.URL.Path == "/review" ||
 			r.URL.Path == "/lobbies" ||
 			r.URL.Path == "/decks" ||
+			strings.HasPrefix(r.URL.Path, "/stats/") ||
 			strings.HasPrefix(r.URL.Path, "/lobby/") ||
 			strings.HasPrefix(r.URL.Path, "/deck/") {
 			if !basePageData.LoggedIn {
