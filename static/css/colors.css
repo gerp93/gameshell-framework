@@ -289,9 +289,8 @@ body.flambeau-inverse-theme {
     --color-text: rgb(255, 255, 255);
     --color-bg: rgb(195, 46, 11);
     --color-bg-hover: rgb(160, 35, 8);
-    --color-primary-action: rgb(213, 184, 154);
-    --color-primary-action-hover: rgb(230, 205, 175);
-    --color-primary-action-text: rgb(0, 0, 0);
+    --color-primary-action: rgb(120, 80, 40);
+    --color-primary-action-hover: rgb(160, 110, 60);
     --color-accent-green: rgb(255, 230, 180);
     --color-accent-red: rgb(255, 255, 255);
     --color-accent-blue: rgb(213, 184, 154);
@@ -363,12 +362,12 @@ dialog {
 }
 
 button {
-    color: var(--color-primary-action-text, var(--color-text));
+    color: var(--color-text);
     background-color: var(--color-primary-action);
 }
 
 button:hover {
-    color: var(--color-primary-action-text, var(--color-text));
+    color: var(--color-text);
     background-color: var(--color-primary-action-hover);
 }
 
@@ -378,12 +377,12 @@ input {
 }
 
 input[type="submit"] {
-    color: var(--color-primary-action-text, var(--color-text));
+    color: var(--color-text);
     background-color: var(--color-primary-action);
 }
 
 input[type="submit"]:hover {
-    color: var(--color-primary-action-text, var(--color-text));
+    color: var(--color-text);
     background-color: var(--color-primary-action-hover);
 }
 
