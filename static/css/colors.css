@@ -113,9 +113,6 @@ body.retrowave-theme {
     --color-accent-green: rgb(255, 217, 61);
     --color-accent-red: rgb(224, 64, 251);
     --color-accent-blue: rgb(199, 125, 255);
-    --font-family: 'Orbitron', 'Segoe UI', -apple-system, sans-serif;
-    --font-family-mono: 'Share Tech Mono', 'Consolas', monospace;
-    --font-size-base: 15px;
 }
 
 body.bubblegum-theme {
@@ -129,9 +126,6 @@ body.bubblegum-theme {
     --color-accent-green: rgb(255, 255, 0);
     --color-accent-red: rgb(204, 0, 102);
     --color-accent-blue: rgb(135, 206, 235);
-    --font-family: 'Comic Sans MS', 'Chalkboard', cursive, sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 16px;
 }
 
 body.electric-lime-theme {
@@ -145,9 +139,6 @@ body.electric-lime-theme {
     --color-accent-green: rgb(136, 170, 0);
     --color-accent-red: rgb(255, 0, 170);
     --color-accent-blue: rgb(0, 102, 255);
-    --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 16px;
 }
 
 body.neon-theme {
@@ -161,9 +152,6 @@ body.neon-theme {
     --color-accent-green: rgb(57, 255, 20);
     --color-accent-red: rgb(255, 20, 147);
     --color-accent-blue: rgb(125, 249, 255);
-    --font-family: 'Orbitron', 'Segoe UI', -apple-system, sans-serif;
-    --font-family-mono: 'Share Tech Mono', 'Consolas', monospace;
-    --font-size-base: 15px;
 }
 
 body.commander-keen-theme {
@@ -177,9 +165,6 @@ body.commander-keen-theme {
     --color-accent-green: rgb(85, 255, 85);
     --color-accent-red: rgb(170, 0, 170);
     --color-accent-blue: rgb(85, 255, 255);
-    --font-family: 'Press Start 2P', 'Courier New', monospace;
-    --font-family-mono: 'Press Start 2P', 'Courier New', monospace;
-    --font-size-base: 12px;
 }
 
 body.lava-theme {
@@ -193,9 +178,6 @@ body.lava-theme {
     --color-accent-green: rgb(255, 204, 0);
     --color-accent-red: rgb(255, 51, 0);
     --color-accent-blue: rgb(255, 102, 0);
-    --font-family: 'Arial Black', 'Impact', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 16px;
 }
 
 body.hacker-theme {
@@ -209,9 +191,6 @@ body.hacker-theme {
     --color-accent-green: rgb(0, 255, 65);
     --color-accent-red: rgb(255, 191, 0);
     --color-accent-blue: rgb(50, 205, 50);
-    --font-family: 'Courier New', 'Consolas', 'Liberation Mono', monospace;
-    --font-family-mono: 'Courier New', 'Consolas', 'Liberation Mono', monospace;
-    --font-size-base: 14px;
 }
 
 body.hawkeye-theme {
@@ -225,9 +204,6 @@ body.hawkeye-theme {
     --color-accent-green: rgb(255, 205, 0);
     --color-accent-red: rgb(255, 150, 0);
     --color-accent-blue: rgb(255, 230, 100);
-    --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 16px;
 }
 
 body.green-acres-theme {
@@ -241,9 +217,6 @@ body.green-acres-theme {
     --color-accent-green: rgb(255, 222, 0);
     --color-accent-red: rgb(255, 180, 0);
     --color-accent-blue: rgb(200, 255, 150);
-    --font-family: 'Arial Black', 'Trebuchet MS', 'Impact', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 17px;
 }
 
 body.red-barn-theme {
@@ -257,9 +230,6 @@ body.red-barn-theme {
     --color-accent-green: rgb(255, 220, 100);
     --color-accent-red: rgb(255, 255, 255);
     --color-accent-blue: rgb(255, 180, 180);
-    --font-family: 'Arial Black', 'Franklin Gothic Heavy', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 17px;
 }
 
 body.flambeau-theme {
@@ -273,9 +243,6 @@ body.flambeau-theme {
     --color-accent-green: rgb(0, 100, 0);
     --color-accent-red: rgb(195, 46, 11);
     --color-accent-blue: rgb(100, 60, 20);
-    --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 17px;
 }
 
 body.flambeau-inverse-theme {
@@ -289,9 +256,6 @@ body.flambeau-inverse-theme {
     --color-accent-green: rgb(255, 230, 180);
     --color-accent-red: rgb(255, 255, 255);
     --color-accent-blue: rgb(255, 189, 123);
-    --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 17px;
 }
 
 body.blue-oval-theme {
@@ -305,9 +269,6 @@ body.blue-oval-theme {
     --color-accent-green: rgb(200, 210, 220);
     --color-accent-red: rgb(255, 150, 150);
     --color-accent-blue: rgb(150, 200, 255);
-    --font-family: 'Trebuchet MS', 'Arial', 'Helvetica', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 16px;
 }
 
 body.merica-theme {
@@ -321,9 +282,6 @@ body.merica-theme {
     --color-accent-green: rgb(255, 255, 255);
     --color-accent-red: rgb(191, 10, 48);
     --color-accent-blue: rgb(100, 180, 255);
-    --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
-    --font-family-mono: 'Consolas', 'Courier New', monospace;
-    --font-size-base: 17px;
 }
 
 body {
