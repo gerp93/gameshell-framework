@@ -214,7 +214,6 @@ body.hacker-theme {
     --font-size-base: 14px;
 }
 
-/* Iowa Hawkeyes - Black and Old Gold */
 body.hawkeye-theme {
     --color-top-bar-bg: rgb(0, 0, 0);
     --color-top-bar-hover: rgb(40, 40, 0);
@@ -231,7 +230,6 @@ body.hawkeye-theme {
     --font-size-base: 16px;
 }
 
-/* John Deere inspired - Green and Yellow */
 body.green-acres-theme {
     --color-top-bar-bg: rgb(54, 124, 43);
     --color-top-bar-hover: rgb(70, 150, 55);
@@ -248,7 +246,6 @@ body.green-acres-theme {
     --font-size-base: 17px;
 }
 
-/* Farmall inspired - Red and Black */
 body.red-barn-theme {
     --color-top-bar-bg: rgb(198, 12, 48);
     --color-top-bar-hover: rgb(230, 40, 70);
@@ -265,7 +262,6 @@ body.red-barn-theme {
     --font-size-base: 17px;
 }
 
-/* Case inspired - Flambeau Red and Power Tan */
 body.flambeau-theme {
     --color-top-bar-bg: rgb(195, 46, 11);
     --color-top-bar-hover: rgb(220, 70, 30);
@@ -282,7 +278,6 @@ body.flambeau-theme {
     --font-size-base: 17px;
 }
 
-/* Case inspired - Flambeau Inverse (Red bg, Tan accents) */
 body.flambeau-inverse-theme {
     --color-top-bar-bg: rgb(160, 35, 8);
     --color-top-bar-hover: rgb(130, 25, 5);
@@ -299,7 +294,6 @@ body.flambeau-inverse-theme {
     --font-size-base: 17px;
 }
 
-/* Ford Tractor inspired - Ford Blue and Gray */
 body.blue-oval-theme {
     --color-top-bar-bg: rgb(13, 71, 161);
     --color-top-bar-hover: rgb(25, 100, 200);
@@ -316,7 +310,6 @@ body.blue-oval-theme {
     --font-size-base: 16px;
 }
 
-/* 'MERICA - Red, White, and Blue */
 body.merica-theme {
     --color-top-bar-bg: rgb(191, 10, 48);
     --color-top-bar-hover: rgb(220, 40, 70);
