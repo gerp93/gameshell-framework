@@ -266,7 +266,7 @@ body.flambeau-theme {
     --color-top-bar-bg: rgb(195, 46, 11);
     --color-top-bar-hover: rgb(220, 70, 30);
     --color-text: rgb(0, 0, 0);
-    --color-bg: rgb(213, 184, 154);
+    --color-bg: rgb(255, 189, 123);
     --color-bg-hover: rgb(195, 170, 140);
     --color-primary-action: rgb(195, 46, 11);
     --color-primary-action-hover: rgb(220, 70, 30);
@@ -288,7 +288,7 @@ body.flambeau-inverse-theme {
     --color-primary-action-hover: rgb(160, 110, 60);
     --color-accent-green: rgb(255, 230, 180);
     --color-accent-red: rgb(255, 255, 255);
-    --color-accent-blue: rgb(213, 184, 154);
+    --color-accent-blue: rgb(255, 189, 123);
     --font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
     --font-family-mono: 'Consolas', 'Courier New', monospace;
     --font-size-base: 17px;
