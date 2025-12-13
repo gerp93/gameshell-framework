@@ -1338,13 +1338,13 @@ func BlockResponse(playerId uuid.UUID, targetPlayerId uuid.UUID) error {
 	return execute(sqlString, playerId, targetPlayerId)
 }
 
-func PlayStealCard(playerId uuid.UUID) error {
-	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
+func PlaySurpriseCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_RESPOND_WITH_SURPRISE_CARD (?)"
 	return execute(sqlString, playerId)
 }
 
-func PlaySurpriseCard(playerId uuid.UUID) error {
-	sqlString := "CALL SP_RESPOND_WITH_SURPRISE_CARD (?)"
+func PlayStealCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
 	return execute(sqlString, playerId)
 }
 
