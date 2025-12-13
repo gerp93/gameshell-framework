@@ -50,7 +50,7 @@ type PlayerHandData struct {
 	PlayerId      uuid.UUID
 	PlayerIsJudge bool
 	PlayerIsReady bool
-	PlayerHand    []handCard
+	PlayerHand    []Card
 }
 
 type PlayerSpecialsData struct {
@@ -81,7 +81,6 @@ type LobbyGameBoardData struct {
 	LobbyId uuid.UUID
 
 	JudgeCardText      sql.NullString
-	JudgeCardDeck      sql.NullString
 	JudgeCardYouTube   sql.NullString
 	JudgeCardImage     sql.NullString
 	JudgeBlankCount    int
@@ -126,13 +125,7 @@ type boardResponse struct {
 type boardResponseCard struct {
 	ResponseCardId uuid.UUID
 	Card
-	DeckName        string
 	SpecialCategory sql.NullString
-}
-
-type handCard struct {
-	Card
-	DeckName string
 }
 
 type nameCountRow struct {
@@ -714,11 +707,9 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 			C.ID,
 			C.TEXT,
 			C.YOUTUBE,
-			C.IMAGE,
-			D.NAME
+			C.IMAGE
 		FROM HAND AS H
 			INNER JOIN CARD AS C ON C.ID = H.CARD_ID
-			INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 		WHERE H.PLAYER_ID = ?
 		ORDER BY C.TEXT
 	`
@@ -729,14 +720,13 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var card handCard
+		var card Card
 		var imageBytes []byte
 		if err := rows.Scan(
 			&card.Id,
 			&card.Text,
 			&card.YouTube,
 			&imageBytes,
-			&card.DeckName,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -929,13 +919,6 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 		SELECT
 			L.ID AS LOBBY_ID,
 			(SELECT TEXT FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_TEXT,
-			(
-				SELECT
-					D.NAME
-				FROM CARD AS C
-					INNER JOIN DECK AS D ON D.ID = C.DECK_ID
-				WHERE C.ID = J.CARD_ID
-			) AS JUDGE_CARD_DECK,
 			(SELECT YOUTUBE FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_YOUTUBE,
 			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_IMAGE,
 			J.BLANK_COUNT AS JUDGE_BLANK_COUNT,
@@ -958,7 +941,6 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 		if err := rows.Scan(
 			&data.LobbyId,
 			&data.JudgeCardText,
-			&data.JudgeCardDeck,
 			&data.JudgeCardYouTube,
 			&imageBytes,
 			&data.JudgeBlankCount,
@@ -1038,12 +1020,10 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 				C.TEXT AS CARD_TEXT,
 				C.YOUTUBE AS CARD_YOUTUBE,
 				C.IMAGE AS CARD_IMAGE,
-				D.NAME AS DECK_NAME,
 				RC.SPECIAL_CATEGORY
 			FROM RESPONSE AS R
 				INNER JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
 				INNER JOIN CARD AS C ON C.ID = RC.CARD_ID
-				INNER JOIN DECK AS D ON D.ID = C.DECK_ID
 			WHERE R.ID = ?
 			ORDER BY RC.CREATED_ON_DATE
 		`
@@ -1062,8 +1042,8 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 				&responseCard.Text,
 				&responseCard.YouTube,
 				&imageBytes,
-				&responseCard.DeckName,
-				&responseCard.SpecialCategory); err != nil {
+				&responseCard.SpecialCategory,
+			); err != nil {
 				log.Println(err)
 				return data, errors.New("failed to scan row in query results")
 			}
