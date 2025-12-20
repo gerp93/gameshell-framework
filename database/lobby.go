@@ -67,7 +67,6 @@ type PlayerSpecialsData struct {
 
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
-	PlayerIsWinning        bool
 	PlayerIsReady          bool
 	PlayerWinningStreak    int
 	PlayerLosingStreak     int
@@ -754,7 +753,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			L.LOSE_STREAK_THRESHOLD AS LOBBY_LOSE_STREAK_THRESHOLD,
 			P.ID AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
-			FN_GET_PLAYER_IS_WINNING(P.ID) AS PLAYER_IS_WINNING,
 			P.WINNING_STREAK AS PLAYER_WINNING_STREAK,
 			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
@@ -779,7 +777,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.LobbyLoseStreakThreshold,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
-			&data.PlayerIsWinning,
 			&data.PlayerWinningStreak,
 			&data.PlayerLosingStreak,
 			&data.PlayerCreditsSpent,
