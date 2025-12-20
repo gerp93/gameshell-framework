@@ -78,6 +78,8 @@ var SQLFiles = []string{
 	"sql/procedures/SP_SET_WINNING_STREAK.sql",
 	"sql/procedures/SP_SKIP_JUDGE.sql",
 	"sql/procedures/SP_SKIP_PROMPT.sql",
+	"sql/procedures/SP_SPEND_CREDITS.sql",
+	"sql/procedures/SP_SPEND_CREDITS_UNDO.sql",
 	"sql/procedures/SP_START_NEW_ROUND.sql",
 	"sql/procedures/SP_VOTE_TO_KICK.sql",
 	"sql/procedures/SP_VOTE_TO_KICK_UNDO.sql",
