@@ -74,6 +74,13 @@ type PlayerSpecialsData struct {
 	PlayerBetOnWin         int
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
+
+	SpecialCostSkipBeingJudge int
+	SpecialCostExtraResponse  int
+	SpecialCostBlockResponse  int
+	SpecialCostSurpriseCard   int
+	SpecialCostFindCard       int
+	SpecialCostWildCard       int
 }
 
 type LobbyGameBoardData struct {
@@ -905,6 +912,13 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		}
 		data.Opponents = append(data.Opponents, row)
 	}
+
+	data.SpecialCostSkipBeingJudge = 5
+	data.SpecialCostExtraResponse = 2
+	data.SpecialCostBlockResponse = 2
+	data.SpecialCostSurpriseCard = 1
+	data.SpecialCostFindCard = 2
+	data.SpecialCostWildCard = 3
 
 	return data, nil
 }
