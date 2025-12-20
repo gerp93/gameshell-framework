@@ -64,7 +64,6 @@ var SQLFiles = []string{
 	"sql/procedures/SP_RESET_RESPONSES.sql",
 	"sql/procedures/SP_RESPOND_WITH_CARD.sql",
 	"sql/procedures/SP_RESPOND_WITH_FIND_CARD.sql",
-	"sql/procedures/SP_RESPOND_WITH_STEAL_CARD.sql",
 	"sql/procedures/SP_RESPOND_WITH_SURPRISE_CARD.sql",
 	"sql/procedures/SP_RESPOND_WITH_WILD_CARD.sql",
 	"sql/procedures/SP_SET_LOSING_STREAK.sql",
