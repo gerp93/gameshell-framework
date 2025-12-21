@@ -67,7 +67,6 @@ type PlayerSpecialsData struct {
 
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
-	PlayerIsWinning        bool
 	PlayerIsReady          bool
 	PlayerWinningStreak    int
 	PlayerLosingStreak     int
@@ -75,6 +74,14 @@ type PlayerSpecialsData struct {
 	PlayerBetOnWin         int
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
+
+	SpecialCostSkipBeingJudge int
+	SpecialCostExtraResponse  int
+	SpecialCostBlockResponse  int
+	SpecialCostSurpriseCard   int
+	SpecialCostStealCard      int
+	SpecialCostFindCard       int
+	SpecialCostWildCard       int
 }
 
 type LobbyGameBoardData struct {
@@ -754,7 +761,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			L.LOSE_STREAK_THRESHOLD AS LOBBY_LOSE_STREAK_THRESHOLD,
 			P.ID AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
-			FN_GET_PLAYER_IS_WINNING(P.ID) AS PLAYER_IS_WINNING,
 			P.WINNING_STREAK AS PLAYER_WINNING_STREAK,
 			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
@@ -779,7 +785,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.LobbyLoseStreakThreshold,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
-			&data.PlayerIsWinning,
 			&data.PlayerWinningStreak,
 			&data.PlayerLosingStreak,
 			&data.PlayerCreditsSpent,
@@ -907,6 +912,39 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 		data.Opponents = append(data.Opponents, row)
+	}
+
+	sqlString = `
+		SELECT
+			FN_GET_SPECIAL_COST(P.ID, 'SKIP-JUDGE'),
+			FN_GET_SPECIAL_COST(P.ID, 'EXTRA-RESPONSE'),
+			FN_GET_SPECIAL_COST(P.ID, 'BLOCK-RESPONSE'),
+			FN_GET_SPECIAL_COST(P.ID, 'SURPRISE'),
+			FN_GET_SPECIAL_COST(P.ID, 'STEAL'),
+			FN_GET_SPECIAL_COST(P.ID, 'FIND'),
+			FN_GET_SPECIAL_COST(P.ID, 'WILD')
+		FROM PLAYER AS P
+		WHERE P.ID = ?
+	`
+	rows, err = query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.SpecialCostSkipBeingJudge,
+			&data.SpecialCostExtraResponse,
+			&data.SpecialCostBlockResponse,
+			&data.SpecialCostSurpriseCard,
+			&data.SpecialCostStealCard,
+			&data.SpecialCostFindCard,
+			&data.SpecialCostWildCard,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
 	}
 
 	return data, nil
