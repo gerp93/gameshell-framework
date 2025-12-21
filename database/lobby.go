@@ -914,37 +914,37 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		data.Opponents = append(data.Opponents, row)
 	}
 
-	data.SpecialCostSkipBeingJudge, err = getSpecialCost("SKIP-JUDGE")
+	data.SpecialCostSkipBeingJudge, err = getSpecialCost(playerId, "SKIP-JUDGE")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostExtraResponse, err = getSpecialCost("EXTRA-RESPONSE")
+	data.SpecialCostExtraResponse, err = getSpecialCost(playerId, "EXTRA-RESPONSE")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostBlockResponse, err = getSpecialCost("BLOCK-RESPONSE")
+	data.SpecialCostBlockResponse, err = getSpecialCost(playerId, "BLOCK-RESPONSE")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostSurpriseCard, err = getSpecialCost("SURPRISE")
+	data.SpecialCostSurpriseCard, err = getSpecialCost(playerId, "SURPRISE")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostStealCard, err = getSpecialCost("STEAL")
+	data.SpecialCostStealCard, err = getSpecialCost(playerId, "STEAL")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostFindCard, err = getSpecialCost("FIND")
+	data.SpecialCostFindCard, err = getSpecialCost(playerId, "FIND")
 	if err != nil {
 		return data, err
 	}
 
-	data.SpecialCostWildCard, err = getSpecialCost("WILD")
+	data.SpecialCostWildCard, err = getSpecialCost(playerId, "WILD")
 	if err != nil {
 		return data, err
 	}
@@ -952,9 +952,9 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	return data, nil
 }
 
-func getSpecialCost(category string) (int, error) {
-	sqlString := "SELECT FN_GET_SPECIAL_COST(?)"
-	rows, err := query(sqlString, category)
+func getSpecialCost(playerId uuid.UUID, category string) (int, error) {
+	sqlString := "SELECT FN_GET_SPECIAL_COST(?, ?)"
+	rows, err := query(sqlString, playerId, category)
 	if err != nil {
 		return 0, err
 	}
