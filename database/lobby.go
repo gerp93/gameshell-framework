@@ -79,6 +79,7 @@ type PlayerSpecialsData struct {
 	SpecialCostExtraResponse  int
 	SpecialCostBlockResponse  int
 	SpecialCostSurpriseCard   int
+	SpecialCostStealCard      int
 	SpecialCostFindCard       int
 	SpecialCostWildCard       int
 }
@@ -933,6 +934,11 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		return data, err
 	}
 
+	data.SpecialCostStealCard, err = getSpecialCost("STEAL")
+	if err != nil {
+		return data, err
+	}
+
 	data.SpecialCostFindCard, err = getSpecialCost("FIND")
 	if err != nil {
 		return data, err
@@ -1393,6 +1399,11 @@ func BlockResponse(playerId uuid.UUID, targetPlayerId uuid.UUID) error {
 
 func PlaySurpriseCard(playerId uuid.UUID) error {
 	sqlString := "CALL SP_RESPOND_WITH_SURPRISE_CARD (?)"
+	return execute(sqlString, playerId)
+}
+
+func PlayStealCard(playerId uuid.UUID) error {
+	sqlString := "CALL SP_RESPOND_WITH_STEAL_CARD (?)"
 	return execute(sqlString, playerId)
 }
 
