@@ -68,6 +68,7 @@ type PlayerSpecialsData struct {
 	PlayerId               uuid.UUID
 	PlayerIsJudge          bool
 	PlayerIsReady          bool
+	PlayerHandicap         int
 	PlayerWinningStreak    int
 	PlayerLosingStreak     int
 	PlayerCreditsSpent     int
@@ -761,6 +762,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			L.LOSE_STREAK_THRESHOLD AS LOBBY_LOSE_STREAK_THRESHOLD,
 			P.ID AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			FN_GET_PLAYER_HANDICAP(P.ID) AS PLAYER_HANDICAP,
 			P.WINNING_STREAK AS PLAYER_WINNING_STREAK,
 			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
@@ -785,6 +787,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.LobbyLoseStreakThreshold,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
+			&data.PlayerHandicap,
 			&data.PlayerWinningStreak,
 			&data.PlayerLosingStreak,
 			&data.PlayerCreditsSpent,
@@ -916,17 +919,15 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 
 	sqlString = `
 		SELECT
-			FN_GET_SPECIAL_COST(P.ID, 'SKIP-JUDGE'),
-			FN_GET_SPECIAL_COST(P.ID, 'EXTRA-RESPONSE'),
-			FN_GET_SPECIAL_COST(P.ID, 'BLOCK-RESPONSE'),
-			FN_GET_SPECIAL_COST(P.ID, 'SURPRISE'),
-			FN_GET_SPECIAL_COST(P.ID, 'STEAL'),
-			FN_GET_SPECIAL_COST(P.ID, 'FIND'),
-			FN_GET_SPECIAL_COST(P.ID, 'WILD')
-		FROM PLAYER AS P
-		WHERE P.ID = ?
+			FN_GET_SPECIAL_COST('SKIP-JUDGE'),
+			FN_GET_SPECIAL_COST('EXTRA-RESPONSE'),
+			FN_GET_SPECIAL_COST('BLOCK-RESPONSE'),
+			FN_GET_SPECIAL_COST('SURPRISE'),
+			FN_GET_SPECIAL_COST('STEAL'),
+			FN_GET_SPECIAL_COST('FIND'),
+			FN_GET_SPECIAL_COST('WILD')
 	`
-	rows, err = query(sqlString, playerId)
+	rows, err = query(sqlString)
 	if err != nil {
 		return data, err
 	}
@@ -946,6 +947,14 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 	}
+
+	data.SpecialCostSkipBeingJudge += data.PlayerHandicap
+	data.SpecialCostExtraResponse += data.PlayerHandicap
+	data.SpecialCostBlockResponse += data.PlayerHandicap
+	data.SpecialCostSurpriseCard += data.PlayerHandicap
+	data.SpecialCostStealCard += data.PlayerHandicap
+	data.SpecialCostFindCard += data.PlayerHandicap
+	data.SpecialCostWildCard += data.PlayerHandicap
 
 	return data, nil
 }
