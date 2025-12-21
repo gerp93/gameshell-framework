@@ -43,6 +43,7 @@ var SQLFiles = []string{
 	"sql/functions/FN_GET_DRAW_PILE_CARD_ID.sql",
 	"sql/functions/FN_GET_LOBBY_JUDGE_PLAYER_ID.sql",
 	"sql/functions/FN_GET_LOGIN_ATTEMPT_IS_ALLOWED.sql",
+	"sql/functions/FN_GET_SPECIAL_COST.sql",
 	"sql/functions/FN_USER_HAS_DECK_ACCESS.sql",
 	"sql/functions/FN_USER_HAS_LOBBY_ACCESS.sql",
 

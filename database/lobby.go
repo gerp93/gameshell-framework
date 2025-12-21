@@ -913,14 +913,56 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 		data.Opponents = append(data.Opponents, row)
 	}
 
-	data.SpecialCostSkipBeingJudge = 5
-	data.SpecialCostExtraResponse = 2
-	data.SpecialCostBlockResponse = 2
-	data.SpecialCostSurpriseCard = 1
-	data.SpecialCostFindCard = 2
-	data.SpecialCostWildCard = 3
+	data.SpecialCostSkipBeingJudge, err = getSpecialCost("SKIP-JUDGE")
+	if err != nil {
+		return data, err
+	}
+
+	data.SpecialCostExtraResponse, err = getSpecialCost("EXTRA-RESPONSE")
+	if err != nil {
+		return data, err
+	}
+
+	data.SpecialCostBlockResponse, err = getSpecialCost("BLOCK-RESPONSE")
+	if err != nil {
+		return data, err
+	}
+
+	data.SpecialCostSurpriseCard, err = getSpecialCost("SURPRISE")
+	if err != nil {
+		return data, err
+	}
+
+	data.SpecialCostFindCard, err = getSpecialCost("FIND")
+	if err != nil {
+		return data, err
+	}
+
+	data.SpecialCostWildCard, err = getSpecialCost("WILD")
+	if err != nil {
+		return data, err
+	}
 
 	return data, nil
+}
+
+func getSpecialCost(category string) (int, error) {
+	sqlString := "SELECT FN_GET_SPECIAL_COST(?)"
+	rows, err := query(sqlString, category)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	cost := 0
+	for rows.Next() {
+		if err := rows.Scan(&cost); err != nil {
+			log.Println(err)
+			return 0, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return cost, nil
 }
 
 func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
