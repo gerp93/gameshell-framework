@@ -76,6 +76,8 @@ type PlayerSpecialsData struct {
 	PlayerExtraResponses   int
 	PlayerCreditsRemaining int
 
+	CreditHistory []creditHistoryData
+
 	SpecialCostSkipBeingJudge int
 	SpecialCostExtraResponse  int
 	SpecialCostBlockResponse  int
@@ -119,6 +121,11 @@ type LobbyGameStatsData struct {
 type opponentData struct {
 	PlayerId uuid.UUID
 	UserName string
+}
+
+type creditHistoryData struct {
+	Category      string
+	BalanceChange int
 }
 
 type boardResponse struct {
@@ -915,6 +922,35 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 		data.Opponents = append(data.Opponents, row)
+	}
+
+	sqlString = `
+		SELECT
+			LCS.CATEGORY,
+			LCS.AMOUNT * -1 AS BALANCE_CHANGE
+		FROM LOG_CREDITS_SPENT AS LCS
+			INNER JOIN PLAYER AS P ON P.USER_ID = LCS.USER_ID
+		WHERE P.ID = ?
+			AND LCS.CREATED_ON_DATE >= DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
+		ORDER BY LCS.CREATED_ON_DATE DESC
+		LIMIT 10
+	`
+	rows, err = query(sqlString, playerId)
+	if err != nil {
+		return data, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var row creditHistoryData
+		if err := rows.Scan(
+			&row.Category,
+			&row.BalanceChange,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+		data.CreditHistory = append(data.CreditHistory, row)
 	}
 
 	sqlString = `
