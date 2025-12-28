@@ -85,6 +85,7 @@ type PlayerSpecialsData struct {
 	SpecialCostStealCard      int
 	SpecialCostFindCard       int
 	SpecialCostWildCard       int
+	SpecialCostPerk           int
 }
 
 type LobbyGameBoardData struct {
@@ -961,7 +962,8 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			FN_GET_SPECIAL_COST('SURPRISE'),
 			FN_GET_SPECIAL_COST('STEAL'),
 			FN_GET_SPECIAL_COST('FIND'),
-			FN_GET_SPECIAL_COST('WILD')
+			FN_GET_SPECIAL_COST('WILD'),
+			FN_GET_SPECIAL_COST('PERK')
 	`
 	rows, err = query(sqlString)
 	if err != nil {
@@ -978,6 +980,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.SpecialCostStealCard,
 			&data.SpecialCostFindCard,
 			&data.SpecialCostWildCard,
+			&data.SpecialCostPerk,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -991,6 +994,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	data.SpecialCostStealCard += data.PlayerHandicap
 	data.SpecialCostFindCard += data.PlayerHandicap
 	data.SpecialCostWildCard += data.PlayerHandicap
+	data.SpecialCostPerk += data.PlayerHandicap
 
 	return data, nil
 }
@@ -1439,6 +1443,21 @@ func PlayFindCard(playerId uuid.UUID, cardId uuid.UUID) error {
 func PlayWildCard(playerId uuid.UUID, text string) error {
 	sqlString := "CALL SP_RESPOND_WITH_WILD_CARD (?, ?)"
 	return execute(sqlString, playerId, text)
+}
+
+func PerkLargerHand(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_LARGER_HAND (?)"
+	return execute(sqlString, playerId)
+}
+
+func PerkSmallerHandicap(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_SMALLER_HANDICAP (?)"
+	return execute(sqlString, playerId)
+}
+
+func PerkGambleAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_GAMBLE_ADVANTAGE (?)"
+	return execute(sqlString, playerId)
 }
 
 func WithdrawCard(responseCardId uuid.UUID) error {

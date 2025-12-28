@@ -12,16 +12,19 @@ type Player struct {
 	Id            uuid.UUID
 	CreatedOnDate time.Time
 
-	Name           string
-	LobbyId        uuid.UUID
-	UserId         uuid.UUID
-	JoinOrder      int
-	IsActive       bool
-	WinningStreak  int
-	LosingStreak   int
-	CreditsSpent   int
-	BetOnWin       int
-	ExtraResponses int
+	Name                string
+	LobbyId             uuid.UUID
+	UserId              uuid.UUID
+	JoinOrder           int
+	IsActive            bool
+	WinningStreak       int
+	LosingStreak        int
+	CreditsSpent        int
+	BetOnWin            int
+	ExtraResponses      int
+	LargerHandSize      int
+	SmallerHandicapSize int
+	GambleAdvantageSize int
 }
 
 func GetPlayer(playerId uuid.UUID) (Player, error) {
@@ -40,7 +43,10 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.LOSING_STREAK,
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
-			P.EXTRA_RESPONSES
+			P.EXTRA_RESPONSES,
+			P.LARGER_HAND_SIZE,
+			P.SMALLER_HANDICAP_SIZE,
+			P.GAMBLE_ADVANTAGE_SIZE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.ID = ?
@@ -64,7 +70,11 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.LosingStreak,
 			&player.CreditsSpent,
 			&player.BetOnWin,
-			&player.ExtraResponses); err != nil {
+			&player.ExtraResponses,
+			&player.LargerHandSize,
+			&player.SmallerHandicapSize,
+			&player.GambleAdvantageSize,
+		); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}
@@ -89,7 +99,10 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.LOSING_STREAK,
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
-			P.EXTRA_RESPONSES
+			P.EXTRA_RESPONSES,
+			P.LARGER_HAND_SIZE,
+			P.SMALLER_HANDICAP_SIZE,
+			P.GAMBLE_ADVANTAGE_SIZE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
@@ -114,7 +127,11 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.LosingStreak,
 			&player.CreditsSpent,
 			&player.BetOnWin,
-			&player.ExtraResponses); err != nil {
+			&player.ExtraResponses,
+			&player.LargerHandSize,
+			&player.SmallerHandicapSize,
+			&player.GambleAdvantageSize,
+		); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
 		}
