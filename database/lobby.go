@@ -1455,6 +1455,11 @@ func PerkSmallerHandicap(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
+func PerkGambleAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_GAMBLE_ADVANTAGE (?)"
+	return execute(sqlString, playerId)
+}
+
 func WithdrawCard(responseCardId uuid.UUID) error {
 	sqlString := "CALL SP_WITHDRAW_CARD (?)"
 	return execute(sqlString, responseCardId)
