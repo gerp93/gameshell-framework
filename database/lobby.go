@@ -1451,8 +1451,8 @@ func PlayWildCard(playerId uuid.UUID, text string) error {
 	return execute(sqlString, playerId, text)
 }
 
-func PerkLargerHand(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PERK_LARGER_HAND (?)"
+func PerkHandSizeAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_HAND_SIZE_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 

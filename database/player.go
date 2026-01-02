@@ -22,7 +22,7 @@ type Player struct {
 	CreditsSpent      int
 	BetOnWin          int
 	ExtraResponses    int
-	LargerHandSize    int
+	HandSizeAdvantage int
 	HandicapAdvantage int
 	GambleAdvantage   bool
 }
@@ -44,7 +44,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
 			P.EXTRA_RESPONSES,
-			P.LARGER_HAND_SIZE,
+			P.HAND_SIZE_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
@@ -71,7 +71,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.CreditsSpent,
 			&player.BetOnWin,
 			&player.ExtraResponses,
-			&player.LargerHandSize,
+			&player.HandSizeAdvantage,
 			&player.HandicapAdvantage,
 			&player.GambleAdvantage,
 		); err != nil {
@@ -100,7 +100,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.CREDITS_SPENT,
 			P.BET_ON_WIN,
 			P.EXTRA_RESPONSES,
-			P.LARGER_HAND_SIZE,
+			P.HAND_SIZE_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
@@ -128,7 +128,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.CreditsSpent,
 			&player.BetOnWin,
 			&player.ExtraResponses,
-			&player.LargerHandSize,
+			&player.HandSizeAdvantage,
 			&player.HandicapAdvantage,
 			&player.GambleAdvantage,
 		); err != nil {
