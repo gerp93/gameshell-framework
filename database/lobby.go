@@ -65,17 +65,18 @@ type PlayerSpecialsData struct {
 
 	Opponents []opponentData
 
-	PlayerId               uuid.UUID
-	PlayerIsJudge          bool
-	PlayerIsReady          bool
-	PlayerHandicap         int
-	PlayerWinningStreak    int
-	PlayerLosingStreak     int
-	PlayerCreditsSpent     int
-	PlayerBetOnWin         int
-	PlayerExtraResponses   int
-	PlayerGambleAdvantage  bool
-	PlayerCreditsRemaining int
+	PlayerId                uuid.UUID
+	PlayerIsJudge           bool
+	PlayerIsReady           bool
+	PlayerHandicap          int
+	PlayerWinningStreak     int
+	PlayerLosingStreak      int
+	PlayerCreditsSpent      int
+	PlayerBetOnWin          int
+	PlayerExtraResponses    int
+	PlayerHandicapAdvantage bool
+	PlayerGambleAdvantage   bool
+	PlayerCreditsRemaining  int
 
 	CreditHistory []creditHistoryData
 
@@ -777,6 +778,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
 			P.BET_ON_WIN AS PLAYER_BET_ON_WIN,
 			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES,
+			P.HANDICAP_ADVANTAGE AS PLAYER_HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE AS PLAYER_GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
@@ -803,6 +805,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.PlayerCreditsSpent,
 			&data.PlayerBetOnWin,
 			&data.PlayerExtraResponses,
+			&data.PlayerHandicapAdvantage,
 			&data.PlayerGambleAdvantage,
 		); err != nil {
 			log.Println(err)
@@ -1453,8 +1456,8 @@ func PerkLargerHand(playerId uuid.UUID) error {
 	return execute(sqlString, playerId)
 }
 
-func PerkSmallerHandicap(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PERK_SMALLER_HANDICAP (?)"
+func PerkHandicapAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_HANDICAP_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 

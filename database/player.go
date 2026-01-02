@@ -12,19 +12,19 @@ type Player struct {
 	Id            uuid.UUID
 	CreatedOnDate time.Time
 
-	Name                string
-	LobbyId             uuid.UUID
-	UserId              uuid.UUID
-	JoinOrder           int
-	IsActive            bool
-	WinningStreak       int
-	LosingStreak        int
-	CreditsSpent        int
-	BetOnWin            int
-	ExtraResponses      int
-	LargerHandSize      int
-	SmallerHandicapSize int
-	GambleAdvantage     bool
+	Name              string
+	LobbyId           uuid.UUID
+	UserId            uuid.UUID
+	JoinOrder         int
+	IsActive          bool
+	WinningStreak     int
+	LosingStreak      int
+	CreditsSpent      int
+	BetOnWin          int
+	ExtraResponses    int
+	LargerHandSize    int
+	HandicapAdvantage int
+	GambleAdvantage   bool
 }
 
 func GetPlayer(playerId uuid.UUID) (Player, error) {
@@ -45,7 +45,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.BET_ON_WIN,
 			P.EXTRA_RESPONSES,
 			P.LARGER_HAND_SIZE,
-			P.SMALLER_HANDICAP_SIZE,
+			P.HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
@@ -72,7 +72,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.BetOnWin,
 			&player.ExtraResponses,
 			&player.LargerHandSize,
-			&player.SmallerHandicapSize,
+			&player.HandicapAdvantage,
 			&player.GambleAdvantage,
 		); err != nil {
 			log.Println(err)
@@ -101,7 +101,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.BET_ON_WIN,
 			P.EXTRA_RESPONSES,
 			P.LARGER_HAND_SIZE,
-			P.SMALLER_HANDICAP_SIZE,
+			P.HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
@@ -129,7 +129,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.BetOnWin,
 			&player.ExtraResponses,
 			&player.LargerHandSize,
-			&player.SmallerHandicapSize,
+			&player.HandicapAdvantage,
 			&player.GambleAdvantage,
 		); err != nil {
 			log.Println(err)
