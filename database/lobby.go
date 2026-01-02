@@ -74,6 +74,7 @@ type PlayerSpecialsData struct {
 	PlayerCreditsSpent     int
 	PlayerBetOnWin         int
 	PlayerExtraResponses   int
+	PlayerGambleAdvantage  bool
 	PlayerCreditsRemaining int
 
 	CreditHistory []creditHistoryData
@@ -775,7 +776,8 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
 			P.BET_ON_WIN AS PLAYER_BET_ON_WIN,
-			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES
+			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES,
+			P.GAMBLE_ADVANTAGE AS PLAYER_GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
@@ -801,6 +803,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.PlayerCreditsSpent,
 			&data.PlayerBetOnWin,
 			&data.PlayerExtraResponses,
+			&data.PlayerGambleAdvantage,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")

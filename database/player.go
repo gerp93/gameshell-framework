@@ -24,7 +24,7 @@ type Player struct {
 	ExtraResponses      int
 	LargerHandSize      int
 	SmallerHandicapSize int
-	GambleAdvantageSize int
+	GambleAdvantage     bool
 }
 
 func GetPlayer(playerId uuid.UUID) (Player, error) {
@@ -46,7 +46,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.EXTRA_RESPONSES,
 			P.LARGER_HAND_SIZE,
 			P.SMALLER_HANDICAP_SIZE,
-			P.GAMBLE_ADVANTAGE_SIZE
+			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.ID = ?
@@ -73,7 +73,7 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.ExtraResponses,
 			&player.LargerHandSize,
 			&player.SmallerHandicapSize,
-			&player.GambleAdvantageSize,
+			&player.GambleAdvantage,
 		); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
@@ -102,7 +102,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.EXTRA_RESPONSES,
 			P.LARGER_HAND_SIZE,
 			P.SMALLER_HANDICAP_SIZE,
-			P.GAMBLE_ADVANTAGE_SIZE
+			P.GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
@@ -130,7 +130,7 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.ExtraResponses,
 			&player.LargerHandSize,
 			&player.SmallerHandicapSize,
-			&player.GambleAdvantageSize,
+			&player.GambleAdvantage,
 		); err != nil {
 			log.Println(err)
 			return player, errors.New("failed to scan row in query results")
