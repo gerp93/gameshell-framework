@@ -47,10 +47,11 @@ type LobbyGameInfo struct {
 type PlayerHandData struct {
 	LobbyId uuid.UUID
 
-	PlayerId      uuid.UUID
-	PlayerIsJudge bool
-	PlayerIsReady bool
-	PlayerHand    []Card
+	PlayerId               uuid.UUID
+	PlayerIsJudge          bool
+	PlayerDiscardAdvantage bool
+	PlayerIsReady          bool
+	PlayerHand             []Card
 }
 
 type PlayerSpecialsData struct {
@@ -74,6 +75,7 @@ type PlayerSpecialsData struct {
 	PlayerCreditsSpent      int
 	PlayerBetOnWin          int
 	PlayerExtraResponses    int
+	PlayerDiscardAdvantage  bool
 	PlayerHandicapAdvantage bool
 	PlayerGambleAdvantage   bool
 	PlayerCreditsRemaining  int
@@ -663,7 +665,8 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 		SELECT
 			L.ID AS LOBBY_ID,
 			P.ID AS PLAYER_ID,
-			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			P.DISCARD_ADVANTAGE AS PLAYER_DISCARD_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 		WHERE P.ID = ?
@@ -679,6 +682,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 			&data.LobbyId,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
+			&data.PlayerDiscardAdvantage,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -778,6 +782,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
 			P.BET_ON_WIN AS PLAYER_BET_ON_WIN,
 			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES,
+			P.DISCARD_ADVANTAGE AS PLAYER_DISCARD_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE AS PLAYER_HANDICAP_ADVANTAGE,
 			P.GAMBLE_ADVANTAGE AS PLAYER_GAMBLE_ADVANTAGE
 		FROM PLAYER AS P
@@ -805,6 +810,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.PlayerCreditsSpent,
 			&data.PlayerBetOnWin,
 			&data.PlayerExtraResponses,
+			&data.PlayerDiscardAdvantage,
 			&data.PlayerHandicapAdvantage,
 			&data.PlayerGambleAdvantage,
 		); err != nil {
@@ -1453,6 +1459,11 @@ func PlayWildCard(playerId uuid.UUID, text string) error {
 
 func PerkHandSizeAdvantage(playerId uuid.UUID) error {
 	sqlString := "CALL SP_PERK_HAND_SIZE_ADVANTAGE (?)"
+	return execute(sqlString, playerId)
+}
+
+func PerkDiscardAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_DISCARD_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 
