@@ -47,10 +47,11 @@ type LobbyGameInfo struct {
 type PlayerHandData struct {
 	LobbyId uuid.UUID
 
-	PlayerId      uuid.UUID
-	PlayerIsJudge bool
-	PlayerIsReady bool
-	PlayerHand    []Card
+	PlayerId               uuid.UUID
+	PlayerIsJudge          bool
+	PlayerDiscardAdvantage bool
+	PlayerIsReady          bool
+	PlayerHand             []Card
 }
 
 type PlayerSpecialsData struct {
@@ -65,16 +66,20 @@ type PlayerSpecialsData struct {
 
 	Opponents []opponentData
 
-	PlayerId               uuid.UUID
-	PlayerIsJudge          bool
-	PlayerIsReady          bool
-	PlayerHandicap         int
-	PlayerWinningStreak    int
-	PlayerLosingStreak     int
-	PlayerCreditsSpent     int
-	PlayerBetOnWin         int
-	PlayerExtraResponses   int
-	PlayerCreditsRemaining int
+	PlayerId                uuid.UUID
+	PlayerIsJudge           bool
+	PlayerIsReady           bool
+	PlayerHandicap          int
+	PlayerWinningStreak     int
+	PlayerLosingStreak      int
+	PlayerCreditsSpent      int
+	PlayerBetOnWin          int
+	PlayerExtraResponses    int
+	PlayerDiscardAdvantage  bool
+	PlayerHandicapAdvantage bool
+	PlayerGambleAdvantage   bool
+	PlayerSpyAdvantage      bool
+	PlayerCreditsRemaining  int
 
 	CreditHistory []creditHistoryData
 
@@ -112,9 +117,11 @@ type LobbyGameBoardData struct {
 type LobbyGameStatsData struct {
 	LobbyId uuid.UUID
 
-	PlayerId uuid.UUID
+	PlayerId           uuid.UUID
+	PlayerSpyAdvantage bool
 
 	Wins           []nameCountRow
+	Credits        []nameCountRow
 	UpcomingJudges []string
 	KickVotes      []kickVote
 }
@@ -475,31 +482,6 @@ func GetLobbyId(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func GetPlayerLobbyId(playerId uuid.UUID) (uuid.UUID, error) {
-	var id uuid.UUID
-
-	sqlString := `
-		SELECT
-			LOBBY_ID
-		FROM PLAYER
-		WHERE ID = ?
-	`
-	rows, err := query(sqlString, playerId)
-	if err != nil {
-		return id, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		if err := rows.Scan(&id); err != nil {
-			log.Println(err)
-			return id, errors.New("failed to scan row in query results")
-		}
-	}
-
-	return id, nil
-}
-
 func SetLobbyName(id uuid.UUID, name string) error {
 	sqlString := `
 		UPDATE LOBBY
@@ -661,7 +643,8 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 		SELECT
 			L.ID AS LOBBY_ID,
 			P.ID AS PLAYER_ID,
-			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
+			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE,
+			P.DISCARD_ADVANTAGE AS PLAYER_DISCARD_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 		WHERE P.ID = ?
@@ -677,6 +660,7 @@ func GetPlayerHandData(playerId uuid.UUID) (PlayerHandData, error) {
 			&data.LobbyId,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
+			&data.PlayerDiscardAdvantage,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -775,7 +759,11 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.LOSING_STREAK AS PLAYER_LOSING_STREAK,
 			P.CREDITS_SPENT AS PLAYER_CREDITS_SPENT,
 			P.BET_ON_WIN AS PLAYER_BET_ON_WIN,
-			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES
+			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES,
+			P.DISCARD_ADVANTAGE AS PLAYER_DISCARD_ADVANTAGE,
+			P.HANDICAP_ADVANTAGE AS PLAYER_HANDICAP_ADVANTAGE,
+			P.GAMBLE_ADVANTAGE AS PLAYER_GAMBLE_ADVANTAGE,
+			P.SPY_ADVANTAGE AS PLAYER_SPY_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
 			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
@@ -801,6 +789,10 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.PlayerCreditsSpent,
 			&data.PlayerBetOnWin,
 			&data.PlayerExtraResponses,
+			&data.PlayerDiscardAdvantage,
+			&data.PlayerHandicapAdvantage,
+			&data.PlayerGambleAdvantage,
+			&data.PlayerSpyAdvantage,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
@@ -1244,14 +1236,32 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 	var data LobbyGameStatsData
 
-	data.PlayerId = playerId
-	lobbyId, err := GetPlayerLobbyId(playerId)
+	sqlString := `
+		SELECT
+			P.LOBBY_ID AS LOBBY_ID,
+			P.ID AS PLAYER_ID,
+			P.SPY_ADVANTAGE AS PLAYER_SPY_ADVANTAGE
+		FROM PLAYER AS P
+		WHERE P.ID = ?
+	`
+	rows, err := query(sqlString, playerId)
 	if err != nil {
 		return data, err
 	}
-	data.LobbyId = lobbyId
+	defer rows.Close()
 
-	sqlString := `
+	for rows.Next() {
+		if err := rows.Scan(
+			&data.LobbyId,
+			&data.PlayerId,
+			&data.PlayerSpyAdvantage,
+		); err != nil {
+			log.Println(err)
+			return data, errors.New("failed to scan row in query results")
+		}
+	}
+
+	sqlString = `
 		SELECT
 			U.NAME AS USER_NAME,
 			COUNT(W.ID) AS WINS
@@ -1264,7 +1274,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 		ORDER BY COUNT(W.ID) DESC,
 			U.NAME ASC
 	`
-	rows, err := query(sqlString, data.LobbyId)
+	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
 		return data, err
 	}
@@ -1277,6 +1287,35 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 			return data, errors.New("failed to scan row in query results")
 		}
 		data.Wins = append(data.Wins, row)
+	}
+
+	if data.PlayerSpyAdvantage {
+		sqlString = `
+			SELECT
+				U.NAME AS USER_NAME,
+				L.FREE_CREDITS - P.CREDITS_SPENT AS CREDITS
+			FROM PLAYER AS P
+				INNER JOIN USER AS U ON U.ID = P.USER_ID
+				INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
+			WHERE P.LOBBY_ID = ?
+				AND P.IS_ACTIVE = 1
+			ORDER BY CREDITS DESC,
+				U.NAME ASC
+		`
+		rows, err = query(sqlString, data.LobbyId)
+		if err != nil {
+			return data, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var row nameCountRow
+			if err := rows.Scan(&row.Name, &row.Count); err != nil {
+				log.Println(err)
+				return data, errors.New("failed to scan row in query results")
+			}
+			data.Credits = append(data.Credits, row)
+		}
 	}
 
 	sqlString = `
@@ -1445,18 +1484,28 @@ func PlayWildCard(playerId uuid.UUID, text string) error {
 	return execute(sqlString, playerId, text)
 }
 
-func PerkLargerHand(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PERK_LARGER_HAND (?)"
+func PerkHandSizeAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_HAND_SIZE_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 
-func PerkSmallerHandicap(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PERK_SMALLER_HANDICAP (?)"
+func PerkDiscardAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_DISCARD_ADVANTAGE (?)"
+	return execute(sqlString, playerId)
+}
+
+func PerkHandicapAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_HANDICAP_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 
 func PerkGambleAdvantage(playerId uuid.UUID) error {
 	sqlString := "CALL SP_PERK_GAMBLE_ADVANTAGE (?)"
+	return execute(sqlString, playerId)
+}
+
+func PerkSpyAdvantage(playerId uuid.UUID) error {
+	sqlString := "CALL SP_PERK_SPY_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 
