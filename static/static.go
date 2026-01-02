@@ -65,6 +65,7 @@ var SQLFiles = []string{
 	"sql/procedures/SP_PERK_GAMBLE_ADVANTAGE.sql",
 	"sql/procedures/SP_PERK_HANDICAP_ADVANTAGE.sql",
 	"sql/procedures/SP_PERK_HAND_SIZE_ADVANTAGE.sql",
+	"sql/procedures/SP_PERK_SPY_ADVANTAGE.sql",
 	"sql/procedures/SP_PICK_RANDOM_WINNER.sql",
 	"sql/procedures/SP_PICK_WINNER.sql",
 	"sql/procedures/SP_PURCHASE_CREDITS.sql",
