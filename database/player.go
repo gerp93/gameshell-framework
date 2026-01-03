@@ -25,7 +25,6 @@ type Player struct {
 	HandSizeAdvantage int
 	DiscardAdvantage  bool
 	HandicapAdvantage bool
-	GambleAdvantage   bool
 	SpyAdvantage      bool
 }
 
@@ -49,7 +48,6 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			P.HAND_SIZE_ADVANTAGE,
 			P.DISCARD_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE,
-			P.GAMBLE_ADVANTAGE,
 			P.SPY_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
@@ -78,7 +76,6 @@ func GetPlayer(playerId uuid.UUID) (Player, error) {
 			&player.HandSizeAdvantage,
 			&player.DiscardAdvantage,
 			&player.HandicapAdvantage,
-			&player.GambleAdvantage,
 			&player.SpyAdvantage,
 		); err != nil {
 			log.Println(err)
@@ -109,7 +106,6 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			P.HAND_SIZE_ADVANTAGE,
 			P.DISCARD_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE,
-			P.GAMBLE_ADVANTAGE,
 			P.SPY_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
@@ -139,7 +135,6 @@ func GetLobbyUserPlayer(lobbyId uuid.UUID, userId uuid.UUID) (Player, error) {
 			&player.HandSizeAdvantage,
 			&player.DiscardAdvantage,
 			&player.HandicapAdvantage,
-			&player.GambleAdvantage,
 			&player.SpyAdvantage,
 		); err != nil {
 			log.Println(err)

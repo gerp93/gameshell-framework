@@ -77,7 +77,6 @@ type PlayerSpecialsData struct {
 	PlayerExtraResponses    int
 	PlayerDiscardAdvantage  bool
 	PlayerHandicapAdvantage bool
-	PlayerGambleAdvantage   bool
 	PlayerSpyAdvantage      bool
 	PlayerCreditsRemaining  int
 
@@ -762,7 +761,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			P.EXTRA_RESPONSES AS PLAYER_EXTRA_RESPONSES,
 			P.DISCARD_ADVANTAGE AS PLAYER_DISCARD_ADVANTAGE,
 			P.HANDICAP_ADVANTAGE AS PLAYER_HANDICAP_ADVANTAGE,
-			P.GAMBLE_ADVANTAGE AS PLAYER_GAMBLE_ADVANTAGE,
 			P.SPY_ADVANTAGE AS PLAYER_SPY_ADVANTAGE
 		FROM PLAYER AS P
 			INNER JOIN LOBBY AS L ON L.ID = P.LOBBY_ID
@@ -791,7 +789,6 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			&data.PlayerExtraResponses,
 			&data.PlayerDiscardAdvantage,
 			&data.PlayerHandicapAdvantage,
-			&data.PlayerGambleAdvantage,
 			&data.PlayerSpyAdvantage,
 		); err != nil {
 			log.Println(err)
@@ -1496,11 +1493,6 @@ func PerkDiscardAdvantage(playerId uuid.UUID) error {
 
 func PerkHandicapAdvantage(playerId uuid.UUID) error {
 	sqlString := "CALL SP_PERK_HANDICAP_ADVANTAGE (?)"
-	return execute(sqlString, playerId)
-}
-
-func PerkGambleAdvantage(playerId uuid.UUID) error {
-	sqlString := "CALL SP_PERK_GAMBLE_ADVANTAGE (?)"
 	return execute(sqlString, playerId)
 }
 
