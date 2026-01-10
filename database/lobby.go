@@ -844,7 +844,7 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
-		if betOnWin > 0 || extraResponse > 0 || specialCategory.Valid {
+		if betOnWin > 0 || extraResponse != 0 || specialCategory.Valid {
 			data.BoardHasAnySpecial = true
 			break
 		}
@@ -1169,7 +1169,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
-		if betOnWin > 0 || extraResponse > 0 || specialCategory.Valid {
+		if betOnWin > 0 || extraResponse != 0 || specialCategory.Valid {
 			data.BoardHasAnySpecial = true
 			break
 		}
