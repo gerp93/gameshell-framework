@@ -1365,7 +1365,6 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 			) AS VOTED
 		FROM PLAYER AS P
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
-			LEFT JOIN KICK AS K ON K.SUBJECT_PLAYER_ID = P.ID
 		WHERE P.IS_ACTIVE = 1
 			AND P.ID <> ?
 			AND P.LOBBY_ID = ?
