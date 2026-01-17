@@ -25,6 +25,7 @@ var SQLFiles = []string{
 	"sql/tables/RESPONSE_CARD.sql",
 	"sql/tables/REVIEW_CARD.sql",
 	"sql/tables/WIN.sql",
+	"sql/tables/CREDITS_SPENT.sql",
 	"sql/tables/KICK.sql",
 	"sql/tables/USER_ACCESS_DECK.sql",
 	"sql/tables/USER_ACCESS_LOBBY.sql",
