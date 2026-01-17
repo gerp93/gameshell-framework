@@ -816,39 +816,28 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 
 	sqlString = `
 		SELECT
-			P.BET_ON_WIN,
-			P.EXTRA_RESPONSES,
-			RC.SPECIAL_CATEGORY
+			1
 		FROM PLAYER AS P
-			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
-			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			INNER JOIN CREDITS_SPENT AS C ON C.PLAYER_ID = P.ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
+			AND C.CATEGORY IN (
+				'BET',
+				'EXTRA-RESPONSE',
+				'BLOCK-RESPONSE',
+				'STEAL',
+				'SURPRISE',
+				'FIND',
+				'WILD'
+			)
+		LIMIT 1
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
 		return data, err
 	}
 	defer rows.Close()
-
-	data.BoardHasAnySpecial = false
-	for rows.Next() {
-		var betOnWin int
-		var extraResponse int
-		var specialCategory sql.NullString
-		if err := rows.Scan(
-			&betOnWin,
-			&extraResponse,
-			&specialCategory,
-		); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		if betOnWin > 0 || extraResponse != 0 || specialCategory.Valid {
-			data.BoardHasAnySpecial = true
-			break
-		}
-	}
+	data.BoardHasAnySpecial = rows.Next()
 
 	sqlString = `
 		SELECT
@@ -1141,39 +1130,28 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 
 	sqlString = `
 		SELECT
-			P.BET_ON_WIN,
-			P.EXTRA_RESPONSES,
-			RC.SPECIAL_CATEGORY
+			1
 		FROM PLAYER AS P
-			LEFT JOIN RESPONSE AS R ON R.PLAYER_ID = P.ID
-			LEFT JOIN RESPONSE_CARD AS RC ON RC.RESPONSE_ID = R.ID
+			INNER JOIN CREDITS_SPENT AS C ON C.PLAYER_ID = P.ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
+			AND C.CATEGORY IN (
+				'BET',
+				'EXTRA-RESPONSE',
+				'BLOCK-RESPONSE',
+				'STEAL',
+				'SURPRISE',
+				'FIND',
+				'WILD'
+			)
+		LIMIT 1
 	`
 	rows, err = query(sqlString, data.LobbyId)
 	if err != nil {
 		return data, err
 	}
 	defer rows.Close()
-
-	data.BoardHasAnySpecial = false
-	for rows.Next() {
-		var betOnWin int
-		var extraResponse int
-		var specialCategory sql.NullString
-		if err := rows.Scan(
-			&betOnWin,
-			&extraResponse,
-			&specialCategory,
-		); err != nil {
-			log.Println(err)
-			return data, errors.New("failed to scan row in query results")
-		}
-		if betOnWin > 0 || extraResponse != 0 || specialCategory.Valid {
-			data.BoardHasAnySpecial = true
-			break
-		}
-	}
+	data.BoardHasAnySpecial = rows.Next()
 
 	data.BoardIsReady = totalCardsPlayedCount > 0
 
