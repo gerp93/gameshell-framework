@@ -42,6 +42,7 @@ func MiddlewareForPages(next http.Handler) http.Handler {
 
 		// required to be logged in
 		if r.URL.Path == "/account" ||
+			r.URL.Path == "/achivements" ||
 			r.URL.Path == "/users" ||
 			r.URL.Path == "/review" ||
 			r.URL.Path == "/lobbies" ||
