@@ -43,7 +43,9 @@ var SQLFiles = []string{
 
 	// views
 	"sql/views/V_ROUND_WINNER.sql",
+	"sql/views/V_ROUND_WINS.sql",
 	"sql/views/V_GAME_WINNER.sql",
+	"sql/views/V_GAME_WINS.sql",
 	"sql/views/V_ACHIEVEMENT.sql",
 
 	// functions
