@@ -361,6 +361,10 @@ tbody>tr:hover {
     color: var(--color-accent-blue);
 }
 
+progress {
+    accent-color: var(--color-accent-red);
+}
+
 .danger-zone {
     border-color: var(--color-accent-red);
     background-color: var(--color-bg-hover);
