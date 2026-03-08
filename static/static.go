@@ -42,7 +42,9 @@ var SQLFiles = []string{
 	"sql/tables/AUDIT_USER.sql",
 
 	// views
-	"sql/views/ACHIEVEMENT.sql",
+	"sql/views/V_ROUND_WINNER.sql",
+	"sql/views/V_GAME_WINNER.sql",
+	"sql/views/V_ACHIEVEMENT.sql",
 
 	// functions
 	"sql/functions/FN_GET_DRAW_PILE_CARD_ID.sql",
@@ -56,6 +58,7 @@ var SQLFiles = []string{
 	"sql/functions/FN_USER_HAS_LOBBY_ACCESS.sql",
 
 	// procedures
+	"sql/procedures/SP_ADD_ACHIEVEMENTS.sql",
 	"sql/procedures/SP_ADD_EXTRA_RESPONSE.sql",
 	"sql/procedures/SP_ADD_EXTRA_RESPONSE_UNDO.sql",
 	"sql/procedures/SP_ALERT_LOBBY.sql",
@@ -102,6 +105,7 @@ var SQLFiles = []string{
 	"sql/procedures/SP_WITHDRAW_RESPONSE.sql",
 
 	// events
+	"sql/events/EVT_ADD_ACHIEVEMENTS.sql",
 	"sql/events/EVT_CLEAN_BAD_PROMPT_CARDS.sql",
 	"sql/events/EVT_CLEAN_BAD_RESPONSE_CARDS.sql",
 	"sql/events/EVT_CLEAN_LOGIN_ATTEMPTS.sql",
@@ -116,7 +120,6 @@ var SQLFiles = []string{
 	"sql/triggers/TR_LOBBY_AFTER_DELETE.sql",
 	"sql/triggers/TR_LOBBY_AFTER_INSERT.sql",
 	"sql/triggers/TR_LOBBY_AFTER_UPDATE.sql",
-	"sql/triggers/TR_LOG_WIN_AFTER_INSERT.sql",
 	"sql/triggers/TR_PLAYER_AFTER_INSERT.sql",
 	"sql/triggers/TR_PLAYER_AFTER_UPDATE.sql",
 	"sql/triggers/TR_PLAYER_BEFORE_INSERT.sql",
