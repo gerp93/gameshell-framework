@@ -41,6 +41,9 @@ var SQLFiles = []string{
 	"sql/tables/AUDIT_DECK.sql",
 	"sql/tables/AUDIT_USER.sql",
 
+	// views
+	"sql/views/ACHIEVEMENT.sql",
+
 	// functions
 	"sql/functions/FN_GET_DRAW_PILE_CARD_ID.sql",
 	"sql/functions/FN_GET_LOBBY_JUDGE_PLAYER_ID.sql",
