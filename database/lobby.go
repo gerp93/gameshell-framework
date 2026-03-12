@@ -1512,6 +1512,11 @@ func VoteToKickUndo(voterPlayerId uuid.UUID, subjectPlayerId uuid.UUID) error {
 	return execute(sqlString, voterPlayerId, subjectPlayerId)
 }
 
+func FlipTable(playerId uuid.UUID) error {
+	sqlString := "CALL SP_FLIP_TABLE (?)"
+	return execute(sqlString, playerId)
+}
+
 func RevealResponse(responseId uuid.UUID) error {
 	sqlString := `
 		UPDATE RESPONSE
