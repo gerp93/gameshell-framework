@@ -46,7 +46,6 @@ var SQLFiles = []string{
 	"sql/views/V_ROUND_WINNER.sql",
 	"sql/views/V_GAME_WINNER.sql",
 	"sql/views/V_GAME_WINS.sql",
-	"sql/views/V_ACHIEVEMENT.sql",
 
 	// functions
 	"sql/functions/FN_GET_DRAW_PILE_CARD_ID.sql",
