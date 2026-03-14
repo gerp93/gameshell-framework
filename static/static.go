@@ -37,7 +37,6 @@ var SQLFiles = []string{
 	"sql/tables/LOG_WIN.sql",
 	"sql/tables/LOG_KICK.sql",
 	"sql/tables/LOG_FLIP_TABLE.sql",
-	"sql/tables/USER_ACHIEVEMENT.sql",
 	"sql/tables/AUDIT_CARD.sql",
 	"sql/tables/AUDIT_DECK.sql",
 	"sql/tables/AUDIT_USER.sql",
@@ -59,7 +58,6 @@ var SQLFiles = []string{
 	"sql/functions/FN_USER_HAS_LOBBY_ACCESS.sql",
 
 	// procedures
-	"sql/procedures/SP_ADD_ACHIEVEMENTS.sql",
 	"sql/procedures/SP_ADD_EXTRA_RESPONSE.sql",
 	"sql/procedures/SP_ADD_EXTRA_RESPONSE_UNDO.sql",
 	"sql/procedures/SP_ALERT_LOBBY.sql",
@@ -107,7 +105,6 @@ var SQLFiles = []string{
 	"sql/procedures/SP_WITHDRAW_RESPONSE.sql",
 
 	// events
-	"sql/events/EVT_ADD_ACHIEVEMENTS.sql",
 	"sql/events/EVT_CLEAN_BAD_PROMPT_CARDS.sql",
 	"sql/events/EVT_CLEAN_BAD_RESPONSE_CARDS.sql",
 	"sql/events/EVT_CLEAN_LOGIN_ATTEMPTS.sql",
