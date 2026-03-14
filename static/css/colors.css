@@ -365,7 +365,7 @@ progress {
     accent-color: var(--color-accent-red);
 }
 
-progress.done {
+progress.progress-full {
     accent-color: var(--color-accent-green);
 }
 
