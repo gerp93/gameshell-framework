@@ -365,6 +365,10 @@ progress {
     accent-color: var(--color-accent-red);
 }
 
+progress.done {
+    accent-color: var(--color-accent-green);
+}
+
 .danger-zone {
     border-color: var(--color-accent-red);
     background-color: var(--color-bg-hover);
