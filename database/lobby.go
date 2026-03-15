@@ -1320,6 +1320,7 @@ func GetLobbyGameStatsData(playerId uuid.UUID) (LobbyGameStatsData, error) {
 			INNER JOIN USER AS U ON U.ID = P.USER_ID
 		WHERE P.LOBBY_ID = ?
 			AND P.IS_ACTIVE = 1
+			AND P.ID <> J.PLAYER_ID
 		ORDER BY P.JOIN_ORDER <= J.POSITION,
 			P.JOIN_ORDER
 	`
