@@ -67,13 +67,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	var passwordConfirm string
 	var isPublicReadOnly bool
 	for key, val := range r.Form {
-		if key == "name" {
+		switch key {
+		case "name":
 			name = val[0]
-		} else if key == "password" {
+		case "password":
 			password = val[0]
-		} else if key == "passwordConfirm" {
+		case "passwordConfirm":
 			passwordConfirm = val[0]
-		} else if key == "isPublicReadOnly" {
+		case "isPublicReadOnly":
 			isPublicReadOnly = val[0] == "1"
 		}
 	}
@@ -246,11 +247,12 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 	var newPassword string
 	var newPasswordConfirm string
 	for key, val := range r.Form {
-		if key == "currentPassword" {
+		switch key {
+		case "currentPassword":
 			currentPassword = val[0]
-		} else if key == "newPassword" {
+		case "newPassword":
 			newPassword = val[0]
-		} else if key == "newPasswordConfirm" {
+		case "newPasswordConfirm":
 			newPasswordConfirm = val[0]
 		}
 	}
