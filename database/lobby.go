@@ -354,19 +354,33 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 	}
 }
 
-func SyncDecksInLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
-	if len(deckIds) == 0 {
-		return errors.New("cannot sync decks in lobby, no deck ids provided")
+func SyncDecksInLobby(lobbyId uuid.UUID, deckIdsPrompt []uuid.UUID, deckIdsResponse []uuid.UUID) error {
+	if len(deckIdsPrompt) == 0 {
+		return errors.New("cannot sync decks in lobby, no prompt deck ids provided")
+	}
+
+	if len(deckIdsResponse) == 0 {
+		return errors.New("cannot sync decks in lobby, no response deck ids provided")
 	}
 
 	var err error
 
-	err = addDecksToLobby(lobbyId, deckIds)
+	err = addDecksToLobby(lobbyId, deckIdsPrompt, "PROMPT")
 	if err != nil {
 		return err
 	}
 
-	err = removeDecksFromLobby(lobbyId, deckIds)
+	err = addDecksToLobby(lobbyId, deckIdsResponse, "RESPONSE")
+	if err != nil {
+		return err
+	}
+
+	err = removeDecksFromLobby(lobbyId, deckIdsPrompt, "PROMPT")
+	if err != nil {
+		return err
+	}
+
+	err = removeDecksFromLobby(lobbyId, deckIdsResponse, "RESPONSE")
 	if err != nil {
 		return err
 	}
@@ -374,30 +388,33 @@ func SyncDecksInLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	return nil
 }
 
-func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID, cardCategory string) error {
 	sqlString := fmt.Sprintf(`
-		INSERT INTO DRAW_PILE (LOBBY_ID, CARD_ID)
+		INSERT INTO DRAW_PILE(LOBBY_ID, CARD_ID)
 		SELECT
 			? AS LOBBY_ID,
 			C.ID AS CARD_ID
 		FROM CARD AS C
 			LEFT JOIN (
-					SELECT
-						DISTINCT
-						E_C.DECK_ID
-					FROM DRAW_PILE AS E_DP
-						INNER JOIN CARD AS E_C ON E_C.ID = E_DP.CARD_ID
-					WHERE E_DP.LOBBY_ID = ?
-				) AS E ON E.DECK_ID = C.DECK_ID
-		WHERE C.DECK_ID IN (%s)
+				SELECT DISTINCT
+					E_C.DECK_ID
+				FROM DRAW_PILE AS E_DP
+					INNER JOIN CARD AS E_C ON E_C.ID = E_DP.CARD_ID
+				WHERE E_DP.LOBBY_ID = ?
+					AND E_C.CATEGORY = ?
+			) AS E ON E.DECK_ID = C.DECK_ID
+		WHERE C.CATEGORY = ?
+			AND C.DECK_ID IN (%s)
 			AND E.DECK_ID IS NULL
 	`, strings.Repeat("?,", len(deckIds)-1)+"?")
 
-	args := make([]any, len(deckIds)+2)
+	args := make([]any, len(deckIds)+4)
 	args[0] = lobbyId
 	args[1] = lobbyId
+	args[2] = cardCategory
+	args[3] = cardCategory
 	for i, deckId := range deckIds {
-		args[i+2] = deckId
+		args[i+4] = deckId
 	}
 
 	err := execute(sqlString, args...)
@@ -408,19 +425,21 @@ func addDecksToLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
 	return nil
 }
 
-func removeDecksFromLobby(lobbyId uuid.UUID, deckIds []uuid.UUID) error {
+func removeDecksFromLobby(lobbyId uuid.UUID, deckIds []uuid.UUID, cardCategory string) error {
 	sqlString := fmt.Sprintf(`
 		DELETE DP
 		FROM DRAW_PILE AS DP
 			INNER JOIN CARD AS C ON C.ID = DP.CARD_ID
 		WHERE DP.LOBBY_ID = ?
+			AND C.CATEGORY = ?
 			AND C.DECK_ID NOT IN (%s)
 	`, strings.Repeat("?,", len(deckIds)-1)+"?")
 
-	args := make([]any, len(deckIds)+1)
+	args := make([]any, len(deckIds)+2)
 	args[0] = lobbyId
+	args[1] = cardCategory
 	for i, deckId := range deckIds {
-		args[i+1] = deckId
+		args[i+2] = deckId
 	}
 
 	err := execute(sqlString, args...)
