@@ -21,11 +21,12 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	var password string
 	var passwordConfirm string
 	for key, val := range r.Form {
-		if key == "name" {
+		switch key {
+		case "name":
 			name = val[0]
-		} else if key == "password" {
+		case "password":
 			password = val[0]
-		} else if key == "passwordConfirm" {
+		case "passwordConfirm":
 			passwordConfirm = val[0]
 		}
 	}
@@ -83,11 +84,12 @@ func CreateAdmin(w http.ResponseWriter, r *http.Request) {
 	var password string
 	var passwordConfirm string
 	for key, val := range r.Form {
-		if key == "name" {
+		switch key {
+		case "name":
 			name = val[0]
-		} else if key == "password" {
+		case "password":
 			password = val[0]
-		} else if key == "passwordConfirm" {
+		case "passwordConfirm":
 			passwordConfirm = val[0]
 		}
 	}
@@ -134,9 +136,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var name string
 	var password string
 	for key, val := range r.Form {
-		if key == "name" {
+		switch key {
+		case "name":
 			name = val[0]
-		} else if key == "password" {
+		case "password":
 			password = val[0]
 		}
 	}
@@ -302,11 +305,12 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 	var newPassword string
 	var newPasswordConfirm string
 	for key, val := range r.Form {
-		if key == "currentPassword" {
+		switch key {
+		case "currentPassword":
 			currentPassword = val[0]
-		} else if key == "newPassword" {
+		case "newPassword":
 			newPassword = val[0]
-		} else if key == "newPasswordConfirm" {
+		case "newPasswordConfirm":
 			newPasswordConfirm = val[0]
 		}
 	}
