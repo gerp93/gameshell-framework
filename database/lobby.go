@@ -38,11 +38,11 @@ type LobbyDetails struct {
 type LobbyGameInfo struct {
 	LobbyName string
 
+	JudgeName sql.NullString
+
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
 	DrawPileDeckNames     string
-
-	JudgeName sql.NullString
 }
 
 type PlayerHandData struct {
@@ -600,6 +600,15 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 			L.NAME AS LOBBY_NAME,
 			(
 				SELECT
+					U.NAME
+				FROM USER AS U
+					INNER JOIN PLAYER AS P ON P.USER_ID = U.ID
+					INNER JOIN JUDGE AS J ON J.PLAYER_ID = P.ID
+				WHERE J.LOBBY_ID = L.ID
+				LIMIT 1
+			) AS JUDGE_NAME,
+			(
+				SELECT
 					COUNT(*)
 				FROM DRAW_PILE AS DP
 					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
@@ -613,16 +622,8 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 					INNER JOIN CARD AS DPC ON DPC.ID = DP.CARD_ID
 				WHERE DP.LOBBY_ID = L.ID
 					AND DPC.CATEGORY = 'RESPONSE'
-			) AS DRAW_PILE_RESPONSE_COUNT,
-			(
-				SELECT
-					JU.NAME
-				FROM USER AS JU
-					INNER JOIN PLAYER AS JP ON JP.USER_ID = JU.ID
-				WHERE JP.ID = J.PLAYER_ID
-			) AS JUDGE_NAME
+			) AS DRAW_PILE_RESPONSE_COUNT
 		FROM LOBBY AS L
-			INNER JOIN JUDGE AS J ON J.LOBBY_ID = L.ID
 		WHERE L.ID = ?
 	`
 	rows, err := query(sqlString, lobbyId)
@@ -634,9 +635,9 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	for rows.Next() {
 		if err := rows.Scan(
 			&data.LobbyName,
+			&data.JudgeName,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
-			&data.JudgeName,
 		); err != nil {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
