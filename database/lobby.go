@@ -38,6 +38,8 @@ type LobbyDetails struct {
 type LobbyGameInfo struct {
 	LobbyName string
 
+	PlayerIsLobbyOwner bool
+
 	JudgeName sql.NullString
 
 	DrawPilePromptCount   int
@@ -592,12 +594,21 @@ func DeleteLobby(lobbyId uuid.UUID) error {
 	return execute(sqlString, lobbyId)
 }
 
-func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
+func GetLobbyGameInfo(lobbyId uuid.UUID, playerId uuid.UUID) (LobbyGameInfo, error) {
 	var data LobbyGameInfo
 
 	sqlString := `
 		SELECT
 			L.NAME AS LOBBY_NAME,
+			(
+				SELECT
+					P.ID
+				FROM PLAYER AS P
+				WHERE P.LOBBY_ID = L.ID
+					AND P.IS_ACTIVE = 1
+				ORDER BY P.JOIN_ORDER ASC
+				LIMIT 1
+			) AS LOBBY_OWNER_ID,
 			(
 				SELECT
 					U.NAME
@@ -633,8 +644,10 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 	defer rows.Close()
 
 	for rows.Next() {
+		var lobbyOwnerId uuid.UUID
 		if err := rows.Scan(
 			&data.LobbyName,
+			&lobbyOwnerId,
 			&data.JudgeName,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
@@ -642,6 +655,8 @@ func GetLobbyGameInfo(lobbyId uuid.UUID) (LobbyGameInfo, error) {
 			log.Println(err)
 			return data, errors.New("failed to scan row in query results")
 		}
+
+		data.PlayerIsLobbyOwner = playerId == lobbyOwnerId
 	}
 
 	sqlString = `
