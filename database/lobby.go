@@ -97,6 +97,18 @@ type PlayerSpecialsData struct {
 	SpecialCostFindCard       int
 	SpecialCostWildCard       int
 	SpecialCostPerk           int
+
+	CannotAffordAlert          bool
+	CannotAffordGamble         bool
+	CannotAffordBet            bool
+	CannotAffordSkipBeingJudge bool
+	CannotAffordExtraResponse  bool
+	CannotAffordBlockResponse  bool
+	CannotAffordSurpriseCard   bool
+	CannotAffordStealCard      bool
+	CannotAffordFindCard       bool
+	CannotAffordWildCard       bool
+	CannotAffordPerk           bool
 }
 
 type LobbyGameBoardData struct {
@@ -1046,11 +1058,28 @@ func GetPlayerSpecialsData(playerId uuid.UUID) (PlayerSpecialsData, error) {
 	data.SpecialCostWildCard += data.PlayerHandicap
 	data.SpecialCostPerk += data.PlayerHandicap
 
+	data.CannotAffordAlert = data.PlayerCreditsRemaining < 1
+	data.CannotAffordGamble = data.PlayerCreditsRemaining < 1
+	data.CannotAffordBet = data.PlayerCreditsRemaining < 1
+	data.CannotAffordSkipBeingJudge = data.PlayerCreditsRemaining < data.SpecialCostSkipBeingJudge
+	data.CannotAffordExtraResponse = data.PlayerCreditsRemaining < data.SpecialCostExtraResponse
+	data.CannotAffordBlockResponse = data.PlayerCreditsRemaining < data.SpecialCostBlockResponse
+	data.CannotAffordSurpriseCard = data.PlayerCreditsRemaining < data.SpecialCostSurpriseCard
+	data.CannotAffordStealCard = data.PlayerCreditsRemaining < data.SpecialCostStealCard
+	data.CannotAffordFindCard = data.PlayerCreditsRemaining < data.SpecialCostFindCard
+	data.CannotAffordWildCard = data.PlayerCreditsRemaining < data.SpecialCostWildCard
+	data.CannotAffordPerk = data.PlayerCreditsRemaining < data.SpecialCostPerk
+
 	if data.LobbyFreeSpecialCards {
 		data.SpecialCostSurpriseCard = 0
 		data.SpecialCostStealCard = 0
 		data.SpecialCostFindCard = 0
 		data.SpecialCostWildCard = 0
+
+		data.CannotAffordSurpriseCard = false
+		data.CannotAffordStealCard = false
+		data.CannotAffordFindCard = false
+		data.CannotAffordWildCard = false
 	}
 
 	return data, nil
