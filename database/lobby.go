@@ -43,6 +43,8 @@ type LobbyGameInfo struct {
 
 	JudgeName sql.NullString
 
+	RoundTimer int
+
 	DrawPilePromptCount   int
 	DrawPileResponseCount int
 	DrawPileDeckNames     string
@@ -633,6 +635,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID, playerId uuid.UUID) (LobbyGameInfo, err
 				WHERE J.LOBBY_ID = L.ID
 				LIMIT 1
 			) AS JUDGE_NAME,
+			L.ROUND_TIMER,
 			(
 				SELECT
 					COUNT(*)
@@ -664,6 +667,7 @@ func GetLobbyGameInfo(lobbyId uuid.UUID, playerId uuid.UUID) (LobbyGameInfo, err
 			&data.LobbyName,
 			&lobbyOwnerId,
 			&data.JudgeName,
+			&data.RoundTimer,
 			&data.DrawPilePromptCount,
 			&data.DrawPileResponseCount,
 		); err != nil {
