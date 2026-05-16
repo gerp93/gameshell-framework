@@ -24,6 +24,7 @@ type Lobby struct {
 
 	DrawPriority        string
 	HandSize            int
+	RoundTimer          int
 	FreeCredits         int
 	FreeSpecialCards    bool
 	WinStreakThreshold  int
@@ -180,6 +181,7 @@ func SearchLobbies(name string, page int) ([]LobbyDetails, error) {
 			L.PASSWORD_HASH,
 			L.DRAW_PRIORITY,
 			L.HAND_SIZE,
+			L.ROUND_TIMER,
 			L.FREE_CREDITS,
 			L.FREE_SPECIAL_CARDS,
 			L.WIN_STREAK_THRESHOLD,
@@ -209,6 +211,7 @@ func SearchLobbies(name string, page int) ([]LobbyDetails, error) {
 			&ld.PasswordHash,
 			&ld.DrawPriority,
 			&ld.HandSize,
+			&ld.RoundTimer,
 			&ld.FreeCredits,
 			&ld.FreeSpecialCards,
 			&ld.WinStreakThreshold,
@@ -261,6 +264,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			PASSWORD_HASH,
 			DRAW_PRIORITY,
 			HAND_SIZE,
+			ROUND_TIMER,
 			FREE_CREDITS,
 			FREE_SPECIAL_CARDS,
 			WIN_STREAK_THRESHOLD,
@@ -283,6 +287,7 @@ func GetLobby(id uuid.UUID) (Lobby, error) {
 			&lobby.PasswordHash,
 			&lobby.DrawPriority,
 			&lobby.HandSize,
+			&lobby.RoundTimer,
 			&lobby.FreeCredits,
 			&lobby.FreeSpecialCards,
 			&lobby.WinStreakThreshold,
@@ -320,7 +325,7 @@ func GetLobbyPasswordHash(id uuid.UUID) (sql.NullString, error) {
 	return passwordHash, nil
 }
 
-func CreateLobby(name string, message string, password string, drawPriority string, handSize int, freeCredits int, freeSpecialCards bool, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
+func CreateLobby(name string, message string, password string, drawPriority string, handSize int, roundTimer int, freeCredits int, freeSpecialCards bool, winStreakThreshold int, loseStreakThreshold int) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Println(err)
@@ -341,24 +346,25 @@ func CreateLobby(name string, message string, password string, drawPriority stri
 			PASSWORD_HASH,
 			DRAW_PRIORITY,
 			HAND_SIZE,
+			ROUND_TIMER,
 			FREE_CREDITS,
 			FREE_SPECIAL_CARDS,
 			WIN_STREAK_THRESHOLD,
 			LOSE_STREAK_THRESHOLD
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	if message == "" {
 		if password == "" {
-			return id, execute(sqlString, id, name, nil, nil, drawPriority, handSize, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, nil, drawPriority, handSize, roundTimer, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, nil, passwordHash, drawPriority, handSize, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, nil, passwordHash, drawPriority, handSize, roundTimer, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
 		}
 	} else {
 		if password == "" {
-			return id, execute(sqlString, id, name, message, nil, drawPriority, handSize, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, nil, drawPriority, handSize, roundTimer, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
 		} else {
-			return id, execute(sqlString, id, name, message, passwordHash, drawPriority, handSize, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
+			return id, execute(sqlString, id, name, message, passwordHash, drawPriority, handSize, roundTimer, freeCredits, freeSpecialCards, winStreakThreshold, loseStreakThreshold)
 		}
 	}
 }
@@ -547,6 +553,15 @@ func SetLobbyHandSize(id uuid.UUID, handSize int) error {
 		WHERE ID = ?
 	`
 	return execute(sqlString, handSize, id)
+}
+
+func SetLobbyRoundTimer(id uuid.UUID, roundTimer int) error {
+	sqlString := `
+		UPDATE LOBBY
+		SET ROUND_TIMER = ?
+		WHERE ID = ?
+	`
+	return execute(sqlString, roundTimer, id)
 }
 
 func SetLobbyFreeCredits(id uuid.UUID, freeCredits int) error {
