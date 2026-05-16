@@ -47,11 +47,14 @@ var SQLFiles = []string{
 
 	// functions
 	"sql/functions/FN_GET_DRAW_PILE_CARD_ID.sql",
+	"sql/functions/FN_GET_LOBBY_JUDGE_BLANK_COUNT.sql",
 	"sql/functions/FN_GET_LOBBY_JUDGE_PLAYER_ID.sql",
 	"sql/functions/FN_GET_LOGIN_ATTEMPT_IS_ALLOWED.sql",
 	"sql/functions/FN_GET_PLAYER_HANDICAP.sql",
 	"sql/functions/FN_GET_PLAYER_HANDICAP_INVERSE.sql",
 	"sql/functions/FN_GET_PLAYER_LOBBY_ID.sql",
+	"sql/functions/FN_GET_PLAYER_RESPONSE_CARD_COUNT.sql",
+	"sql/functions/FN_GET_PLAYER_RESPONSE_COUNT.sql",
 	"sql/functions/FN_GET_SPECIAL_COST.sql",
 	"sql/functions/FN_USER_HAS_DECK_ACCESS.sql",
 	"sql/functions/FN_USER_HAS_LOBBY_ACCESS.sql",
