@@ -1447,6 +1447,25 @@ func PlayCard(playerId uuid.UUID, cardId uuid.UUID) error {
 	return execute(sqlString, playerId, cardId)
 }
 
+func PlayForceCard(playerId uuid.UUID) (bool, error) {
+	var cardWasPlayed bool
+	sqlString := "CALL SP_RESPOND_WITH_FORCE_CARD (?)"
+	rows, err := query(sqlString, playerId)
+	if err != nil {
+		return cardWasPlayed, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&cardWasPlayed); err != nil {
+			log.Println(err)
+			return cardWasPlayed, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return cardWasPlayed, nil
+}
+
 func PurchaseCredits(playerId uuid.UUID) error {
 	sqlString := "CALL SP_PURCHASE_CREDITS (?)"
 	return execute(sqlString, playerId)
