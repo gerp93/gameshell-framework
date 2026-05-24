@@ -120,6 +120,8 @@ type LobbyGameBoardData struct {
 	JudgeBlankCount    int
 	JudgeResponseCount int
 
+	RoundTimer int
+
 	BoardIsReady        bool
 	BoardHasAnySpecial  bool
 	BoardHasAnyRevealed bool
@@ -1096,6 +1098,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			(SELECT IMAGE FROM CARD WHERE ID = J.CARD_ID) AS JUDGE_CARD_IMAGE,
 			J.BLANK_COUNT AS JUDGE_BLANK_COUNT,
 			J.RESPONSE_COUNT AS JUDGE_RESPONSE_COUNT,
+			L.ROUND_TIMER AS ROUND_TIMER,
 			P.ID AS PLAYER_ID,
 			IF(FN_GET_LOBBY_JUDGE_PLAYER_ID(L.ID) = P.ID, 1, 0) AS PLAYER_IS_JUDGE
 		FROM PLAYER AS P
@@ -1118,6 +1121,7 @@ func GetLobbyGameBoardData(playerId uuid.UUID) (LobbyGameBoardData, error) {
 			&imageBytes,
 			&data.JudgeBlankCount,
 			&data.JudgeResponseCount,
+			&data.RoundTimer,
 			&data.PlayerId,
 			&data.PlayerIsJudge,
 		); err != nil {
