@@ -20,15 +20,20 @@ var SQLFiles = []string{
 	"sql/tables/USER_ACCESS_LOBBY.sql",
 	"sql/tables/LOGIN_ATTEMPT.sql",
 	"sql/tables/AUDIT_USER.sql",
+	"sql/tables/DECK.sql",
+	"sql/tables/USER_ACCESS_DECK.sql",
+	"sql/tables/AUDIT_DECK.sql",
 
 	// functions
 	"sql/functions/FN_GET_LOGIN_ATTEMPT_IS_ALLOWED.sql",
 	"sql/functions/FN_GET_PLAYER_LOBBY_ID.sql",
 	"sql/functions/FN_USER_HAS_LOBBY_ACCESS.sql",
+	"sql/functions/FN_USER_HAS_DECK_ACCESS.sql",
 
 	// procedures
 	"sql/procedures/SP_SET_PLAYER_ACTIVE.sql",
 	"sql/procedures/SP_SET_PLAYER_INACTIVE.sql",
+	"sql/procedures/SP_GET_READABLE_DECKS.sql",
 
 	// events
 	"sql/events/EVT_CLEAN_AUDIT_USER.sql",
@@ -40,4 +45,8 @@ var SQLFiles = []string{
 	"sql/triggers/TR_PLAYER_BEFORE_INSERT.sql",
 	"sql/triggers/TR_REVOKE_ACCESS_AF_UP_LOBBY.sql",
 	"sql/triggers/TR_SET_CHANGED_ON_DATE_BF_UP_USER.sql",
+	"sql/triggers/TR_AUDIT_DECK_DELETE.sql",
+	"sql/triggers/TR_AUDIT_DECK_UPDATE.sql",
+	"sql/triggers/TR_REVOKE_ACCESS_AF_UP_DECK.sql",
+	"sql/triggers/TR_SET_CHANGED_ON_DATE_BF_UP_DECK.sql",
 }

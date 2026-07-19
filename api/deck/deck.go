@@ -1,0 +1,291 @@
+package apiDeck
+
+import (
+	"net/http"
+
+	"github.com/gerp93/gameshell-framework/api"
+	"github.com/gerp93/gameshell-framework/auth"
+	"github.com/gerp93/gameshell-framework/database"
+	"github.com/google/uuid"
+)
+
+func Create(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var name string
+	var password string
+	var passwordConfirm string
+	var isPublicReadOnly bool
+	for key, val := range r.Form {
+		switch key {
+		case "name":
+			name = val[0]
+		case "password":
+			password = val[0]
+		case "passwordConfirm":
+			passwordConfirm = val[0]
+		case "isPublicReadOnly":
+			isPublicReadOnly = val[0] == "1"
+		}
+	}
+
+	if name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No name found."))
+		return
+	}
+
+	if password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No password found."))
+		return
+	}
+
+	if password != passwordConfirm {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Passwords do not match."))
+		return
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id."))
+		return
+	}
+
+	existingDeckId, err := database.GetDeckId(name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+	if existingDeckId != uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Deck name already exists."))
+		return
+	}
+
+	id, err := database.CreateDeck(name, password, isPublicReadOnly)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	err = database.AddUserDeckAccess(userId, id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Redirect", "/deck/"+id.String())
+	w.WriteHeader(http.StatusCreated)
+}
+
+func SetName(w http.ResponseWriter, r *http.Request) {
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var name string
+	for key, val := range r.Form {
+		if key == "name" {
+			name = val[0]
+		}
+	}
+
+	if name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No name found."))
+		return
+	}
+
+	existingDeckId, err := database.GetDeckId(name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	if existingDeckId != uuid.Nil && existingDeckId != deckId {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Deck name already exists."))
+		return
+	}
+
+	err = database.SetDeckName(deckId, name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+func SetPassword(w http.ResponseWriter, r *http.Request) {
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var currentPassword string
+	var newPassword string
+	var newPasswordConfirm string
+	for key, val := range r.Form {
+		switch key {
+		case "currentPassword":
+			currentPassword = val[0]
+		case "newPassword":
+			newPassword = val[0]
+		case "newPasswordConfirm":
+			newPasswordConfirm = val[0]
+		}
+	}
+
+	if currentPassword == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No current password found."))
+		return
+	}
+
+	passwordHash, err := database.GetDeckPasswordHash(deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	if !auth.PasswordMatchesHash(currentPassword, passwordHash) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Provided current password is not valid."))
+		return
+	}
+
+	if newPassword == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No new password found."))
+		return
+	}
+
+	if newPassword != newPasswordConfirm {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("New passwords do not match."))
+		return
+	}
+
+	err = database.SetDeckPassword(deckId, newPassword)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var isPublicReadOnly bool
+	for key, val := range r.Form {
+		if key == "isPublicReadOnly" {
+			isPublicReadOnly = val[0] == "1"
+		}
+	}
+
+	err = database.SetIsPublicReadOnly(deckId, isPublicReadOnly)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+func Delete(w http.ResponseWriter, r *http.Request) {
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
+		return
+	}
+
+	err := database.DeleteDeck(deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Redirect", "/decks")
+	w.WriteHeader(http.StatusOK)
+}
+
+// authorizedDeckId parses the {deckId} path value and confirms the requesting
+// user has access to it. It writes the error response and returns ok=false on
+// any failure.
+func authorizedDeckId(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	deckId, err := uuid.Parse(r.PathValue("deckId"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
+		return uuid.Nil, false
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id."))
+		return uuid.Nil, false
+	}
+
+	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("Failed to check deck access."))
+		return uuid.Nil, false
+	}
+
+	if !hasDeckAccess {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return uuid.Nil, false
+	}
+
+	return deckId, true
+}
