@@ -10,9 +10,10 @@ not introduce new styles, formatters, or abstractions.
 
 A Go library (`module github.com/gerp93/gameshell-framework`, go.mod at repo
 root) providing the platform for multiplayer party games: users, auth,
-lobbies/rooms, player presence, websocket realtime, and the framework schema.
-Games live in their own repos, pin a version of this module, and plug in via
-the `Game` interface.
+lobbies/rooms, player presence, **generic deck management**, **shared chat
+rendering**, websocket realtime, and the framework schema. Games live in
+their own repos (card-judge, timeline-trivia), pin a version of this module,
+and plug in via the `Game` interface.
 
 Stack: **Go (stdlib `net/http`) + `gorilla/websocket` + MariaDB.** No web
 framework, no ORM.
@@ -44,6 +45,29 @@ framework, no ORM.
   lobby (after `OnRoomEmpty`) when its last client disconnects.
 - **Game DB access:** games use the exported `database.Query` /
   `database.Execute` and keep hand-written SQL.
+- **Decks are framework-owned, cards are not:** `DECK(ID, CREATED_ON_DATE,
+  CHANGED_ON_DATE, NAME UNIQUE, PASSWORD_HASH, IS_PUBLIC_READONLY,
+  IS_HIDDEN)` + `USER_ACCESS_DECK` + `AUDIT_DECK` (`database/deck.go`,
+  `api/deck/deck.go`) are the full deck lifecycle — creation, name/password/
+  visibility changes, access grants, deletion. `IS_HIDDEN` is the generic
+  form of a game's "don't list this deck" flag (e.g. card-judge's wild deck);
+  it is not "wild"-specific. Games own their own `CARD`-equivalent table,
+  FK'd to `DECK.ID`, with their own schema/columns/CRUD — the framework never
+  touches card rows directly.
+- **`OnDeckDeleting(deckId uuid.UUID) error`** (part of the `Game` interface,
+  `gameshell.go`): `database.DeleteDeck` calls this **before** deleting the
+  `DECK` row. MariaDB's `ON DELETE CASCADE` from `DECK` to a game's `CARD`
+  table does **not** fire that table's own triggers, so games use this hook
+  to audit/clean up their cards themselves. Do not assume cascade alone
+  keeps a game's audit trail correct.
+- **Chat rendering is shared, not game-specific:** `static/js/chat.js`
+  (`window.gsChat.append`/`.wireForm`) parses the `<red>`/`<green>`/`<blue>`/
+  `</>` color tokens used in lobby broadcast messages, adds a timestamp, and
+  trims history; `static/css/chat.css` styles those tokens via
+  `--color-accent-*` (with fallbacks) so it adapts to each game's active
+  theme. Games mount the framework's `static.StaticFiles` under `/gs/` and
+  include `/gs/js/chat.js` + `/gs/css/chat.css` instead of writing their own
+  chat renderer.
 
 ## Style (same as card-judge — match exactly)
 
@@ -76,9 +100,10 @@ framework, no ORM.
 
 - `go build ./...` + `go vet ./...` (also run on tag by the release workflow).
 - There is no test suite; verify changes by running a consuming game
-  (card-judge) against a local MariaDB and playing through lobby join/leave,
-  a full round, and a websocket disconnect (see card-judge's
-  `docs/local-mariadb-setup.md`).
+  (card-judge or timeline-trivia) against a local MariaDB and playing through
+  lobby join/leave, a full round, and a websocket disconnect (see card-judge's
+  `docs/local-mariadb-setup.md`). If the change touches decks, verify both
+  games since deck management (and its `IS_HIDDEN` semantics) is shared code.
 
 ## Known quirks (preserved from card-judge by design)
 
