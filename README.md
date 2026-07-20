@@ -13,7 +13,13 @@ first game built on it.
 ## What the framework owns
 
 - **Users & auth**: accounts, bcrypt passwords, signed cookie sessions, login
-  attempt rate limiting, admin/approval flags (`auth/`, `database/user.go`).
+  attempt rate limiting, admin/approval flags (`auth/`, `database/user.go`),
+  and the full account-management HTTP layer — create, login/logout,
+  name/password change, admin approve/reset/is-admin, delete, color-theme
+  (`api/user/user.go`).
+- **Theme system**: `static/css/colors.css` (22 switchable themes, served at
+  `/gs/css/colors.css`) plus `api.ThemeGroups` (`api/theme.go`), the canonical
+  grouped theme list games range over to build their own account-page picker.
 - **Lobbies (rooms)**: create/delete, name/message/password, password-gated
   access grants (`database/lobby.go`, `database/access.go`).
 - **Players (participants)**: per-lobby membership with join order and

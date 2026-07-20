@@ -9,11 +9,12 @@ not introduce new styles, formatters, or abstractions.
 ## What this is
 
 A Go library (`module github.com/gerp93/gameshell-framework`, go.mod at repo
-root) providing the platform for multiplayer party games: users, auth,
-lobbies/rooms, player presence, **generic deck management**, **shared chat
-rendering**, websocket realtime, and the framework schema. Games live in
-their own repos (card-judge, timeline-trivia), pin a version of this module,
-and plug in via the `Game` interface.
+root) providing the platform for multiplayer party games: **users and
+accounts**, auth, lobbies/rooms, player presence, **generic deck
+management**, **shared chat rendering**, **the color-theme system**,
+websocket realtime, and the framework schema. Games live in their own repos
+(card-judge, timeline-trivia), pin a version of this module, and plug in via
+the `Game` interface.
 
 Stack: **Go (stdlib `net/http`) + `gorilla/websocket` + MariaDB.** No web
 framework, no ORM.
@@ -68,6 +69,19 @@ framework, no ORM.
   theme. Games mount the framework's `static.StaticFiles` under `/gs/` and
   include `/gs/js/chat.js` + `/gs/css/chat.css` instead of writing their own
   chat renderer.
+- **User accounts and the theme system are framework-owned:** `USER` (incl.
+  `COLOR_THEME`), auth, and the full account lifecycle — create, admin-create,
+  login/logout, name/password change, admin password-reset/approve/is-admin,
+  delete, color-theme — live in `api/user/user.go` (package `apiUser`), mounted
+  by games at the same 11 routes card-judge originally defined
+  (`/api/user/...`). `static/css/colors.css` (22 themes, served at
+  `/gs/css/colors.css` via the same `/gs/` mount as chat) and `api.ThemeGroups`
+  (`api/theme.go` — the canonical `[]ThemeGroup{Name, Themes []Theme{Value,
+  Label}}` list, grouped "Classic"/"Visual Assault"/"Tractor") are the single
+  source of truth for available themes. Games render their own `account.html`
+  and range over `api.ThemeGroups` to build the theme `<select>` instead of
+  hardcoding `<option>` tags — the framework ships the data, never the HTML
+  (same split as deck management).
 
 ## Style (same as card-judge — match exactly)
 
