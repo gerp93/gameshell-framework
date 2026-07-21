@@ -47,14 +47,14 @@ framework, no ORM.
 - **Game DB access:** games use the exported `database.Query` /
   `database.Execute` and keep hand-written SQL.
 - **Decks are framework-owned, cards are not:** `DECK(ID, CREATED_ON_DATE,
-  CHANGED_ON_DATE, NAME UNIQUE, PASSWORD_HASH, IS_PUBLIC_READONLY,
-  IS_HIDDEN)` + `USER_ACCESS_DECK` + `AUDIT_DECK` (`database/deck.go`,
-  `api/deck/deck.go`) are the full deck lifecycle — creation, name/password/
-  visibility changes, access grants, deletion. `IS_HIDDEN` is the generic
-  form of a game's "don't list this deck" flag (e.g. card-judge's wild deck);
-  it is not "wild"-specific. Games own their own `CARD`-equivalent table,
-  FK'd to `DECK.ID`, with their own schema/columns/CRUD — the framework never
-  touches card rows directly.
+  CHANGED_ON_DATE, NAME UNIQUE, PASSWORD_HASH, IS_PUBLIC_READONLY)` +
+  `USER_ACCESS_DECK` + `AUDIT_DECK` (`database/deck.go`, `api/deck/deck.go`)
+  are the full deck lifecycle — creation, name/password/visibility changes,
+  access grants, deletion. Every `DECK` row is a real, user-facing deck; games
+  needing per-room internal cards model them in their own tables (e.g.
+  card-judge's wild cards are `CARD` rows keyed by `LOBBY_ID`, not decks).
+  Games own their own `CARD`-equivalent table, FK'd to `DECK.ID`, with their
+  own schema/columns/CRUD — the framework never touches card rows directly.
 - **`OnDeckDeleting(deckId uuid.UUID) error`** (part of the `Game` interface,
   `gameshell.go`): `database.DeleteDeck` calls this **before** deleting the
   `DECK` row. MariaDB's `ON DELETE CASCADE` from `DECK` to a game's `CARD`
@@ -117,7 +117,7 @@ framework, no ORM.
   (card-judge or timeline-trivia) against a local MariaDB and playing through
   lobby join/leave, a full round, and a websocket disconnect (see card-judge's
   `docs/local-mariadb-setup.md`). If the change touches decks, verify both
-  games since deck management (and its `IS_HIDDEN` semantics) is shared code.
+  games since deck management is shared code.
 
 ## Known quirks (preserved from card-judge by design)
 

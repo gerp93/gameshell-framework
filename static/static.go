@@ -49,4 +49,9 @@ var SQLFiles = []string{
 	"sql/triggers/TR_AUDIT_DECK_UPDATE.sql",
 	"sql/triggers/TR_REVOKE_ACCESS_AF_UP_DECK.sql",
 	"sql/triggers/TR_SET_CHANGED_ON_DATE_BF_UP_DECK.sql",
+
+	// migrations (idempotent ALTERs for pre-existing databases; run last so
+	// objects that referenced a dropped column are already replaced above)
+	"sql/migrations/MIG_DECK_DROP_IS_HIDDEN.sql",
+	"sql/migrations/MIG_AUDIT_DECK_DROP_IS_HIDDEN.sql",
 }

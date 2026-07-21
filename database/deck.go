@@ -43,8 +43,7 @@ func SearchDecks(name string, page int) ([]DeckDetails, error) {
 			) AS CARD_COUNT,
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
-		WHERE D.IS_HIDDEN = FALSE
-			AND D.NAME LIKE ?
+		WHERE D.NAME LIKE ?
 		ORDER BY D.NAME
 		LIMIT 10 OFFSET ?
 	`
@@ -78,8 +77,7 @@ func CountDecks(name string) (int, error) {
 		SELECT
 			COUNT(*)
 		FROM DECK AS D
-		WHERE D.IS_HIDDEN = FALSE
-			AND D.NAME LIKE ?
+		WHERE D.NAME LIKE ?
 	`
 	rows, err := query(sqlString, name)
 	if err != nil {
