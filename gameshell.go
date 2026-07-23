@@ -23,6 +23,10 @@ type Game interface {
 	// the game clean up its own per-room state before the shell deletes the
 	// base LOBBY row.
 	OnRoomEmpty(lobbyId uuid.UUID) error
+	// OnDeckDeleting runs just before the shell deletes a base DECK row, letting
+	// the game audit/clean up its own CARD rows first (MariaDB FK cascade does
+	// not fire the game's card triggers).
+	OnDeckDeleting(deckId uuid.UUID) error
 }
 
 var registeredGame Game

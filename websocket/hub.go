@@ -1,9 +1,9 @@
 package websocket
 
 import (
+	"github.com/gerp93/gameshell-framework"
+	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
-	"github.com/grantfbarnes/card-judge/database"
-	"github.com/grantfbarnes/card-judge/gameshell"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
