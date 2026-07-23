@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/gerp93/gameshell-framework/auth"
 	"github.com/google/uuid"
-	"github.com/grantfbarnes/card-judge/auth"
 )
 
 type User struct {

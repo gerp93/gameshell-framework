@@ -1,0 +1,19 @@
+/* Shared lobby chat color tokens for gameshell games.
+   Uses the host game's accent palette when present, with neutral fallbacks so
+   the framework never hard-depends on a game's theme variables. */
+.gs-chat-green {
+    color: var(--color-accent-green, #3fb950);
+}
+
+.gs-chat-red {
+    color: var(--color-accent-red, #f85149);
+}
+
+.gs-chat-blue {
+    color: var(--color-accent-blue, #58a6ff);
+}
+
+.gs-chat-message {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
