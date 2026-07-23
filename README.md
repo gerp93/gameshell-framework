@@ -66,6 +66,21 @@ the framework schema move together per tag; games pin a version in `go.mod`.
 The schema manifest only creates/replaces objects — removing an object from
 `SQLFiles` does not drop it from an existing database.
 
+### Migrations
+
+`sql/migrations/` holds idempotent `ALTER`/`DROP` scripts for evolving a
+database that was already provisioned by an older version of the schema —
+e.g. `MIG_DECK_DROP_IS_HIDDEN.sql` drops the retired `DECK.IS_HIDDEN` column
+(`DROP COLUMN IF EXISTS`, safe to run against a database that never had it).
+They're registered in `static.SQLFiles` last, after every table/function/
+procedure/event/trigger, so anything that referenced the old object has
+already been replaced by the time the migration runs.
+
+A migration is a temporary bridge, not a permanent fixture: once every real
+deployment has run past the version that introduced it (i.e. no database in
+the wild still predates the change), the migration script and its `SQLFiles`
+entry get deleted — there's no longer anything left for it to migrate.
+
 ## License
 
 AGPL-3.0 (inherited from card-judge, from which this framework was extracted).
