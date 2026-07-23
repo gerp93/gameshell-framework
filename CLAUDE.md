@@ -35,7 +35,7 @@ framework, no ORM.
   `database.RunFile`) BEFORE its own schema; game extension-table FKs depend
   on the framework tables. `SQLFiles` order is manual and matters
   (settings → tables → functions → procedures → events → triggers).
-- **Parameterization points** a game sets at startup: `database.SetEnvPrefix`
+- **Parameterization points** a game sets at startup: `database.SetEnvVarPrefix`
   (`<PREFIX>_SQL_HOST/_DATABASE/_USER/_PASSWORD`), `auth.SetCookiePrefix`,
   `api.SetBrandName`, `api.SetPagePolicy`. Generalize by adding parameters to
   existing code, not by rewriting it.

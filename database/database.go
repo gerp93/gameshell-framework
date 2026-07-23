@@ -13,18 +13,18 @@ import (
 
 var database *sql.DB
 
-var envPrefix = "GAMESHELL"
+var envVarPrefix = "GAMESHELL"
 
-func SetEnvPrefix(prefix string) {
-	envPrefix = prefix
+func SetEnvVarPrefix(prefix string) {
+	envVarPrefix = prefix
 }
 
 func CreateDatabaseConnection() (*sql.DB, error) {
 	// get connection string
-	userName := os.Getenv(envPrefix + "_SQL_USER")
-	userPassword := os.Getenv(envPrefix + "_SQL_PASSWORD")
-	serverHost := os.Getenv(envPrefix + "_SQL_HOST")
-	databaseName := os.Getenv(envPrefix + "_SQL_DATABASE")
+	userName := os.Getenv(envVarPrefix + "_SQL_USER")
+	userPassword := os.Getenv(envVarPrefix + "_SQL_PASSWORD")
+	serverHost := os.Getenv(envVarPrefix + "_SQL_HOST")
+	databaseName := os.Getenv(envVarPrefix + "_SQL_DATABASE")
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 
 	// open database connection

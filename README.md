@@ -1,6 +1,6 @@
 # Gameshell Framework
 
-Version: 0.5.0
+Version: 0.6.0
 
 A reusable Go + HTMX + MariaDB platform for multiplayer party games. Gameshell
 provides the bones every game needs — user accounts, authentication, game
@@ -40,7 +40,7 @@ framework never imports a game.
 
 ```go
 gameshell.Register(myGame{})            // lifecycle hooks
-database.SetEnvPrefix("MY_GAME")        // MY_GAME_SQL_HOST, _DATABASE, _USER, _PASSWORD
+database.SetEnvVarPrefix("MY_GAME")        // MY_GAME_SQL_HOST, _DATABASE, _USER, _PASSWORD
 auth.SetCookiePrefix("MY-GAME")         // MY-GAME-USER-TOKEN cookie
 api.SetBrandName("My Game")             // top bar + default page title
 api.SetPagePolicy(api.PagePolicy{...})  // which paths need login/admin
