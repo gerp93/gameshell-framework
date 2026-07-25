@@ -15,9 +15,18 @@ import (
 // Limits on the per-user win celebration. The image is fetched on every win
 // popup, so it is kept small on purpose.
 const (
-	maxWinGifBytes      = 60 * 1024
-	maxWinMessageRunes  = 140
-	winGifMultipartSize = maxWinGifBytes + 4096 // payload plus multipart framing
+	maxWinGifBytes     = 60 * 1024
+	maxWinMessageRunes = 140
+	// maxWinGifUploadBytes bounds the request body ParseMultipartForm will
+	// read, well above maxWinGifBytes. It must NOT be set close to
+	// maxWinGifBytes: http.MaxBytesReader aborts the connection the instant
+	// it's exceeded, and if the client (a real GIF is routinely well over
+	// 60 KB) is still mid-upload when that happens, the abrupt close races
+	// the client's writes and surfaces as a TCP reset (net::ERR_CONNECTION_RESET)
+	// instead of the intended "60 KB or smaller" response. Reading the whole
+	// body first and rejecting on size after, as below, keeps the read from
+	// ever being cut off mid-stream.
+	maxWinGifUploadBytes = 10 << 20 // 10 MB
 )
 
 // winImageTypes are the accepted upload formats, identified by magic bytes
@@ -578,13 +587,14 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cap the request before anything is buffered, so an oversized upload is
-	// refused rather than read into memory.
-	r.Body = http.MaxBytesReader(w, r.Body, winGifMultipartSize)
-	err = r.ParseMultipartForm(winGifMultipartSize)
+	// Cap the request well above the real 60 KB rule (see maxWinGifUploadBytes)
+	// so a legitimate-but-oversized file is always read to completion instead
+	// of aborting the connection mid-upload.
+	r.Body = http.MaxBytesReader(w, r.Body, maxWinGifUploadBytes)
+	err = r.ParseMultipartForm(maxWinGifUploadBytes)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("GIF must be 60 KB or smaller."))
+		_, _ = w.Write([]byte("Failed to read the uploaded file."))
 		return
 	}
 	defer func() { _ = r.MultipartForm.RemoveAll() }()
