@@ -1,12 +1,24 @@
 package apiUser
 
 import (
+	"bytes"
+	"io"
 	"net/http"
+	"unicode/utf8"
 
 	"github.com/gerp93/gameshell-framework/api"
 	"github.com/gerp93/gameshell-framework/auth"
 	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
+)
+
+// Limits on the per-user win celebration. The GIF rides inside the HTTP
+// response of every win popup, so it is kept small on purpose.
+const (
+	maxWinGifBytes      = 60 * 1024
+	maxWinMessageRunes  = 1000
+	winGifMimeType      = "image/gif"
+	winGifMultipartSize = maxWinGifBytes + 4096 // payload plus multipart framing
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -524,6 +536,185 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("HX-Refresh", "true")
 	w.WriteHeader(http.StatusOK)
+}
+
+// SetWinGif stores the GIF shown when this user wins. This is the only
+// multipart handler in the framework; everything else takes a plain form.
+func SetWinGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	// Cap the request before anything is buffered, so an oversized upload is
+	// refused rather than read into memory.
+	r.Body = http.MaxBytesReader(w, r.Body, winGifMultipartSize)
+	err = r.ParseMultipartForm(winGifMultipartSize)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("GIF must be 60 KB or smaller."))
+		return
+	}
+	defer func() { _ = r.MultipartForm.RemoveAll() }()
+
+	file, _, err := r.FormFile("winGif")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No GIF found."))
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	data, err := io.ReadAll(io.LimitReader(file, maxWinGifBytes+1))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to read the uploaded file."))
+		return
+	}
+
+	if len(data) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("The uploaded file is empty."))
+		return
+	}
+	if len(data) > maxWinGifBytes {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("GIF must be 60 KB or smaller."))
+		return
+	}
+
+	// Check the magic bytes rather than trusting the extension or the
+	// browser-supplied content type.
+	if !bytes.HasPrefix(data, []byte("GIF87a")) && !bytes.HasPrefix(data, []byte("GIF89a")) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("That file is not a GIF."))
+		return
+	}
+
+	err = database.SetUserWinGif(userId, data, winGifMimeType)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+// ClearWinGif removes a user's win GIF, leaving their win message alone.
+func ClearWinGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = database.ClearUserWinGif(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
+// GetWinGif serves a user's win GIF. Unlike the setters this is not limited
+// to the current user — every player in a lobby has to render the winner's.
+func GetWinGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	data, mime, err := database.GetUserWinGif(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+	if len(data) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No win gif found."))
+		return
+	}
+
+	if mime == "" {
+		mime = winGifMimeType
+	}
+	w.Header().Set("Content-Type", mime)
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+// SetWinMessage stores the message shown beneath the win GIF.
+func SetWinMessage(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var winMessage string
+	for key, val := range r.Form {
+		if key == "winMessage" {
+			winMessage = val[0]
+		}
+	}
+
+	if utf8.RuneCountInString(winMessage) > maxWinMessageRunes {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Win message must be 1000 characters or fewer."))
+		return
+	}
+
+	err = database.SetUserWinMessage(userId, winMessage)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Win message saved."))
 }
 
 func isCurrentUser(r *http.Request, checkId uuid.UUID) bool {

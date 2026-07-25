@@ -1,0 +1,27 @@
+/* Shared turn/round countdown styling for gameshell games (see /gs/js/timer.js).
+   Uses the host game's accent palette when present, with neutral fallbacks so
+   the framework never hard-depends on a game's theme variables. */
+.gs-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: bold;
+}
+
+.gs-timer.warn {
+    color: var(--color-accent-red, #f85149);
+}
+
+.gs-timer.critical {
+    color: var(--color-accent-red, #f85149);
+    animation: gs-timer-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes gs-timer-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+}

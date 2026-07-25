@@ -185,6 +185,49 @@ func SetLobbyMessage(id uuid.UUID, message string) error {
 	}
 }
 
+// GetLobbyTurnTimerSeconds returns how long a player gets for their turn in
+// this lobby, in seconds. Zero means no timer. A lobby with no settings row
+// yet simply has no timer, so this never errors on a missing row.
+func GetLobbyTurnTimerSeconds(lobbyId uuid.UUID) (int, error) {
+	var seconds int
+
+	sqlString := `
+		SELECT
+			COALESCE(LS.TURN_TIMER_SECONDS, 0)
+		FROM LOBBY L
+		LEFT JOIN LOBBY_SETTINGS LS ON LS.LOBBY_ID = L.ID
+		WHERE L.ID = ?
+	`
+	rows, err := query(sqlString, lobbyId)
+	if err != nil {
+		return seconds, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&seconds); err != nil {
+			log.Println(err)
+			return seconds, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return seconds, nil
+}
+
+// SetLobbyTurnTimerSeconds sets the per-turn timer for a lobby. Upserts so
+// callers never have to create the settings row themselves.
+func SetLobbyTurnTimerSeconds(lobbyId uuid.UUID, seconds int) error {
+	sqlString := `
+		INSERT INTO LOBBY_SETTINGS(
+			LOBBY_ID,
+			TURN_TIMER_SECONDS
+		)
+		VALUES (?, ?)
+		ON DUPLICATE KEY UPDATE TURN_TIMER_SECONDS = VALUES(TURN_TIMER_SECONDS)
+	`
+	return execute(sqlString, lobbyId, seconds)
+}
+
 func DeleteLobby(lobbyId uuid.UUID) error {
 	sqlString := `
 		DELETE

@@ -361,6 +361,118 @@ func SetUserColorTheme(id uuid.UUID, colorTheme string) error {
 	return nil
 }
 
+// UserWinCelebration is the personalization a player gets to show off when
+// they win — an optional GIF and an optional message shown beneath it. The
+// GIF bytes are deliberately not part of this struct (or of User): GetUser
+// runs on every page request, and the blob lives in its own table so the
+// AUDIT_USER triggers never copy it.
+type UserWinCelebration struct {
+	UserId  uuid.UUID
+	HasGif  bool
+	Message sql.NullString
+}
+
+// GetUserWinCelebration returns a user's celebration metadata without loading
+// the GIF bytes. A user who has never set one comes back zeroed, not an error.
+func GetUserWinCelebration(userId uuid.UUID) (UserWinCelebration, error) {
+	celebration := UserWinCelebration{UserId: userId}
+
+	sqlString := `
+		SELECT
+			COALESCE(LENGTH(GIF_DATA), 0) > 0,
+			MESSAGE
+		FROM USER_WIN_CELEBRATION
+		WHERE USER_ID = ?
+	`
+	rows, err := query(sqlString, userId)
+	if err != nil {
+		return celebration, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&celebration.HasGif, &celebration.Message); err != nil {
+			log.Println(err)
+			return celebration, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return celebration, nil
+}
+
+// GetUserWinGif returns the raw GIF bytes and their mime type. Empty bytes
+// mean the user has no GIF set.
+func GetUserWinGif(userId uuid.UUID) ([]byte, string, error) {
+	var data []byte
+	var mime sql.NullString
+
+	sqlString := `
+		SELECT
+			GIF_DATA,
+			GIF_MIME
+		FROM USER_WIN_CELEBRATION
+		WHERE USER_ID = ?
+	`
+	rows, err := query(sqlString, userId)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&data, &mime); err != nil {
+			log.Println(err)
+			return nil, "", errors.New("failed to scan row in query results")
+		}
+	}
+
+	return data, mime.String, nil
+}
+
+func SetUserWinGif(id uuid.UUID, data []byte, mime string) error {
+	sqlString := `
+		INSERT INTO USER_WIN_CELEBRATION(
+			USER_ID,
+			GIF_DATA,
+			GIF_MIME
+		)
+		VALUES (?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			GIF_DATA = VALUES(GIF_DATA),
+			GIF_MIME = VALUES(GIF_MIME),
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+	`
+	return execute(sqlString, id, data, mime)
+}
+
+func ClearUserWinGif(id uuid.UUID) error {
+	sqlString := `
+		UPDATE USER_WIN_CELEBRATION
+		SET GIF_DATA = NULL,
+			GIF_MIME = NULL,
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+		WHERE USER_ID = ?
+	`
+	return execute(sqlString, id)
+}
+
+func SetUserWinMessage(id uuid.UUID, message string) error {
+	sqlString := `
+		INSERT INTO USER_WIN_CELEBRATION(
+			USER_ID,
+			MESSAGE
+		)
+		VALUES (?, ?)
+		ON DUPLICATE KEY UPDATE
+			MESSAGE = VALUES(MESSAGE),
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+	`
+	if message == "" {
+		return execute(sqlString, id, nil)
+	}
+	return execute(sqlString, id, message)
+}
+
 func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 	sqlString := `
 		UPDATE USER

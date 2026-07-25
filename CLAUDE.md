@@ -82,6 +82,31 @@ framework, no ORM.
   and range over `api.ThemeGroups` to build the theme `<select>` instead of
   hardcoding `<option>` tags — the framework ships the data, never the HTML
   (same split as deck management).
+- **Win celebrations are per-user personalization, so they're framework-owned:**
+  `USER_WIN_CELEBRATION(USER_ID PK→USER, CHANGED_ON_DATE, GIF_DATA MEDIUMBLOB,
+  GIF_MIME, MESSAGE VARCHAR(1000))` — an optional GIF (≤60 KB) and message a
+  game shows when that player wins. It is deliberately a **side table, not
+  `USER` columns**: the `AUDIT_USER` triggers enumerate every `USER` column and
+  would copy the blob on every user update, and `GetUser` runs on every page
+  request via `MiddlewareForPages`. `database.GetUserWinCelebration` returns
+  metadata only (`HasGif` + message); the bytes come from
+  `GetUserWinGif`/`apiUser.GetWinGif`. `apiUser.SetWinGif` is the framework's
+  only multipart handler — it caps the body with `http.MaxBytesReader` and
+  checks the `GIF87a`/`GIF89a` magic rather than trusting the extension.
+- **Lobby settings live in `LOBBY_SETTINGS`, not on `LOBBY`:**
+  `LOBBY_SETTINGS(LOBBY_ID PK→LOBBY, TURN_TIMER_SECONDS)` holds
+  framework-level, game-agnostic lobby configuration. Getter/setter
+  (`database.GetLobbyTurnTimerSeconds`/`SetLobbyTurnTimerSeconds`) upsert and
+  `COALESCE`, so no row has to exist and `CreateLobby`'s signature is
+  unchanged. `apiLobby.SetTurnTimer` (`api/lobby/lobby.go`) is the handler,
+  mounted by games at `PUT /api/lobby/{lobbyId}/turn-timer`. Add new
+  framework-level lobby settings as columns here; game-specific ones still
+  belong in the game's own 1:1 table.
+- **The turn countdown is shared client-side plumbing:** `static/js/timer.js`
+  (`window.gsTimer.start(el, seconds, onExpire)`/`.stop()`/`.reset()`) +
+  `static/css/timer.css`, served at `/gs/js/timer.js` and `/gs/css/timer.css`.
+  What happens at zero is game-specific and is passed in as `onExpire` — the
+  framework runs no server-side timer goroutine and stores no deadline.
 
 ## Style (same as card-judge — match exactly)
 
