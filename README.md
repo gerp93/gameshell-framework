@@ -1,6 +1,6 @@
 # Gameshell Framework
 
-Version: 0.10.1
+Version: 0.10.2
 
 A reusable Go + HTMX + MariaDB platform for multiplayer party games. Gameshell
 provides the bones every game needs — user accounts, authentication, game
