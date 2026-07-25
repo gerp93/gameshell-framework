@@ -84,15 +84,22 @@ framework, no ORM.
   (same split as deck management).
 - **Win celebrations are per-user personalization, so they're framework-owned:**
   `USER_WIN_CELEBRATION(USER_ID PK→USER, CHANGED_ON_DATE, GIF_DATA MEDIUMBLOB,
-  GIF_MIME, MESSAGE VARCHAR(1000))` — an optional GIF (≤60 KB) and message a
-  game shows when that player wins. It is deliberately a **side table, not
-  `USER` columns**: the `AUDIT_USER` triggers enumerate every `USER` column and
-  would copy the blob on every user update, and `GetUser` runs on every page
-  request via `MiddlewareForPages`. `database.GetUserWinCelebration` returns
-  metadata only (`HasGif` + message); the bytes come from
-  `GetUserWinGif`/`apiUser.GetWinGif`. `apiUser.SetWinGif` is the framework's
-  only multipart handler — it caps the body with `http.MaxBytesReader` and
-  checks the `GIF87a`/`GIF89a` magic rather than trusting the extension.
+  GIF_MIME, MESSAGE VARCHAR(1000))` — an optional image (≤60 KB, GIF or PNG —
+  columns/handler names keep the `WinGif` name for API stability, but
+  `winImageMime` accepts either) and message (≤140 runes, enforced by
+  `apiUser.SetWinMessage`; the column is wider only as headroom, not the
+  active limit) a game shows when that player wins. It is deliberately a
+  **side table, not `USER` columns**: the `AUDIT_USER` triggers enumerate
+  every `USER` column and would copy the blob on every user update, and
+  `GetUser` runs on every page request via `MiddlewareForPages`.
+  `database.GetUserWinCelebration` returns metadata only (`HasGif` +
+  message); the bytes come from `GetUserWinGif`/`apiUser.GetWinGif`.
+  `apiUser.SetWinGif` is the framework's only multipart handler — it caps the
+  body with `http.MaxBytesReader` and checks the `GIF87a`/`GIF89a`/PNG magic
+  rather than trusting the extension. Its response deliberately carries no
+  `HX-Refresh`: the account-page form lives inside a `<details>`, and a full
+  reload collapses it right after the upload — the caller updates the preview
+  in place with JS instead.
 - **Lobby settings live in `LOBBY_SETTINGS`, not on `LOBBY`:**
   `LOBBY_SETTINGS(LOBBY_ID PK→LOBBY, TURN_TIMER_SECONDS)` holds
   framework-level, game-agnostic lobby configuration. Getter/setter

@@ -12,14 +12,35 @@ import (
 	"github.com/google/uuid"
 )
 
-// Limits on the per-user win celebration. The GIF rides inside the HTTP
-// response of every win popup, so it is kept small on purpose.
+// Limits on the per-user win celebration. The image is fetched on every win
+// popup, so it is kept small on purpose.
 const (
 	maxWinGifBytes      = 60 * 1024
-	maxWinMessageRunes  = 1000
-	winGifMimeType      = "image/gif"
+	maxWinMessageRunes  = 140
 	winGifMultipartSize = maxWinGifBytes + 4096 // payload plus multipart framing
 )
+
+// winImageTypes are the accepted upload formats, identified by magic bytes
+// rather than by extension or the browser-supplied content type.
+var winImageTypes = []struct {
+	magic []byte
+	mime  string
+}{
+	{[]byte("GIF87a"), "image/gif"},
+	{[]byte("GIF89a"), "image/gif"},
+	{[]byte("\x89PNG\r\n\x1a\n"), "image/png"},
+}
+
+// winImageMime returns the mime type for the uploaded bytes, or "" when the
+// data is not an accepted image format.
+func winImageMime(data []byte) string {
+	for _, t := range winImageTypes {
+		if bytes.HasPrefix(data, t.magic) {
+			return t.mime
+		}
+	}
+	return ""
+}
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
@@ -538,8 +559,10 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// SetWinGif stores the GIF shown when this user wins. This is the only
-// multipart handler in the framework; everything else takes a plain form.
+// SetWinGif stores the image shown when this user wins. Despite the name
+// (kept for API stability) it accepts GIF or PNG, detected by magic bytes —
+// see winImageMime. This is the only multipart handler in the framework;
+// everything else takes a plain form.
 func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	userIdString := r.PathValue("userId")
 	userId, err := uuid.Parse(userIdString)
@@ -588,27 +611,29 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(data) > maxWinGifBytes {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("GIF must be 60 KB or smaller."))
+		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
 		return
 	}
 
-	// Check the magic bytes rather than trusting the extension or the
-	// browser-supplied content type.
-	if !bytes.HasPrefix(data, []byte("GIF87a")) && !bytes.HasPrefix(data, []byte("GIF89a")) {
+	mime := winImageMime(data)
+	if mime == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("That file is not a GIF."))
+		_, _ = w.Write([]byte("That file is not a GIF or PNG."))
 		return
 	}
 
-	err = database.SetUserWinGif(userId, data, winGifMimeType)
+	err = database.SetUserWinGif(userId, data, mime)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
-	w.Header().Add("HX-Refresh", "true")
+	// Deliberately no HX-Refresh: this form lives inside a <details> on the
+	// account page, and a full reload snaps it shut so the new image looks
+	// like it never saved. The caller updates the preview in place instead.
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Image saved."))
 }
 
 // ClearWinGif removes a user's win GIF, leaving their win message alone.
@@ -634,8 +659,9 @@ func ClearWinGif(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("HX-Refresh", "true")
+	// No HX-Refresh, for the same reason as SetWinGif.
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Image removed."))
 }
 
 // GetWinGif serves a user's win GIF. Unlike the setters this is not limited
@@ -662,7 +688,7 @@ func GetWinGif(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mime == "" {
-		mime = winGifMimeType
+		mime = "image/gif"
 	}
 	w.Header().Set("Content-Type", mime)
 	w.Header().Set("Cache-Control", "private, max-age=300")
@@ -702,7 +728,7 @@ func SetWinMessage(w http.ResponseWriter, r *http.Request) {
 
 	if utf8.RuneCountInString(winMessage) > maxWinMessageRunes {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Win message must be 1000 characters or fewer."))
+		_, _ = w.Write([]byte("Win message must be 140 characters or fewer."))
 		return
 	}
 
