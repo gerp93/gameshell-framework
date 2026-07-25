@@ -102,14 +102,15 @@ framework, no ORM.
   mounted by games at `PUT /api/lobby/{lobbyId}/turn-timer`. Add new
   framework-level lobby settings as columns here; game-specific ones still
   belong in the game's own 1:1 table.
-- **Click-to-navigate is shared client-side plumbing:** `static/js/nav.js`
-  (`window.gsNav`), served at `/gs/js/nav.js`. Elements that navigate on click
-  but are not links (buttons, top-bar menu rows) get `data-href="/path"`
-  instead of `onclick="location.href='/path'"`; gsNav then honors
-  ctrl/cmd-click, shift-click, and middle-click by opening a new tab, the way
-  a real anchor would, plus Enter/Space for non-button elements. A genuine
-  `<a href>` needs nothing from this file — prefer one wherever markup allows,
-  and use `data-href` only where an anchor is awkward.
+- **Navigation is markup, not framework JS:** anything that navigates on click
+  is a real `<a href>` — never `onclick="location.href=..."` and never a JS
+  click-interceptor. The browser then gives ctrl/cmd-click, middle-click,
+  right-click "Open in new tab", the hover URL preview and link semantics for
+  free, none of which a script can fully reproduce. Wrap the visual element:
+  `<a href="/decks"><button>Card Decks</button></a>`, or
+  `<a href="/account" class="no-style"><div class="top-bar-menu-link">…</div></a>`.
+  This is a convention each game follows in its own HTML, since the framework
+  ships no HTML.
 - **The turn countdown is shared client-side plumbing:** `static/js/timer.js`
   (`window.gsTimer.start(el, seconds, onExpire)`/`.stop()`/`.reset()`) +
   `static/css/timer.css`, served at `/gs/js/timer.js` and `/gs/css/timer.css`.
