@@ -17,16 +17,17 @@ import (
 const (
 	maxWinGifBytes     = 60 * 1024
 	maxWinMessageRunes = 140
-	// maxWinGifUploadBytes bounds the request body ParseMultipartForm will
-	// read, well above maxWinGifBytes. It must NOT be set close to
-	// maxWinGifBytes: http.MaxBytesReader aborts the connection the instant
-	// it's exceeded, and if the client (a real GIF is routinely well over
-	// 60 KB) is still mid-upload when that happens, the abrupt close races
-	// the client's writes and surfaces as a TCP reset (net::ERR_CONNECTION_RESET)
-	// instead of the intended "60 KB or smaller" response. Reading the whole
-	// body first and rejecting on size after, as below, keeps the read from
-	// ever being cut off mid-stream.
-	maxWinGifUploadBytes = 10 << 20 // 10 MB
+	// maxWinGifUploadBytes bounds the multipart read: payload plus framing
+	// overhead (boundary markers, field headers), not a size a real image is
+	// meant to approach. SetWinGif rejects on Content-Length before ever
+	// reading the body when a client honestly declares an oversized upload
+	// (the normal case — a browser always knows a picked file's size), so
+	// this cap is just a defense-in-depth backstop for a request that didn't
+	// declare its size. Keep it just above maxWinGifBytes for framing slack,
+	// not materially larger — see SetWinGif's Content-Length check for why
+	// this doesn't reopen the mid-upload connection-reset that
+	// maxWinGifUploadBytes near maxWinGifBytes used to cause.
+	maxWinGifUploadBytes = maxWinGifBytes + 4096
 )
 
 // winImageTypes are the accepted upload formats, identified by magic bytes
@@ -587,14 +588,27 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cap the request well above the real 60 KB rule (see maxWinGifUploadBytes)
-	// so a legitimate-but-oversized file is always read to completion instead
-	// of aborting the connection mid-upload.
+	// Reject an honestly-oversized upload by its declared Content-Length
+	// before reading any of the body. A browser always knows a picked
+	// file's size upfront, so this is the normal path for "you picked too
+	// big a file" — and because nothing has been read yet, Go's own default
+	// handling of the unread body applies (a bounded drain, then a
+	// half-close) instead of the abrupt mid-read abort that
+	// http.MaxBytesReader below performs, which surfaces to the client as a
+	// TCP reset (net::ERR_CONNECTION_RESET) rather than this response.
+	if r.ContentLength > maxWinGifUploadBytes {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
+		return
+	}
+
+	// Backstop for a request that didn't declare Content-Length honestly
+	// (e.g. chunked transfer encoding) — not the normal path, see above.
 	r.Body = http.MaxBytesReader(w, r.Body, maxWinGifUploadBytes)
 	err = r.ParseMultipartForm(maxWinGifUploadBytes)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to read the uploaded file."))
+		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
 		return
 	}
 	defer func() { _ = r.MultipartForm.RemoveAll() }()
