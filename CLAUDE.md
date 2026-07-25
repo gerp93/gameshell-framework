@@ -37,8 +37,8 @@ framework, no ORM.
   (settings → tables → functions → procedures → events → triggers).
 - **Parameterization points** a game sets at startup: `database.SetEnvVarPrefix`
   (`<PREFIX>_SQL_HOST/_DATABASE/_USER/_PASSWORD`), `auth.SetCookiePrefix`,
-  `api.SetBrandName`, `api.SetPagePolicy`. Generalize by adding parameters to
-  existing code, not by rewriting it.
+  `api.SetBrandName`, `api.SetPagePolicy`, `apiUser.SetMaxWinGifBytes`.
+  Generalize by adding parameters to existing code, not by rewriting it.
 - **Realtime model:** short control strings over the socket, never HTML; the
   game's client re-fetches HTML fragments in response. `LobbyBroadcast` /
   `PlayerBroadcast` (`websocket/hub.go`) are the public realtime API. Presence
@@ -84,9 +84,9 @@ framework, no ORM.
   (same split as deck management).
 - **Win celebrations are per-user personalization, so they're framework-owned:**
   `USER_WIN_CELEBRATION(USER_ID PK→USER, CHANGED_ON_DATE, GIF_DATA MEDIUMBLOB,
-  GIF_MIME, MESSAGE VARCHAR(1000))` — an optional image (≤60 KB, GIF or PNG —
-  columns/handler names keep the `WinGif` name for API stability, but
-  `winImageMime` accepts either) and message (≤140 runes, enforced by
+  GIF_MIME, MESSAGE VARCHAR(1000))` — an optional image (≤`apiUser.SetMaxWinGifBytes`,
+  60 KB by default, GIF or PNG — columns/handler names keep the `WinGif` name
+  for API stability, but `winImageMime` accepts either) and message (≤140 runes, enforced by
   `apiUser.SetWinMessage`; the column is wider only as headroom, not the
   active limit) a game shows when that player wins. It is deliberately a
   **side table, not `USER` columns**: the `AUDIT_USER` triggers enumerate

@@ -2,6 +2,7 @@ package apiUser
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"unicode/utf8"
@@ -12,23 +13,34 @@ import (
 	"github.com/google/uuid"
 )
 
-// Limits on the per-user win celebration. The image is fetched on every win
-// popup, so it is kept small on purpose.
-const (
-	maxWinGifBytes     = 60 * 1024
-	maxWinMessageRunes = 140
-	// maxWinGifUploadBytes bounds the multipart read: payload plus framing
-	// overhead (boundary markers, field headers), not a size a real image is
-	// meant to approach. SetWinGif rejects on Content-Length before ever
-	// reading the body when a client honestly declares an oversized upload
-	// (the normal case — a browser always knows a picked file's size), so
-	// this cap is just a defense-in-depth backstop for a request that didn't
-	// declare its size. Keep it just above maxWinGifBytes for framing slack,
-	// not materially larger — see SetWinGif's Content-Length check for why
-	// this doesn't reopen the mid-upload connection-reset that
-	// maxWinGifUploadBytes near maxWinGifBytes used to cause.
-	maxWinGifUploadBytes = maxWinGifBytes + 4096
-)
+// maxWinGifBytes is the per-game-configurable size limit for a win image.
+// The image is fetched on every win popup, so games are expected to keep it
+// bounded — set via SetMaxWinGifBytes at startup, same as SetBrandName/
+// SetCookiePrefix/etc. Defaults conservatively; a game that wants a larger
+// (or smaller) limit calls the setter once during init.
+var maxWinGifBytes = 60 * 1024
+
+const maxWinMessageRunes = 140
+
+// SetMaxWinGifBytes overrides the default per-image size limit enforced by
+// SetWinGif. Call it once at startup, before serving requests.
+func SetMaxWinGifBytes(maxBytes int) {
+	maxWinGifBytes = maxBytes
+}
+
+// maxWinGifUploadBytes bounds the multipart read: payload plus framing
+// overhead (boundary markers, field headers), not a size a real image is
+// meant to approach. SetWinGif rejects on Content-Length before ever
+// reading the body when a client honestly declares an oversized upload (the
+// normal case — a browser always knows a picked file's size), so this cap
+// is just a defense-in-depth backstop for a request that didn't declare its
+// size. Keep it just above maxWinGifBytes for framing slack, not materially
+// larger — see SetWinGif's Content-Length check for why this doesn't
+// reopen the mid-upload connection-reset that a read cap near
+// maxWinGifBytes used to cause.
+func maxWinGifUploadBytes() int64 {
+	return int64(maxWinGifBytes) + 4096
+}
 
 // winImageTypes are the accepted upload formats, identified by magic bytes
 // rather than by extension or the browser-supplied content type.
@@ -596,19 +608,21 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	// half-close) instead of the abrupt mid-read abort that
 	// http.MaxBytesReader below performs, which surfaces to the client as a
 	// TCP reset (net::ERR_CONNECTION_RESET) rather than this response.
-	if r.ContentLength > maxWinGifUploadBytes {
+	sizeLimitMessage := fmt.Sprintf("Image must be %d KB or smaller.", maxWinGifBytes/1024)
+
+	if r.ContentLength > maxWinGifUploadBytes() {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
+		_, _ = w.Write([]byte(sizeLimitMessage))
 		return
 	}
 
 	// Backstop for a request that didn't declare Content-Length honestly
 	// (e.g. chunked transfer encoding) — not the normal path, see above.
-	r.Body = http.MaxBytesReader(w, r.Body, maxWinGifUploadBytes)
-	err = r.ParseMultipartForm(maxWinGifUploadBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, maxWinGifUploadBytes())
+	err = r.ParseMultipartForm(maxWinGifUploadBytes())
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
+		_, _ = w.Write([]byte(sizeLimitMessage))
 		return
 	}
 	defer func() { _ = r.MultipartForm.RemoveAll() }()
@@ -621,7 +635,7 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = file.Close() }()
 
-	data, err := io.ReadAll(io.LimitReader(file, maxWinGifBytes+1))
+	data, err := io.ReadAll(io.LimitReader(file, int64(maxWinGifBytes)+1))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Failed to read the uploaded file."))
@@ -635,7 +649,7 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(data) > maxWinGifBytes {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Image must be 60 KB or smaller."))
+		_, _ = w.Write([]byte(sizeLimitMessage))
 		return
 	}
 
