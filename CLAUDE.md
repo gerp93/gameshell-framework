@@ -116,8 +116,33 @@ framework, no ORM.
   free, none of which a script can fully reproduce. Wrap the visual element:
   `<a href="/decks"><button>Card Decks</button></a>`, or
   `<a href="/account" class="no-style"><div class="top-bar-menu-link">…</div></a>`.
-  This is a convention each game follows in its own HTML, since the framework
-  ships no HTML.
+- **Pages that are identical across every game are framework-owned HTML +
+  handler, not just framework-owned data:** `api/pages` (package `apiPages`)
+  ships `Login`, `Users`, `Decks`, `DeckAccess`, and `Account`, each backed by
+  a template under `static/html/pages/body/` and `static/html/pages/base.html`.
+  Games mount these directly — `http.Handle("GET /login", ...MiddlewareForPages(http.HandlerFunc(gsApiPages.Login)))`
+  — the same zero-wrapper pattern already used for `gsApiDeck`'s CRUD
+  handlers. `Account`'s optional win-celebration section is gated by
+  `apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration: bool})`
+  (default off — the same safe-default `Set*` pattern as `SetBrandName`/
+  `SetMaxWinGifBytes`; a game must opt in, and only after it has also mounted
+  `apiUser`'s win-gif/win-message handlers, or the section renders pointing
+  at routes that don't exist).
+- **Pages that are *mostly* shared use a chrome-plus-slot split, not a full
+  page:** `static/html/pages/body/deck-detail-chrome.html` renders everything
+  about a deck's detail page that's identical between games (header, Export
+  Deck, the Edit Deck dialog, the danger-zone delete) and leaves three named
+  blocks — `card-header-actions`, `card-search-controls`, `card-management`
+  — for the genuinely per-game part (each game's own card schema/dialogs).
+  The game supplies its own small fragment file defining those three block
+  names and composes it with the chrome via `apiPages.ParseGameFragment`.
+  **Critical constraint:** every page body template in this framework and
+  every consuming game defines the *same* Go template name, `{{define "body"}}`
+  — this only works because exactly one body file is ever parsed per
+  request. A composed parse must never include two files that both define
+  `"body"`; `text/template` silently lets the second overwrite the first,
+  with no compile-time signal. A game's slot-filling fragment must define
+  distinctly-named blocks, never `"body"`.
 - **The turn countdown is shared client-side plumbing:** `static/js/timer.js`
   (`window.gsTimer.start(el, seconds, onExpire)`/`.stop()`/`.reset()`) +
   `static/css/timer.css`, served at `/gs/js/timer.js` and `/gs/css/timer.css`.
