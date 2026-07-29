@@ -8,6 +8,7 @@ import (
 	apiLobby "github.com/gerp93/gameshell-framework/api/lobby"
 	apiPages "github.com/gerp93/gameshell-framework/api/pages"
 	apiUser "github.com/gerp93/gameshell-framework/api/user"
+	"github.com/gerp93/gameshell-framework/static"
 )
 
 // Features is the single, readable list of framework-provided
@@ -73,5 +74,18 @@ func MountFeatures(f Features) {
 
 	if f.LobbyTurnTimer {
 		http.Handle("PUT /api/lobby/{lobbyId}/turn-timer", api.MiddlewareForAPIs(http.HandlerFunc(apiLobby.SetTurnTimer)))
+	}
+}
+
+// ApplyFeatureSchema applies the SQL for whichever optional features f
+// enables — currently just static.DeckSQLFiles for f.Decks. Call after
+// ApplySchema(static.StaticFiles, static.SQLFiles) (the core schema) and
+// before the game's own ApplySchema call, same DB-connect-first ordering.
+// A deckless game (Decks: false) never gets DECK/USER_ACCESS_DECK/
+// AUDIT_DECK created at all, not just unused — same "doesn't exist unless
+// asked for" guarantee MountFeatures gives the routes.
+func ApplyFeatureSchema(f Features) {
+	if f.Decks {
+		ApplySchema(static.StaticFiles, static.DeckSQLFiles)
 	}
 }

@@ -183,6 +183,16 @@ framework, no ORM.
   doesn't cover `GET /deck/{deckId}` (the deck detail page): that route is
   game-owned even when `Decks: true`, since it needs each game's own card
   schema, so a deckless game must still skip wiring it itself.
+- **Schema, not just routes, is Features-gated for Decks:** `static.SQLFiles`
+  holds only the core schema every game needs; `static.DeckSQLFiles`
+  (`DECK`/`USER_ACCESS_DECK`/`AUDIT_DECK` + their function/procedure/
+  triggers/migrations) is separate and applied by
+  `bootstrap.ApplyFeatureSchema(f)` only when `f.Decks` is true — called
+  after the core `ApplySchema` and before the game's own, same ordering. A
+  deckless game genuinely never gets those tables created, not just unused
+  ones sitting empty. If a future optional feature needs its own tables
+  (e.g. win-celebration's), split them into their own `*SQLFiles` list the
+  same way rather than adding them to the core list.
 
 ## Style (same as card-judge — match exactly)
 
