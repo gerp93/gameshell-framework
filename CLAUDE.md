@@ -168,6 +168,21 @@ framework, no ORM.
   error — this package exists only to be called from `main()`, never from
   request-serving code, so that's an intentional, scoped exception to the
   rest of the framework's error-returning convention.
+- **`bootstrap.Features` is the single place to see and toggle which
+  optional framework functionality a game exposes:** a `Decks`/
+  `WinCelebration`/`LobbyTurnTimer` struct passed to `bootstrap.MountFeatures`,
+  which mounts the framework's core user/account/auth routes unconditionally
+  (every game needs accounts) and each optional group's routes only when its
+  field is `true` — `WinCelebration: true` also calls
+  `apiPages.SetAccountPageFeatures` internally, so a game doesn't set that
+  flag separately. Adding a new optional framework route group means adding
+  a field here and its `if` block, not touching every consuming game's
+  `main()`. This does **not** cover feature-specific configuration (e.g. the
+  win-image size limit) — that's still `apiUser.SetMaxWinGifBytes`, called
+  independently — `Features` only controls existence, not tuning. It also
+  doesn't cover `GET /deck/{deckId}` (the deck detail page): that route is
+  game-owned even when `Decks: true`, since it needs each game's own card
+  schema, so a deckless game must still skip wiring it itself.
 
 ## Style (same as card-judge — match exactly)
 
