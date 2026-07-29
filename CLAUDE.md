@@ -148,6 +148,26 @@ framework, no ORM.
   `static/css/timer.css`, served at `/gs/js/timer.js` and `/gs/css/timer.css`.
   What happens at zero is game-specific and is passed in as `onExpire` — the
   framework runs no server-side timer goroutine and stores no deadline.
+- **Assets found identical across both consuming games move here too, not
+  just page templates:** `static/js/deck.js` (the CSV-export download
+  handler for `deck-detail-chrome.html`'s Export Deck button — it reads the
+  filename from the export target's `data-filename` attribute rather than a
+  hardcoded per-game string, so it needed no game-specific branch to become
+  shared) and `static/css/about.css`/`home.css` (styling for `about.html`/
+  `home.html`, which stay game-owned since their *content* genuinely
+  differs — only the CSS was byte-identical). Before assuming something is
+  game-specific, diff it against the other consuming game first; several
+  "obviously per-game" files turned out identical.
+- **`bootstrap` package removes main()'s repeated startup sequence:**
+  `bootstrap.ConnectWithRetry`, `.ApplySchema`, `.MountStaticAssets`,
+  `.Serve` — every consuming game's `main()` had byte-identical DB-connect-
+  retry, schema-application, static-mounting, and port/cert/log-file/listen
+  logic, differing only in the env-var prefix and which `embed.FS` to read
+  from. These functions `log.Fatalln` and exit the process on failure
+  (matching what every call site already did) rather than returning an
+  error — this package exists only to be called from `main()`, never from
+  request-serving code, so that's an intentional, scoped exception to the
+  rest of the framework's error-returning convention.
 
 ## Style (same as card-judge — match exactly)
 

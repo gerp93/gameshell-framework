@@ -1,4 +1,5 @@
 {{define "body"}}
+<script src="/gs/js/deck.js"></script>
 <div style="display: grid; grid-auto-flow: column">
     <h2>{{.Deck.Name}}</h2>
     <div style="text-align: right;">
@@ -15,6 +16,7 @@
             <span class="bi bi-download"></span> Export Deck
             <span
                 id="deck-card-export-content"
+                data-filename="{{.Deck.Name}}-cards.csv"
                 style="display: none"
             ></span>
         </button>
