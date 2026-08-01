@@ -99,7 +99,10 @@ framework, no ORM.
   rather than trusting the extension. Its response deliberately carries no
   `HX-Refresh`: the account-page form lives inside a `<details>`, and a full
   reload collapses it right after the upload — the caller updates the preview
-  in place with JS instead.
+  in place with JS instead. `USER_LOSE_CELEBRATION` and `apiUser.SetLoseGif`/
+  `ClearLoseGif`/`GetLoseGif`/`SetLoseMessage` mirror this exactly for the
+  opposite case (a game shows it when that player loses); they share
+  `apiUser.SetMaxWinGifBytes`'s size limit rather than getting their own knob.
 - **Lobby settings live in `LOBBY_SETTINGS`, not on `LOBBY`:**
   `LOBBY_SETTINGS(LOBBY_ID PK→LOBBY, TURN_TIMER_SECONDS)` holds
   framework-level, game-agnostic lobby configuration. Getter/setter
@@ -122,12 +125,13 @@ framework, no ORM.
   a template under `static/html/pages/body/` and `static/html/pages/base.html`.
   Games mount these directly — `http.Handle("GET /login", ...MiddlewareForPages(http.HandlerFunc(gsApiPages.Login)))`
   — the same zero-wrapper pattern already used for `gsApiDeck`'s CRUD
-  handlers. `Account`'s optional win-celebration section is gated by
-  `apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration: bool})`
+  handlers. `Account`'s optional win-celebration and lose-celebration sections
+  are each gated by their own field on
+  `apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration, LoseCelebration bool})`
   (default off — the same safe-default `Set*` pattern as `SetBrandName`/
   `SetMaxWinGifBytes`; a game must opt in, and only after it has also mounted
-  `apiUser`'s win-gif/win-message handlers, or the section renders pointing
-  at routes that don't exist).
+  the matching `apiUser` win-gif/win-message or lose-gif/lose-message
+  handlers, or the section renders pointing at routes that don't exist).
 - **Pages that are *mostly* shared use a chrome-plus-slot split, not a full
   page:** `static/html/pages/body/deck-detail-chrome.html` renders everything
   about a deck's detail page that's identical between games (header, Export
@@ -170,12 +174,13 @@ framework, no ORM.
   rest of the framework's error-returning convention.
 - **`bootstrap.Features` is the single place to see and toggle which
   optional framework functionality a game exposes:** a `Decks`/
-  `WinCelebration`/`LobbyTurnTimer` struct passed to `bootstrap.MountFeatures`,
-  which mounts the framework's core user/account/auth routes unconditionally
-  (every game needs accounts) and each optional group's routes only when its
-  field is `true` — `WinCelebration: true` also calls
-  `apiPages.SetAccountPageFeatures` internally, so a game doesn't set that
-  flag separately. Adding a new optional framework route group means adding
+  `WinCelebration`/`LoseCelebration`/`LobbyTurnTimer` struct passed to
+  `bootstrap.MountFeatures`, which mounts the framework's core user/account/
+  auth routes unconditionally (every game needs accounts) and each optional
+  group's routes only when its field is `true` — `WinCelebration`/
+  `LoseCelebration: true` also calls `apiPages.SetAccountPageFeatures`
+  internally, so a game doesn't set that flag separately. Adding a new
+  optional framework route group means adding
   a field here and its `if` block, not touching every consuming game's
   `main()`. This does **not** cover feature-specific configuration (e.g. the
   win-image size limit) — that's still `apiUser.SetMaxWinGifBytes`, called

@@ -225,15 +225,18 @@ func Account(w http.ResponseWriter, r *http.Request) {
 
 	type data struct {
 		api.BasePageData
-		ThemeGroups        []api.ThemeGroup
-		ShowWinCelebration bool
-		WinCelebration     database.UserWinCelebration
+		ThemeGroups         []api.ThemeGroup
+		ShowWinCelebration  bool
+		WinCelebration      database.UserWinCelebration
+		ShowLoseCelebration bool
+		LoseCelebration     database.UserLoseCelebration
 	}
 
 	d := data{
-		BasePageData:       basePageData,
-		ThemeGroups:        api.ThemeGroups,
-		ShowWinCelebration: accountPageFeatures.WinCelebration,
+		BasePageData:        basePageData,
+		ThemeGroups:         api.ThemeGroups,
+		ShowWinCelebration:  accountPageFeatures.WinCelebration,
+		ShowLoseCelebration: accountPageFeatures.LoseCelebration,
 	}
 
 	if accountPageFeatures.WinCelebration {
@@ -242,6 +245,13 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		winCelebration, err := database.GetUserWinCelebration(basePageData.User.Id)
 		if err == nil {
 			d.WinCelebration = winCelebration
+		}
+	}
+
+	if accountPageFeatures.LoseCelebration {
+		loseCelebration, err := database.GetUserLoseCelebration(basePageData.User.Id)
+		if err == nil {
+			d.LoseCelebration = loseCelebration
 		}
 	}
 

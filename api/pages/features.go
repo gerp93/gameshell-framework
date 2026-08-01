@@ -10,6 +10,10 @@ type AccountPageFeatures struct {
 	// enable it if the game also mounts apiUser.SetWinGif/ClearWinGif/
 	// GetWinGif/SetWinMessage.
 	WinCelebration bool
+	// LoseCelebration shows the lose-image/lose-message upload section, the
+	// counterpart to WinCelebration. Only enable it if the game also mounts
+	// apiUser.SetLoseGif/ClearLoseGif/GetLoseGif/SetLoseMessage.
+	LoseCelebration bool
 }
 
 var accountPageFeatures AccountPageFeatures

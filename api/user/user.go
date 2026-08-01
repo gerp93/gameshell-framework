@@ -781,6 +781,192 @@ func SetWinMessage(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("Win message saved."))
 }
 
+// SetLoseGif stores the image shown when this user loses — the counterpart
+// to SetWinGif. Shares the same size limit and format checks; see SetWinGif
+// for why the Content-Length check comes before anything is read.
+func SetLoseGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	sizeLimitMessage := fmt.Sprintf("Image must be %d KB or smaller.", maxWinGifBytes/1024)
+
+	if r.ContentLength > maxWinGifUploadBytes() {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(sizeLimitMessage))
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxWinGifUploadBytes())
+	err = r.ParseMultipartForm(maxWinGifUploadBytes())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(sizeLimitMessage))
+		return
+	}
+	defer func() { _ = r.MultipartForm.RemoveAll() }()
+
+	file, _, err := r.FormFile("loseGif")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("No GIF found."))
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	data, err := io.ReadAll(io.LimitReader(file, int64(maxWinGifBytes)+1))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to read the uploaded file."))
+		return
+	}
+
+	if len(data) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("The uploaded file is empty."))
+		return
+	}
+	if len(data) > maxWinGifBytes {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(sizeLimitMessage))
+		return
+	}
+
+	mime := winImageMime(data)
+	if mime == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("That file is not a GIF or PNG."))
+		return
+	}
+
+	err = database.SetUserLoseGif(userId, data, mime)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	// Deliberately no HX-Refresh, same reasoning as SetWinGif.
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Image saved."))
+}
+
+// ClearLoseGif removes a user's lose GIF, leaving their lose message alone.
+func ClearLoseGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = database.ClearUserLoseGif(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Image removed."))
+}
+
+// GetLoseGif serves a user's lose GIF. Unlike the setter this is not limited
+// to the current user — every player in a lobby has to render the loser's.
+func GetLoseGif(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	data, mime, err := database.GetUserLoseGif(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+	if len(data) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No lose gif found."))
+		return
+	}
+
+	if mime == "" {
+		mime = "image/gif"
+	}
+	w.Header().Set("Content-Type", mime)
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+// SetLoseMessage stores the message shown beneath the lose GIF.
+func SetLoseMessage(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var loseMessage string
+	for key, val := range r.Form {
+		if key == "loseMessage" {
+			loseMessage = val[0]
+		}
+	}
+
+	if utf8.RuneCountInString(loseMessage) > maxWinMessageRunes {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Lose message must be 140 characters or fewer."))
+		return
+	}
+
+	err = database.SetUserLoseMessage(userId, loseMessage)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Lose message saved."))
+}
+
 func isCurrentUser(r *http.Request, checkId uuid.UUID) bool {
 	userId := api.GetUserId(r)
 	return userId == checkId

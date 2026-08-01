@@ -28,6 +28,10 @@ type Features struct {
 	// account page's Win Celebration section (equivalent to calling
 	// apiPages.SetAccountPageFeatures(AccountPageFeatures{WinCelebration: true})).
 	WinCelebration bool
+	// LoseCelebration mounts the lose-gif/lose-message routes and enables the
+	// account page's Lose Celebration section — the counterpart to
+	// WinCelebration, shown on a loss instead of a win.
+	LoseCelebration bool
 	// LobbyTurnTimer mounts PUT /api/lobby/{lobbyId}/turn-timer. Games that
 	// have their own timer concept (e.g. card-judge's round timer) leave
 	// this off rather than expose a second, competing timer control.
@@ -69,7 +73,20 @@ func MountFeatures(f Features) {
 		http.Handle("DELETE /api/user/{userId}/win-gif", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.ClearWinGif)))
 		http.Handle("GET /api/user/{userId}/win-gif", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.GetWinGif)))
 		http.Handle("PUT /api/user/{userId}/win-message", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.SetWinMessage)))
-		apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration: true})
+	}
+
+	if f.LoseCelebration {
+		http.Handle("PUT /api/user/{userId}/lose-gif", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.SetLoseGif)))
+		http.Handle("DELETE /api/user/{userId}/lose-gif", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.ClearLoseGif)))
+		http.Handle("GET /api/user/{userId}/lose-gif", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.GetLoseGif)))
+		http.Handle("PUT /api/user/{userId}/lose-message", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.SetLoseMessage)))
+	}
+
+	if f.WinCelebration || f.LoseCelebration {
+		apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{
+			WinCelebration:  f.WinCelebration,
+			LoseCelebration: f.LoseCelebration,
+		})
 	}
 
 	if f.LobbyTurnTimer {

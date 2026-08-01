@@ -473,6 +473,118 @@ func SetUserWinMessage(id uuid.UUID, message string) error {
 	return execute(sqlString, id, message)
 }
 
+// UserLoseCelebration is the opposite of UserWinCelebration — an optional
+// GIF and message a player can set to be shown to everyone in the lobby
+// when they lose instead of win. See UserWinCelebration for why the GIF
+// bytes are kept out of this struct.
+type UserLoseCelebration struct {
+	UserId  uuid.UUID
+	HasGif  bool
+	Message sql.NullString
+}
+
+// GetUserLoseCelebration returns a user's lose-celebration metadata without
+// loading the GIF bytes. A user who has never set one comes back zeroed,
+// not an error.
+func GetUserLoseCelebration(userId uuid.UUID) (UserLoseCelebration, error) {
+	celebration := UserLoseCelebration{UserId: userId}
+
+	sqlString := `
+		SELECT
+			COALESCE(LENGTH(GIF_DATA), 0) > 0,
+			MESSAGE
+		FROM USER_LOSE_CELEBRATION
+		WHERE USER_ID = ?
+	`
+	rows, err := query(sqlString, userId)
+	if err != nil {
+		return celebration, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&celebration.HasGif, &celebration.Message); err != nil {
+			log.Println(err)
+			return celebration, errors.New("failed to scan row in query results")
+		}
+	}
+
+	return celebration, nil
+}
+
+// GetUserLoseGif returns the raw GIF bytes and their mime type. Empty bytes
+// mean the user has no lose GIF set.
+func GetUserLoseGif(userId uuid.UUID) ([]byte, string, error) {
+	var data []byte
+	var mime sql.NullString
+
+	sqlString := `
+		SELECT
+			GIF_DATA,
+			GIF_MIME
+		FROM USER_LOSE_CELEBRATION
+		WHERE USER_ID = ?
+	`
+	rows, err := query(sqlString, userId)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&data, &mime); err != nil {
+			log.Println(err)
+			return nil, "", errors.New("failed to scan row in query results")
+		}
+	}
+
+	return data, mime.String, nil
+}
+
+func SetUserLoseGif(id uuid.UUID, data []byte, mime string) error {
+	sqlString := `
+		INSERT INTO USER_LOSE_CELEBRATION(
+			USER_ID,
+			GIF_DATA,
+			GIF_MIME
+		)
+		VALUES (?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			GIF_DATA = VALUES(GIF_DATA),
+			GIF_MIME = VALUES(GIF_MIME),
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+	`
+	return execute(sqlString, id, data, mime)
+}
+
+func ClearUserLoseGif(id uuid.UUID) error {
+	sqlString := `
+		UPDATE USER_LOSE_CELEBRATION
+		SET GIF_DATA = NULL,
+			GIF_MIME = NULL,
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+		WHERE USER_ID = ?
+	`
+	return execute(sqlString, id)
+}
+
+func SetUserLoseMessage(id uuid.UUID, message string) error {
+	sqlString := `
+		INSERT INTO USER_LOSE_CELEBRATION(
+			USER_ID,
+			MESSAGE
+		)
+		VALUES (?, ?)
+		ON DUPLICATE KEY UPDATE
+			MESSAGE = VALUES(MESSAGE),
+			CHANGED_ON_DATE = CURRENT_TIMESTAMP(6)
+	`
+	if message == "" {
+		return execute(sqlString, id, nil)
+	}
+	return execute(sqlString, id, message)
+}
+
 func SetUserIsAdmin(id uuid.UUID, isAdmin bool) error {
 	sqlString := `
 		UPDATE USER
