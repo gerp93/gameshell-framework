@@ -98,7 +98,7 @@
         hx-on::after-request="if (event.detail.successful) { document.getElementById('win-image-preview-img').src = '/api/user/{{.User.Id}}/win-gif?t=' + Date.now(); document.getElementById('win-image-preview').style.display = ''; document.getElementById('win-image-empty').style.display = 'none'; this.reset(); }"
     >
         <div class="form-input">
-            <label for="winGif">Upload an image (GIF or PNG)</label>
+            <label for="winGif">Upload an image (GIF or PNG, {{.MaxGifKB}} KB max)</label>
             <input
                 type="file"
                 id="winGif"
@@ -106,6 +106,13 @@
                 accept="image/gif,image/png"
                 required="required"
             />
+            <p style="font-size: 0.85em; opacity: 0.7;">
+                Need to shrink a file first? Try
+                <a
+                    href="https://github.com/gerp93/KVGrainy/releases"
+                    target="_blank"
+                >KVGrainy</a>.
+            </p>
         </div>
         <div class="htmx-result"></div>
         <input
@@ -144,7 +151,7 @@
 {{end}}
 {{if .ShowLoseCelebration}}
 <details>
-    <summary>Lose Celebration</summary>
+    <summary>Loss Commiseration</summary>
     <p>
         Shown to everyone in the lobby whenever you guess wrong. Both are
         optional &mdash; set either, both, or neither.
@@ -178,7 +185,7 @@
         hx-on::after-request="if (event.detail.successful) { document.getElementById('lose-image-preview-img').src = '/api/user/{{.User.Id}}/lose-gif?t=' + Date.now(); document.getElementById('lose-image-preview').style.display = ''; document.getElementById('lose-image-empty').style.display = 'none'; this.reset(); }"
     >
         <div class="form-input">
-            <label for="loseGif">Upload an image (GIF or PNG)</label>
+            <label for="loseGif">Upload an image (GIF or PNG, {{.MaxGifKB}} KB max)</label>
             <input
                 type="file"
                 id="loseGif"
@@ -186,6 +193,13 @@
                 accept="image/gif,image/png"
                 required="required"
             />
+            <p style="font-size: 0.85em; opacity: 0.7;">
+                Need to shrink a file first? Try
+                <a
+                    href="https://github.com/gerp93/KVGrainy/releases"
+                    target="_blank"
+                >KVGrainy</a>.
+            </p>
         </div>
         <div class="htmx-result"></div>
         <input

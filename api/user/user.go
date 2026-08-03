@@ -28,6 +28,13 @@ func SetMaxWinGifBytes(maxBytes int) {
 	maxWinGifBytes = maxBytes
 }
 
+// MaxWinGifBytes returns the currently configured per-image size limit
+// (shared by the win and lose GIF uploads), so pages can display it next to
+// the upload control instead of only enforcing it silently.
+func MaxWinGifBytes() int {
+	return maxWinGifBytes
+}
+
 // maxWinGifUploadBytes bounds the multipart read: payload plus framing
 // overhead (boundary markers, field headers), not a size a real image is
 // meant to approach. SetWinGif rejects on Content-Length before ever
@@ -601,16 +608,22 @@ func SetWinGif(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Reject an honestly-oversized upload by its declared Content-Length
-	// before reading any of the body. A browser always knows a picked
+	// before parsing any of the body. A browser always knows a picked
 	// file's size upfront, so this is the normal path for "you picked too
-	// big a file" — and because nothing has been read yet, Go's own default
-	// handling of the unread body applies (a bounded drain, then a
-	// half-close) instead of the abrupt mid-read abort that
-	// http.MaxBytesReader below performs, which surfaces to the client as a
-	// TCP reset (net::ERR_CONNECTION_RESET) rather than this response.
+	// big a file". The client sends the whole multipart body in one write
+	// (no Expect: 100-continue), so it's typically still mid-upload when
+	// this handler responds; writing the error without also draining the
+	// unread body races the client's in-flight send against the server
+	// closing the connection, and on the losing side of that race the
+	// response never reaches the browser at all — surfaced as
+	// net::ERR_CONNECTION_RESET, not this response (reproduced live: a file
+	// even modestly over the limit reset the connection instead of showing
+	// the message). Draining first lets the server finish reading the
+	// declared body before it replies, so the connection closes cleanly.
 	sizeLimitMessage := fmt.Sprintf("Image must be %d KB or smaller.", maxWinGifBytes/1024)
 
 	if r.ContentLength > maxWinGifUploadBytes() {
+		_, _ = io.Copy(io.Discard, r.Body)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(sizeLimitMessage))
 		return
@@ -801,7 +814,11 @@ func SetLoseGif(w http.ResponseWriter, r *http.Request) {
 
 	sizeLimitMessage := fmt.Sprintf("Image must be %d KB or smaller.", maxWinGifBytes/1024)
 
+	// Drain before responding — see SetWinGif's early-reject branch for why:
+	// without this, a client still mid-upload races the server closing the
+	// connection and net::ERR_CONNECTION_RESET wins instead of this response.
 	if r.ContentLength > maxWinGifUploadBytes() {
+		_, _ = io.Copy(io.Discard, r.Body)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(sizeLimitMessage))
 		return

@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/gerp93/gameshell-framework/api"
+	apiUser "github.com/gerp93/gameshell-framework/api/user"
 	"github.com/gerp93/gameshell-framework/database"
 	"github.com/gerp93/gameshell-framework/static"
 	"github.com/google/uuid"
@@ -230,6 +231,7 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		WinCelebration      database.UserWinCelebration
 		ShowLoseCelebration bool
 		LoseCelebration     database.UserLoseCelebration
+		MaxGifKB            int
 	}
 
 	d := data{
@@ -237,6 +239,7 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		ThemeGroups:         api.ThemeGroups,
 		ShowWinCelebration:  accountPageFeatures.WinCelebration,
 		ShowLoseCelebration: accountPageFeatures.LoseCelebration,
+		MaxGifKB:            apiUser.MaxWinGifBytes() / 1024,
 	}
 
 	if accountPageFeatures.WinCelebration {
