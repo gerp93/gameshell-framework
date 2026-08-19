@@ -29,6 +29,17 @@ type Game interface {
 	OnDeckDeleting(deckId uuid.UUID) error
 }
 
+// DeckCreationHook is an optional interface a Game may additionally
+// implement (alongside Game) to receive whatever extra form fields it
+// posted from its own "deck-create-extra-fields" block in the shared
+// deck-create dialog (see decks.html and api/deck.Create), right after a
+// new base DECK row is inserted. Separate from Game itself — rather than a
+// required method — so a game with nothing extra to capture at deck
+// creation doesn't need a no-op implementation.
+type DeckCreationHook interface {
+	OnDeckCreated(deckId uuid.UUID, extraFields map[string]string) error
+}
+
 var registeredGame Game
 
 // Register sets the game whose hooks the shell will invoke. Called once at

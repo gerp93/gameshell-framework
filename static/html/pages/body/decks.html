@@ -67,6 +67,7 @@
                 <option value="1">Yes</option>
             </select>
         </div>
+        {{block "deck-create-extra-fields" .}}{{end}}
         <br />
         <div class="htmx-result"></div>
         <input
@@ -87,6 +88,7 @@
         autocomplete="off"
         onchange="submitTableFilterForm()"
     />
+    {{block "deck-list-extra-filter" .}}{{end}}
 
     {{if gt .Page 1}}
     <button onclick="goToTablePage(1)">
@@ -127,6 +129,7 @@ No decks found with that search criteria.
             <th>Name</th>
             <th>Cards</th>
             <th>View Access</th>
+            {{block "deck-list-extra-column-header" .}}{{end}}
         </tr>
     </thead>
     <tbody>
@@ -135,6 +138,7 @@ No decks found with that search criteria.
             <td class="wrap-new-lines"><a href="/deck/{{.Id}}">{{.Name}}</a></td>
             <td>{{.CardCount}}</td>
             <td>{{if .IsPublicReadOnly}} Public {{else}} <span class="bi bi-lock">Private</span> {{end}}</td>
+            {{block "deck-list-extra-column" .}}{{end}}
         </tr>
         {{end}}
     </tbody>

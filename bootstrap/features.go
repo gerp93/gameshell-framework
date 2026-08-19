@@ -24,6 +24,15 @@ type Features struct {
 	// game's own card schema — so a deckless game still skips wiring that
 	// route itself; this flag only covers the framework's half.
 	Decks bool
+	// DecksListPageOverride skips mounting the framework's own GET /decks
+	// handler even when Decks is true, so the game can mount its own
+	// instead — for a game whose /decks page needs its own data injected
+	// into the shared decks.html chrome (an extra column or filter via its
+	// deck-list-extra-* blocks; see gameshell-framework's compose.go).
+	// Every other route Decks enables (CRUD, /deck/{deckId}/access) still
+	// mounts normally. No effect when Decks is false. Defaults to false,
+	// so existing callers are unaffected.
+	DecksListPageOverride bool
 	// WinCelebration mounts the win-gif/win-message routes and enables the
 	// account page's Win Celebration section (equivalent to calling
 	// apiPages.SetAccountPageFeatures(AccountPageFeatures{WinCelebration: true})).
@@ -64,7 +73,9 @@ func MountFeatures(f Features) {
 		http.Handle("PUT /api/deck/{deckId}/password", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.SetPassword)))
 		http.Handle("PUT /api/deck/{deckId}/is-public-read-only", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.SetIsPublicReadOnly)))
 		http.Handle("DELETE /api/deck/{deckId}", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.Delete)))
-		http.Handle("GET /decks", api.MiddlewareForPages(http.HandlerFunc(apiPages.Decks)))
+		if !f.DecksListPageOverride {
+			http.Handle("GET /decks", api.MiddlewareForPages(http.HandlerFunc(apiPages.Decks)))
+		}
 		http.Handle("GET /deck/{deckId}/access", api.MiddlewareForPages(http.HandlerFunc(apiPages.DeckAccess)))
 	}
 

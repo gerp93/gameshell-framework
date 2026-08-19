@@ -3,11 +3,23 @@ package apiDeck
 import (
 	"net/http"
 
+	gameshell "github.com/gerp93/gameshell-framework"
 	"github.com/gerp93/gameshell-framework/api"
 	"github.com/gerp93/gameshell-framework/auth"
 	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
 )
+
+// knownCreateDeckFields are the form fields Create itself reads. Anything
+// else posted alongside them is assumed to belong to a game's own
+// "deck-create-extra-fields" block and is forwarded to DeckCreationHook
+// verbatim — Create doesn't need to know what it means.
+var knownCreateDeckFields = map[string]bool{
+	"name":             true,
+	"password":         true,
+	"passwordConfirm":  true,
+	"isPublicReadOnly": true,
+}
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
@@ -83,6 +95,20 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
+	}
+
+	if hook, ok := gameshell.Registered().(gameshell.DeckCreationHook); ok {
+		extraFields := make(map[string]string)
+		for key, val := range r.Form {
+			if !knownCreateDeckFields[key] && len(val) > 0 {
+				extraFields[key] = val[0]
+			}
+		}
+		if err := hook.OnDeckCreated(id, extraFields); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 	}
 
 	w.Header().Add("HX-Redirect", "/deck/"+id.String())
