@@ -1,7 +1,5 @@
 # Gameshell Framework
 
-Version: 0.6.0
-
 A reusable Go + HTMX + MariaDB platform for multiplayer party games. Gameshell
 provides the bones every game needs — user accounts, authentication, game
 lobbies, player presence, and websocket realtime — so each game repo only has
@@ -9,6 +7,12 @@ to implement its own rules, tables, and UI.
 
 Extracted from [card-judge](https://github.com/gerp93/card-judge), which is the
 first game built on it.
+
+This repo follows the shared conventions in
+[gerp93/KVG_Standards](https://github.com/gerp93/KVG_Standards) — theming
+(this repo's `static/css/colors.css` is the vendored source that card-judge
+and timeline-trivia both inherit from), licensing, release tagging, and repo
+hygiene. See that repo for the standards themselves.
 
 ## What the framework owns
 
@@ -61,8 +65,12 @@ use `database.Query` / `database.Execute`.
 
 ## Versioning
 
-Semver git tags (`vMAJOR.MINOR.PATCH`) via `version_bump.sh`. The Go API and
-the framework schema move together per tag; games pin a version in `go.mod`.
+Semver git tags (`vMAJOR.MINOR.PATCH`) cut via the `Cut Tag` GitHub Actions
+workflow (`.github/workflows/cut-tag.yml`, `workflow_dispatch` with a
+major/minor/patch choice) — a bare tag, no build artifact, per
+[KVG_Standards' `templates/cut-tag.yml`](https://github.com/gerp93/KVG_Standards/blob/main/templates/cut-tag.yml).
+The Go API and the framework schema move together per tag; games pin a
+version in `go.mod` (`go get github.com/gerp93/gameshell-framework@vX.Y.Z`).
 The schema manifest only creates/replaces objects — removing an object from
 `SQLFiles` does not drop it from an existing database.
 
