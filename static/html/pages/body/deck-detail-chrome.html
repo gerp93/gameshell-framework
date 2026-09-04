@@ -11,19 +11,6 @@
         <button onclick="document.getElementById('deck-update-dialog').showModal()">
             <span class="bi bi-pencil"></span> Edit Deck
         </button>
-        <button
-            title="Export Deck to CSV"
-            hx-get="/api/deck/{{.Deck.Id}}/card-export"
-            hx-target="#deck-card-export-content"
-            hx-confirm="Are you sure you want to export deck cards to a CSV file?"
-        >
-            <span class="bi bi-download"></span> Export Deck
-            <span
-                id="deck-card-export-content"
-                data-filename="{{.Deck.Name}}-cards.csv"
-                style="display: none"
-            ></span>
-        </button>
     </div>
 </div>
 <form id="table-filter-form">

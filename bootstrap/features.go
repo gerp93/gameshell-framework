@@ -18,8 +18,9 @@ import (
 // apiUser.SetMaxWinGifBytes) — Features only controls whether the feature
 // exists at all, not how it's configured.
 type Features struct {
-	// Decks mounts deck CRUD (create/rename/password/visibility/delete) and
-	// the /decks list + /deck/{deckId}/access gate pages. The deck *detail*
+	// Decks mounts deck CRUD (create/rename/password/visibility/delete), the
+	// password-grant route POST /api/access/deck/{deckId}, and the /decks
+	// list + /deck/{deckId}/access gate pages. The deck *detail*
 	// page (GET /deck/{deckId}) stays game-owned regardless — it needs each
 	// game's own card schema — so a deckless game still skips wiring that
 	// route itself; this flag only covers the framework's half.
@@ -29,9 +30,9 @@ type Features struct {
 	// instead — for a game whose /decks page needs its own data injected
 	// into the shared decks.html chrome (an extra column or filter via its
 	// deck-list-extra-* blocks; see gameshell-framework's compose.go).
-	// Every other route Decks enables (CRUD, /deck/{deckId}/access) still
-	// mounts normally. No effect when Decks is false. Defaults to false,
-	// so existing callers are unaffected.
+	// Every other route Decks enables (CRUD, password grant,
+	// /deck/{deckId}/access) still mounts normally. No effect when Decks
+	// is false. Defaults to false, so existing callers are unaffected.
 	DecksListPageOverride bool
 	// WinCelebration mounts the win-gif/win-message routes and enables the
 	// account page's Win Celebration section (equivalent to calling
@@ -77,6 +78,7 @@ func MountFeatures(f Features) {
 		http.Handle("PUT /api/deck/{deckId}/password", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.SetPassword)))
 		http.Handle("PUT /api/deck/{deckId}/is-public-read-only", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.SetIsPublicReadOnly)))
 		http.Handle("DELETE /api/deck/{deckId}", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.Delete)))
+		http.Handle("POST /api/access/deck/{deckId}", api.MiddlewareForAPIs(http.HandlerFunc(apiDeck.Access)))
 		if !f.DecksListPageOverride {
 			http.Handle("GET /decks", api.MiddlewareForPages(http.HandlerFunc(apiPages.Decks)))
 		}

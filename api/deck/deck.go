@@ -282,6 +282,59 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func Access(w http.ResponseWriter, r *http.Request) {
+	deckId, err := uuid.Parse(r.PathValue("deckId"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
+		return
+	}
+
+	deckPasswordHash, err := database.GetDeckPasswordHash(deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	var password string
+	for key, val := range r.Form {
+		if key == "password" {
+			password = val[0]
+		}
+	}
+
+	if !auth.PasswordMatchesHash(password, deckPasswordHash) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Provided password is not valid."))
+		return
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id."))
+		return
+	}
+
+	err = database.AddUserDeckAccess(userId, deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to add access."))
+		return
+	}
+
+	w.Header().Add("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+}
+
 // authorizedDeckId parses the {deckId} path value and confirms the requesting
 // user has access to it. It writes the error response and returns ok=false on
 // any failure.

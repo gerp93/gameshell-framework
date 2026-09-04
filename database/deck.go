@@ -36,11 +36,7 @@ func SearchDecks(name string, page int) ([]DeckDetails, error) {
 		SELECT
 			D.ID,
 			D.NAME,
-			(
-				SELECT COUNT(*)
-				FROM CARD AS C
-				WHERE C.DECK_ID = D.ID
-			) AS CARD_COUNT,
+			0 AS CARD_COUNT,
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
 		WHERE D.NAME LIKE ?

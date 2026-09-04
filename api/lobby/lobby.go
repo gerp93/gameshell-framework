@@ -2,6 +2,7 @@ package apiLobby
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 
@@ -69,10 +70,11 @@ func SetTurnTimer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	player, _ := database.GetLobbyUserPlayer(lobbyId, userId)
+	name := html.EscapeString(player.Name)
 	if turnTimerSeconds > 0 {
-		websocket.LobbyBroadcast(lobbyId, fmt.Sprintf("<green>%s</>: Turn timer set to %d seconds", player.Name, turnTimerSeconds))
+		websocket.LobbyBroadcast(lobbyId, fmt.Sprintf("<green>%s</>: Turn timer set to %d seconds", name, turnTimerSeconds))
 	} else {
-		websocket.LobbyBroadcast(lobbyId, fmt.Sprintf("<green>%s</>: Turn timer turned off", player.Name))
+		websocket.LobbyBroadcast(lobbyId, fmt.Sprintf("<green>%s</>: Turn timer turned off", name))
 	}
 	websocket.LobbyBroadcast(lobbyId, fmt.Sprintf("turnTimer:%d", turnTimerSeconds))
 
