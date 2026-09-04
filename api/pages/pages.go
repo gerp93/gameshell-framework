@@ -231,6 +231,8 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		WinCelebration      database.UserWinCelebration
 		ShowLoseCelebration bool
 		LoseCelebration     database.UserLoseCelebration
+		ShowWinVideo        bool
+		WinVideo            database.UserWinVideo
 		MaxGifKB            int
 	}
 
@@ -239,6 +241,7 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		ThemeGroups:         api.ThemeGroups,
 		ShowWinCelebration:  accountPageFeatures.WinCelebration,
 		ShowLoseCelebration: accountPageFeatures.LoseCelebration,
+		ShowWinVideo:        accountPageFeatures.WinVideo,
 		MaxGifKB:            apiUser.MaxWinGifBytes() / 1024,
 	}
 
@@ -255,6 +258,13 @@ func Account(w http.ResponseWriter, r *http.Request) {
 		loseCelebration, err := database.GetUserLoseCelebration(basePageData.User.Id)
 		if err == nil {
 			d.LoseCelebration = loseCelebration
+		}
+	}
+
+	if accountPageFeatures.WinVideo {
+		winVideo, err := database.GetUserWinVideo(basePageData.User.Id)
+		if err == nil {
+			d.WinVideo = winVideo
 		}
 	}
 

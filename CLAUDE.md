@@ -103,6 +103,14 @@ framework, no ORM.
   `ClearLoseGif`/`GetLoseGif`/`SetLoseMessage` mirror this exactly for the
   opposite case (a game shows it when that player loses); they share
   `apiUser.SetMaxWinGifBytes`'s size limit rather than getting their own knob.
+- **Win videos are the game-over counterpart** (`USER_WIN_VIDEO(USER_ID PK→USER,
+  CHANGED_ON_DATE, YOUTUBE_VIDEO_ID VARCHAR(11), START_OFFSET_SECONDS INT)`),
+  gated by `Features.WinVideo` / `AccountPageFeatures.WinVideo`. Unlike the
+  per-round GIF, this is a YouTube clip the whole lobby is forced to watch
+  when that user wins the *game*. `database.ParseYouTubeVideoId` accepts a
+  bare id or common URL forms; `apiUser.SetWinVideo`/`ClearWinVideo` are the
+  account-page handlers. Metadata is small enough to live on the row — no
+  blob split needed.
 - **Lobby settings live in `LOBBY_SETTINGS`, not on `LOBBY`:**
   `LOBBY_SETTINGS(LOBBY_ID PK→LOBBY, TURN_TIMER_SECONDS)` holds
   framework-level, game-agnostic lobby configuration. Getter/setter
@@ -125,9 +133,9 @@ framework, no ORM.
   a template under `static/html/pages/body/` and `static/html/pages/base.html`.
   Games mount these directly — `http.Handle("GET /login", ...MiddlewareForPages(http.HandlerFunc(gsApiPages.Login)))`
   — the same zero-wrapper pattern already used for `gsApiDeck`'s CRUD
-  handlers. `Account`'s optional win-celebration and lose-celebration sections
-  are each gated by their own field on
-  `apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration, LoseCelebration bool})`
+  handlers. `Account`'s optional win-celebration, lose-celebration, and
+  win-video sections are each gated by their own field on
+  `apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{WinCelebration, LoseCelebration, WinVideo bool})`
   (default off — the same safe-default `Set*` pattern as `SetBrandName`/
   `SetMaxWinGifBytes`; a game must opt in, and only after it has also mounted
   the matching `apiUser` win-gif/win-message or lose-gif/lose-message
@@ -136,7 +144,8 @@ framework, no ORM.
   page:** `static/html/pages/body/deck-detail-chrome.html` renders everything
   about a deck's detail page that's identical between games (header, Export
   Deck, the Edit Deck dialog, the danger-zone delete) and leaves three named
-  blocks — `card-header-actions`, `card-search-controls`, `card-management`
+  blocks — `deck-heading`, `card-header-actions`, `card-search-controls`,
+  `card-management`
   — for the genuinely per-game part (each game's own card schema/dialogs).
   The game supplies its own small fragment file defining those three block
   names and composes it with the chrome via `apiPages.ParseGameFragment`.
@@ -174,13 +183,13 @@ framework, no ORM.
   rest of the framework's error-returning convention.
 - **`bootstrap.Features` is the single place to see and toggle which
   optional framework functionality a game exposes:** a `Decks`/
-  `WinCelebration`/`LoseCelebration`/`LobbyTurnTimer` struct passed to
-  `bootstrap.MountFeatures`, which mounts the framework's core user/account/
-  auth routes unconditionally (every game needs accounts) and each optional
-  group's routes only when its field is `true` — `WinCelebration`/
-  `LoseCelebration: true` also calls `apiPages.SetAccountPageFeatures`
-  internally, so a game doesn't set that flag separately. Adding a new
-  optional framework route group means adding
+  `WinCelebration`/`LoseCelebration`/`WinVideo`/`LobbyTurnTimer` struct
+  passed to `bootstrap.MountFeatures`, which mounts the framework's core
+  user/account/auth routes unconditionally (every game needs accounts) and
+  each optional group's routes only when its field is `true` —
+  `WinCelebration`/`LoseCelebration`/`WinVideo: true` also calls
+  `apiPages.SetAccountPageFeatures` internally, so a game doesn't set that
+  flag separately. Adding a new optional framework route group means adding
   a field here and its `if` block, not touching every consuming game's
   `main()`. This does **not** cover feature-specific configuration (e.g. the
   win-image size limit) — that's still `apiUser.SetMaxWinGifBytes`, called

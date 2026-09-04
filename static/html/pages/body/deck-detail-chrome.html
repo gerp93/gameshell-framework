@@ -1,7 +1,11 @@
 {{define "body"}}
 <script src="/gs/js/deck.js"></script>
-<div style="display: grid; grid-auto-flow: column">
-    <h2>{{.Deck.Name}}</h2>
+<div style="display: grid; grid-auto-flow: column; align-items: start">
+    <div>
+        {{block "deck-heading" .}}
+        <h2>{{.Deck.Name}}</h2>
+        {{end}}
+    </div>
     <div style="text-align: right;">
         {{block "card-header-actions" .}}{{end}}
         <button onclick="document.getElementById('deck-update-dialog').showModal()">

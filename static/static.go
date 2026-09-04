@@ -22,6 +22,7 @@ var SQLFiles = []string{
 	"sql/tables/USER.sql",
 	"sql/tables/USER_WIN_CELEBRATION.sql",
 	"sql/tables/USER_LOSE_CELEBRATION.sql",
+	"sql/tables/USER_WIN_VIDEO.sql",
 	"sql/tables/LOBBY.sql",
 	"sql/tables/LOBBY_SETTINGS.sql",
 	"sql/tables/PLAYER.sql",

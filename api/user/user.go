@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/gerp93/gameshell-framework/api"
@@ -982,6 +984,86 @@ func SetLoseMessage(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("Lose message saved."))
+}
+
+// SetWinVideo stores the YouTube clip shown to the whole lobby when this
+// user wins a game overall. Accepts a bare video id or a YouTube URL, plus
+// an optional start offset in seconds.
+func SetWinVideo(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to parse form."))
+		return
+	}
+
+	videoId, err := database.ParseYouTubeVideoId(r.FormValue("winVideo"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("A valid YouTube video ID or URL is required."))
+		return
+	}
+
+	startOffset := 0
+	if raw := strings.TrimSpace(r.FormValue("winVideoStartSeconds")); raw != "" {
+		startOffset, err = strconv.Atoi(raw)
+		if err != nil || startOffset < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Start seconds must be a non-negative whole number."))
+			return
+		}
+	}
+
+	err = database.SetUserWinVideo(userId, videoId, startOffset)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Win video saved."))
+}
+
+// ClearWinVideo removes this user's game-win YouTube clip.
+func ClearWinVideo(w http.ResponseWriter, r *http.Request) {
+	userIdString := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id from path."))
+		return
+	}
+
+	if !isCurrentUser(r, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return
+	}
+
+	err = database.ClearUserWinVideo(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Win video removed."))
 }
 
 func isCurrentUser(r *http.Request, checkId uuid.UUID) bool {

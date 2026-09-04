@@ -41,6 +41,10 @@ type Features struct {
 	// account page's Lose Celebration section — the counterpart to
 	// WinCelebration, shown on a loss instead of a win.
 	LoseCelebration bool
+	// WinVideo mounts the win-video routes and enables the account page's
+	// Win Video section — a YouTube clip forced on the whole lobby when the
+	// player wins a game overall (separate from the per-round win GIF).
+	WinVideo bool
 	// LobbyTurnTimer mounts PUT /api/lobby/{lobbyId}/turn-timer. Games that
 	// have their own timer concept (e.g. card-judge's round timer) leave
 	// this off rather than expose a second, competing timer control.
@@ -93,10 +97,16 @@ func MountFeatures(f Features) {
 		http.Handle("PUT /api/user/{userId}/lose-message", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.SetLoseMessage)))
 	}
 
-	if f.WinCelebration || f.LoseCelebration {
+	if f.WinVideo {
+		http.Handle("PUT /api/user/{userId}/win-video", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.SetWinVideo)))
+		http.Handle("DELETE /api/user/{userId}/win-video", api.MiddlewareForAPIs(http.HandlerFunc(apiUser.ClearWinVideo)))
+	}
+
+	if f.WinCelebration || f.LoseCelebration || f.WinVideo {
 		apiPages.SetAccountPageFeatures(apiPages.AccountPageFeatures{
 			WinCelebration:  f.WinCelebration,
 			LoseCelebration: f.LoseCelebration,
+			WinVideo:        f.WinVideo,
 		})
 	}
 

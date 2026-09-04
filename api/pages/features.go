@@ -14,6 +14,9 @@ type AccountPageFeatures struct {
 	// counterpart to WinCelebration. Only enable it if the game also mounts
 	// apiUser.SetLoseGif/ClearLoseGif/GetLoseGif/SetLoseMessage.
 	LoseCelebration bool
+	// WinVideo shows the game-win YouTube clip section. Only enable it if
+	// the game also mounts apiUser.SetWinVideo/ClearWinVideo.
+	WinVideo bool
 }
 
 var accountPageFeatures AccountPageFeatures
