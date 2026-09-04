@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gerp93/gameshell-framework/auth"
+	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
-	"github.com/grantfbarnes/card-judge/auth"
-	"github.com/grantfbarnes/card-judge/database"
 )
 
 type RequestContextKey string
@@ -28,7 +28,7 @@ type PagePolicy struct {
 	AdminPaths        []string
 }
 
-var brandName = "Card Judge"
+var brandName = "Gameshell"
 var pagePolicy PagePolicy
 
 func SetBrandName(name string) {
@@ -127,4 +127,14 @@ func MiddlewareForAPIs(next http.Handler) http.Handler {
 
 func GetUserId(r *http.Request) uuid.UUID {
 	return r.Context().Value(userIdRequestContextKey).(uuid.UUID)
+}
+
+func UserIsAdmin(r *http.Request) bool {
+	userId := GetUserId(r)
+	if userId == uuid.Nil {
+		return false
+	}
+
+	isAdmin, _ := database.GetUserIsAdmin(userId)
+	return isAdmin
 }

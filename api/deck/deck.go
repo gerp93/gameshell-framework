@@ -1,57 +1,24 @@
 package apiDeck
 
 import (
-	"encoding/csv"
 	"net/http"
 
+	gameshell "github.com/gerp93/gameshell-framework"
 	"github.com/gerp93/gameshell-framework/api"
 	"github.com/gerp93/gameshell-framework/auth"
+	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
-	"github.com/grantfbarnes/card-judge/database"
 )
 
-func GetCardExport(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckId")
-	deckId, err := uuid.Parse(deckIdString)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get deck id from path."))
-		return
-	}
-
-	userId := api.GetUserId(r)
-	if userId == uuid.Nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get user id."))
-		return
-	}
-
-	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to check deck access."))
-		return
-	}
-
-	if !hasDeckAccess {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("User does not have access."))
-		return
-	}
-
-	cards, err := database.GetCardsInDeckExport(deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/csv")
-	writer := csv.NewWriter(w)
-	defer writer.Flush()
-	for _, card := range cards {
-		_ = writer.Write([]string{card.Category, card.Text})
-	}
+// knownCreateDeckFields are the form fields Create itself reads. Anything
+// else posted alongside them is assumed to belong to a game's own
+// "deck-create-extra-fields" block and is forwarded to DeckCreationHook
+// verbatim — Create doesn't need to know what it means.
+var knownCreateDeckFields = map[string]bool{
+	"name":             true,
+	"password":         true,
+	"passwordConfirm":  true,
+	"isPublicReadOnly": true,
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -130,40 +97,31 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if hook, ok := gameshell.Registered().(gameshell.DeckCreationHook); ok {
+		extraFields := make(map[string]string)
+		for key, val := range r.Form {
+			if !knownCreateDeckFields[key] && len(val) > 0 {
+				extraFields[key] = val[0]
+			}
+		}
+		if err := hook.OnDeckCreated(id, extraFields); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+	}
+
 	w.Header().Add("HX-Redirect", "/deck/"+id.String())
 	w.WriteHeader(http.StatusCreated)
 }
 
 func SetName(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckId")
-	deckId, err := uuid.Parse(deckIdString)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get deck id from path."))
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
 		return
 	}
 
-	userId := api.GetUserId(r)
-	if userId == uuid.Nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get user id."))
-		return
-	}
-
-	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to check deck access."))
-		return
-	}
-
-	if !hasDeckAccess {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("User does not have access."))
-		return
-	}
-
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Failed to parse form."))
@@ -208,35 +166,12 @@ func SetName(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetPassword(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckId")
-	deckId, err := uuid.Parse(deckIdString)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get deck id from path."))
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
 		return
 	}
 
-	userId := api.GetUserId(r)
-	if userId == uuid.Nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get user id."))
-		return
-	}
-
-	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to check deck access."))
-		return
-	}
-
-	if !hasDeckAccess {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("User does not have access."))
-		return
-	}
-
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Failed to parse form."))
@@ -300,35 +235,12 @@ func SetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckId")
-	deckId, err := uuid.Parse(deckIdString)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get deck id from path."))
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
 		return
 	}
 
-	userId := api.GetUserId(r)
-	if userId == uuid.Nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get user id."))
-		return
-	}
-
-	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to check deck access."))
-		return
-	}
-
-	if !hasDeckAccess {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("User does not have access."))
-		return
-	}
-
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Failed to parse form."))
@@ -354,35 +266,12 @@ func SetIsPublicReadOnly(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-	deckIdString := r.PathValue("deckId")
-	deckId, err := uuid.Parse(deckIdString)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get deck id from path."))
+	deckId, ok := authorizedDeckId(w, r)
+	if !ok {
 		return
 	}
 
-	userId := api.GetUserId(r)
-	if userId == uuid.Nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Failed to get user id."))
-		return
-	}
-
-	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to check deck access."))
-		return
-	}
-
-	if !hasDeckAccess {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("User does not have access."))
-		return
-	}
-
-	err = database.DeleteDeck(deckId)
+	err := database.DeleteDeck(deckId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
@@ -391,4 +280,38 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("HX-Redirect", "/decks")
 	w.WriteHeader(http.StatusOK)
+}
+
+// authorizedDeckId parses the {deckId} path value and confirms the requesting
+// user has access to it. It writes the error response and returns ok=false on
+// any failure.
+func authorizedDeckId(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	deckId, err := uuid.Parse(r.PathValue("deckId"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get deck id from path."))
+		return uuid.Nil, false
+	}
+
+	userId := api.GetUserId(r)
+	if userId == uuid.Nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Failed to get user id."))
+		return uuid.Nil, false
+	}
+
+	hasDeckAccess, err := database.UserHasDeckAccess(userId, deckId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("Failed to check deck access."))
+		return uuid.Nil, false
+	}
+
+	if !hasDeckAccess {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("User does not have access."))
+		return uuid.Nil, false
+	}
+
+	return deckId, true
 }
