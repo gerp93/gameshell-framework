@@ -23,6 +23,21 @@ type Game interface {
 	// the game clean up its own per-room state before the shell deletes the
 	// base LOBBY row.
 	OnRoomEmpty(lobbyId uuid.UUID) error
+	// OnDeckDeleting runs just before the shell deletes a base DECK row, letting
+	// the game audit/clean up its own CARD rows first (MariaDB FK cascade does
+	// not fire the game's card triggers).
+	OnDeckDeleting(deckId uuid.UUID) error
+}
+
+// DeckCreationHook is an optional interface a Game may additionally
+// implement (alongside Game) to receive whatever extra form fields it
+// posted from its own "deck-create-extra-fields" block in the shared
+// deck-create dialog (see decks.html and api/deck.Create), right after a
+// new base DECK row is inserted. Separate from Game itself — rather than a
+// required method — so a game with nothing extra to capture at deck
+// creation doesn't need a no-op implementation.
+type DeckCreationHook interface {
+	OnDeckCreated(deckId uuid.UUID, extraFields map[string]string) error
 }
 
 var registeredGame Game

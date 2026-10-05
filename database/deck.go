@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	gameshell "github.com/gerp93/gameshell-framework"
 	"github.com/gerp93/gameshell-framework/auth"
 	"github.com/google/uuid"
 )
@@ -35,13 +36,14 @@ func SearchDecks(name string, page int) ([]DeckDetails, error) {
 		SELECT
 			D.ID,
 			D.NAME,
-			COUNT(C.ID) AS CARD_COUNT,
+			(
+				SELECT COUNT(*)
+				FROM CARD AS C
+				WHERE C.DECK_ID = D.ID
+			) AS CARD_COUNT,
 			D.IS_PUBLIC_READONLY
 		FROM DECK AS D
-			LEFT JOIN CARD AS C ON C.DECK_ID = D.ID
-		WHERE D.IS_LOBBY_WILD_DECK = FALSE
-			AND D.NAME LIKE ?
-		GROUP BY D.ID
+		WHERE D.NAME LIKE ?
 		ORDER BY D.NAME
 		LIMIT 10 OFFSET ?
 	`
@@ -75,8 +77,7 @@ func CountDecks(name string) (int, error) {
 		SELECT
 			COUNT(*)
 		FROM DECK AS D
-		WHERE D.IS_LOBBY_WILD_DECK = FALSE
-			AND D.NAME LIKE ?
+		WHERE D.NAME LIKE ?
 	`
 	rows, err := query(sqlString, name)
 	if err != nil {
@@ -257,6 +258,14 @@ func SetDeckPassword(id uuid.UUID, password string) error {
 }
 
 func DeleteDeck(id uuid.UUID) error {
+	// Let the game audit/clean up its own cards before the deck (and its cards
+	// via FK cascade) are removed.
+	if g := gameshell.Registered(); g != nil {
+		if err := g.OnDeckDeleting(id); err != nil {
+			return err
+		}
+	}
+
 	sqlString := `
 		DELETE
 		FROM DECK

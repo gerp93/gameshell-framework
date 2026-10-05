@@ -8,15 +8,13 @@ BEGIN
         DECK_ID,
         NAME,
         PASSWORD_HASH,
-        IS_PUBLIC_READONLY,
-        IS_LOBBY_WILD_DECK
+        IS_PUBLIC_READONLY
     )
     VALUES (
         'UPDATE',
         OLD.ID,
         OLD.NAME,
         OLD.PASSWORD_HASH,
-        OLD.IS_PUBLIC_READONLY,
-        OLD.IS_LOBBY_WILD_DECK
+        OLD.IS_PUBLIC_READONLY
     );
 END;

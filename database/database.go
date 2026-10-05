@@ -7,18 +7,24 @@ import (
 	"log"
 	"os"
 
+	"github.com/gerp93/gameshell-framework/static"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/grantfbarnes/card-judge/static"
 )
 
 var database *sql.DB
 
+var envVarPrefix = "GAMESHELL"
+
+func SetEnvVarPrefix(prefix string) {
+	envVarPrefix = prefix
+}
+
 func CreateDatabaseConnection() (*sql.DB, error) {
 	// get connection string
-	userName := os.Getenv("CARD_JUDGE_SQL_USER")
-	userPassword := os.Getenv("CARD_JUDGE_SQL_PASSWORD")
-	serverHost := os.Getenv("CARD_JUDGE_SQL_HOST")
-	databaseName := os.Getenv("CARD_JUDGE_SQL_DATABASE")
+	userName := os.Getenv(envVarPrefix + "_SQL_USER")
+	userPassword := os.Getenv(envVarPrefix + "_SQL_PASSWORD")
+	serverHost := os.Getenv(envVarPrefix + "_SQL_HOST")
+	databaseName := os.Getenv(envVarPrefix + "_SQL_DATABASE")
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true", userName, userPassword, serverHost, databaseName)
 
 	// open database connection
