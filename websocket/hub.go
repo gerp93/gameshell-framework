@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"log"
+
 	"github.com/gerp93/gameshell-framework"
 	"github.com/gerp93/gameshell-framework/database"
 	"github.com/google/uuid"
@@ -58,6 +60,16 @@ func (h *Hub) run() {
 
 func (h *Hub) registerClient(client *Client) {
 	h.clients[client] = true
+	// Belt-and-braces reactivation, not a duplicate of what the page load
+	// already did: closes a race where an old connection's disconnect is
+	// detected late (see unregisterClient) and lands in between the page
+	// load reactivating this player and this websocket actually
+	// registering, leaving them stuck inactive despite this brand new
+	// connection. AddUserToLobby is idempotent (a no-op update, no hook
+	// fired) when the player is already active.
+	if _, err := database.AddUserToLobby(h.lobbyId, client.user.Id); err != nil {
+		log.Println(err)
+	}
 	h.broadcastMessage([]byte("<blue>Player Joined</>: <green>" + client.user.Name + "</>"))
 	h.broadcastMessage([]byte("refresh"))
 }
@@ -66,10 +78,32 @@ func (h *Hub) unregisterClient(client *Client) {
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
 		close(client.send)
-		_ = database.SetPlayerInactive(h.lobbyId, client.user.Id)
+		// A fast reconnect (page reload, a flaky connection recovering) can
+		// register the user's new client before this one's disconnect is
+		// even detected -- readPump only notices a dead connection once its
+		// blocking Read finally errors out, which can lag well behind a
+		// brand new connection completing its handshake. If that happened,
+		// h.clients still holds another live client for the same user right
+		// now, and marking them inactive here would stomp the reactivation
+		// their reconnect already did (see gsDatabase.AddUserToLobby),
+		// leaving them permanently stuck inactive despite being connected.
+		if !h.userStillConnected(client.user.Id) {
+			_ = database.SetPlayerInactive(h.lobbyId, client.user.Id)
+		}
 	}
 	h.broadcastMessage([]byte("<red>Player Left</>: <green>" + client.user.Name + "</>"))
 	h.broadcastMessage([]byte("refresh"))
+}
+
+// userStillConnected reports whether any other currently registered client
+// in this hub belongs to the given user.
+func (h *Hub) userStillConnected(userId uuid.UUID) bool {
+	for c := range h.clients {
+		if c.user.Id == userId {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Hub) broadcastMessage(message []byte) {

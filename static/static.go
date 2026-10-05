@@ -63,6 +63,7 @@ var DeckSQLFiles = []string{
 
 	// functions
 	"sql/functions/FN_USER_HAS_DECK_ACCESS.sql",
+	"sql/functions/FN_USER_CAN_READ_DECK.sql",
 
 	// procedures
 	"sql/procedures/SP_GET_READABLE_DECKS.sql",
