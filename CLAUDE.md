@@ -19,6 +19,11 @@ the `Game` interface.
 Stack: **Go (stdlib `net/http`) + `gorilla/websocket` + MariaDB.** No web
 framework, no ORM.
 
+This repo follows [gerp93/KVG_Standards](https://github.com/gerp93/KVG_Standards)
+for theming, licensing, release tagging, and repo hygiene — see that repo's
+`app-standards` skill for the checklist and `themes-versioning.md` for the
+`static/css/colors.css` vendoring rule.
+
 ## The contract (must not break)
 
 - **`Game` interface** (`gameshell.go`, root package `gameshell`): lifecycle
@@ -227,8 +232,12 @@ framework, no ORM.
 
 ## Versioning / release
 
-- Semver git tags `vMAJOR.MINOR.PATCH`; bump with
-  `version_bump.sh {major|minor|patch}` (updates README version line).
+- Semver git tags `vMAJOR.MINOR.PATCH`, cut via the `Cut Tag` GitHub Actions
+  workflow (`.github/workflows/cut-tag.yml`, `workflow_dispatch` with a
+  major/minor/patch choice) — a bare tag, no build artifact, per
+  [KVG_Standards' `templates/cut-tag.yml`](https://github.com/gerp93/KVG_Standards/blob/main/templates/cut-tag.yml)
+  (this repo is a Go library, so that's all release/CI needs — see
+  KVG_Standards' `app-standards` skill).
 - The Go API and the framework schema move together per tag. Games pin a tag
   in `go.mod`.
 - **Upgrade caveat:** `SQLFiles` only creates/replaces; removing an object

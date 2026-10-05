@@ -1,27 +1,16 @@
+# Build+vet gate — logic lives in gerp93/KVG_Standards' ci-go.yml, shared
+# with card-judge and timeline-trivia.
+
 name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Build
-        run: go build ./...
-
-      - name: Vet
-        run: go vet ./...
+  ci:
+    uses: gerp93/KVG_Standards/.github/workflows/ci-go.yml@main
+    with:
+      working_directory: "."
